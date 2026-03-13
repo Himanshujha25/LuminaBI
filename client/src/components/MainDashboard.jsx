@@ -18,10 +18,26 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
   const [showSQL, setShowSQL] = useState(false);
   const [viewMode, setViewMode] = useState('chart'); // 'chart' | 'table'
   const [sidePrompt, setSidePrompt] = useState('');
-  const [pinSuccess, setPinSuccess] = useState(false);
+  const [pinState, setPinState] = useState('idle'); // 'idle' | 'success' | 'duplicate'
   const [pinnedCharts, setPinnedCharts] = useState(() => {
     const saved = localStorage.getItem('lumina_pinned_charts');
-    return saved ? JSON.parse(saved) : [];
+    if (saved) {
+       try {
+           const parsed = JSON.parse(saved);
+           // Auto-deduplicate any charts the user accidentally pinned multiple times previously
+           const unique = [];
+           const seen = new Set();
+           parsed.forEach(c => {
+               const key = `${c.sql_used}_${c.chart_type}`;
+               if (!seen.has(key)) {
+                   seen.add(key);
+                   unique.push(c);
+               }
+           });
+           return unique;
+       } catch (e) { return []; }
+    }
+    return [];
   });
 
   // Persist pinned charts
@@ -119,14 +135,25 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
 
   const handlePinChart = () => {
     if (currentData) {
-       setPinnedCharts(prev => [{ 
-         ...currentData, 
-         id: Date.now(),
-         chart_type: chartTypeOverride || currentData.chart_type
-       }, ...prev]);
-       
-       setPinSuccess(true);
-       setTimeout(() => setPinSuccess(false), 2000);
+       const targetType = chartTypeOverride || currentData.chart_type;
+
+       // Use state updater to perfectly prevent pushing duplicates
+       setPinnedCharts(prev => {
+          const isDuplicate = prev.some(pc => pc.sql_used === currentData.sql_used && pc.chart_type === targetType);
+          if (isDuplicate) {
+             setPinState('duplicate');
+             setTimeout(() => setPinState('idle'), 2000);
+             return prev; // Do nothing if it's already pinned!
+          }
+
+          setPinState('success');
+          setTimeout(() => setPinState('idle'), 2000);
+          return [{ 
+             ...currentData, 
+             id: Date.now(),
+             chart_type: targetType
+          }, ...prev];
+       });
        
        // Scroll to bottom to show pinned charts
        setTimeout(() => {
@@ -225,9 +252,9 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
                            </button>
                            <button 
                              onClick={handlePinChart}
-                             style={{ padding: '6px 14px', borderRadius: '6px', fontSize: '13px', background: pinSuccess ? '#10b981' : 'var(--surface-hover)', border: '1px solid', borderColor: pinSuccess ? '#10b981' : 'var(--accent-blue)', color: pinSuccess ? '#fff' : 'var(--accent-blue)', marginRight: '8px', fontWeight: 600, transition: 'all 0.2s' }}
+                             style={{ padding: '6px 14px', borderRadius: '6px', fontSize: '13px', background: pinState === 'success' ? '#10b981' : (pinState === 'duplicate' ? '#f59e0b' : 'var(--surface-hover)'), border: '1px solid', borderColor: pinState === 'success' ? '#10b981' : (pinState === 'duplicate' ? '#f59e0b' : 'var(--accent-blue)'), color: pinState !== 'idle' ? '#fff' : 'var(--accent-blue)', marginRight: '8px', fontWeight: 600, transition: 'all 0.2s' }}
                            >
-                             {pinSuccess ? '✅ Pinned Below!' : '📌 Pin Chart'}
+                             {pinState === 'success' ? '✅ Pinned Below!' : (pinState === 'duplicate' ? '⚠️ Already Pinned!' : '📌 Pin Chart')}
                            </button>
                            <button 
                              onClick={() => setShowSQL(!showSQL)}
