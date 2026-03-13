@@ -18,6 +18,7 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
   const [showSQL, setShowSQL] = useState(false);
   const [viewMode, setViewMode] = useState('chart'); // 'chart' | 'table'
   const [sidePrompt, setSidePrompt] = useState('');
+  const [pinSuccess, setPinSuccess] = useState(false);
   const [pinnedCharts, setPinnedCharts] = useState(() => {
     const saved = localStorage.getItem('lumina_pinned_charts');
     return saved ? JSON.parse(saved) : [];
@@ -118,7 +119,22 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
 
   const handlePinChart = () => {
     if (currentData) {
-       setPinnedCharts(prev => [{ ...currentData, id: Date.now() }, ...prev]);
+       setPinnedCharts(prev => [{ 
+         ...currentData, 
+         id: Date.now(),
+         chart_type: chartTypeOverride || currentData.chart_type
+       }, ...prev]);
+       
+       setPinSuccess(true);
+       setTimeout(() => setPinSuccess(false), 2000);
+       
+       // Scroll to bottom to show pinned charts
+       setTimeout(() => {
+           const container = document.querySelector('.dashboard-content');
+           if (container) {
+               container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+           }
+       }, 100);
     }
   };
 
@@ -209,9 +225,9 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
                            </button>
                            <button 
                              onClick={handlePinChart}
-                             style={{ padding: '6px 14px', borderRadius: '6px', fontSize: '13px', background: 'var(--surface-hover)', border: '1px solid var(--accent-blue)', color: 'var(--accent-blue)', marginRight: '8px', fontWeight: 600 }}
+                             style={{ padding: '6px 14px', borderRadius: '6px', fontSize: '13px', background: pinSuccess ? '#10b981' : 'var(--surface-hover)', border: '1px solid', borderColor: pinSuccess ? '#10b981' : 'var(--accent-blue)', color: pinSuccess ? '#fff' : 'var(--accent-blue)', marginRight: '8px', fontWeight: 600, transition: 'all 0.2s' }}
                            >
-                             📌 Pin Chart
+                             {pinSuccess ? '✅ Pinned Below!' : '📌 Pin Chart'}
                            </button>
                            <button 
                              onClick={() => setShowSQL(!showSQL)}
@@ -302,6 +318,9 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
                 </div>
              </div>
           )}
+          
+          {/* Invisible div to help with scrolling */}
+          <div style={{ paddingBottom: '20px' }} />
         </div>
       </div>
 
