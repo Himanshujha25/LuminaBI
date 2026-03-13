@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Header from './components/Header';
 import UploadModal from './components/UploadModal';
+import ManageModal from './components/ManageModal';
 import MainDashboard from './components/MainDashboard';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -11,6 +12,7 @@ import axios from 'axios';
 function App() {
   const [isDark, setIsDark] = useState(false);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [isManageOpen, setIsManageOpen] = useState(false);
   const [datasets, setDatasets] = useState([]);
   const [activeDataset, setActiveDataset] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -44,6 +46,19 @@ function App() {
     localStorage.removeItem('token');
   };
 
+  const handleDeleteDataset = async (id) => {
+    try {
+      await axios.delete(`http://localhost:5000/api/datasets/${id}`);
+      const updated = datasets.filter(d => d.id !== id);
+      setDatasets(updated);
+      if (activeDataset && activeDataset.id === id) {
+        setActiveDataset(updated.length > 0 ? updated[0] : null);
+      }
+    } catch (err) {
+      console.error("Failed to delete dataset", err);
+    }
+  };
+
   const fetchDatasets = async () => {
     try {
       const res = await axios.get('http://localhost:5000/api/datasets');
@@ -70,6 +85,7 @@ function App() {
     <div className="layout-container">
       <Header 
         onUploadClick={() => setIsUploadOpen(true)} 
+        onManageClick={() => setIsManageOpen(true)}
         toggleTheme={toggleTheme} 
         isDark={isDark}
         onLogout={handleLogout}
@@ -85,6 +101,12 @@ function App() {
         isOpen={isUploadOpen} 
         onClose={() => setIsUploadOpen(false)} 
         onUploadSuccess={handleUploadSuccess}
+      />
+      <ManageModal 
+        isOpen={isManageOpen} 
+        onClose={() => setIsManageOpen(false)} 
+        datasets={datasets}
+        onDelete={handleDeleteDataset}
       />
     </div>
   );

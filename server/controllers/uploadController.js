@@ -179,4 +179,28 @@ const getDatasets = async (req, res) => {
     }
 }
 
-module.exports = { uploadCSV, getDatasets };
+const deleteDataset = async (req, res) => {
+    const { id } = req.params;
+    try {
+        // Find the table name to drop it
+        const metaResult = await pool.query('SELECT table_name FROM datasets WHERE id = $1', [id]);
+        if (metaResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Dataset not found' });
+        }
+        
+        const tableName = metaResult.rows[0].table_name;
+
+        // Drop the actual data table
+        await pool.query(`DROP TABLE IF EXISTS "${tableName}"`);
+        
+        // Remove from metadata tracking
+        await pool.query('DELETE FROM datasets WHERE id = $1', [id]);
+
+        return res.json({ message: 'Dataset permanently deleted and dropped from db.' });
+    } catch (err) {
+        console.error('Delete error', err);
+        return res.status(500).json({ error: 'Failed to delete dataset: ' + err.message });
+    }
+}
+
+module.exports = { uploadCSV, getDatasets, deleteDataset };
