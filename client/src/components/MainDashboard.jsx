@@ -16,7 +16,17 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
   }); // { [datasetId]: [{ role: 'user' | 'ai', text: string, data?: any }] }
   const [chartTypeOverride, setChartTypeOverride] = useState(null);
   const [showSQL, setShowSQL] = useState(false);
+  const [viewMode, setViewMode] = useState('chart'); // 'chart' | 'table'
   const [sidePrompt, setSidePrompt] = useState('');
+  const [pinnedCharts, setPinnedCharts] = useState(() => {
+    const saved = localStorage.getItem('lumina_pinned_charts');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // Persist pinned charts
+  useEffect(() => {
+    localStorage.setItem('lumina_pinned_charts', JSON.stringify(pinnedCharts));
+  }, [pinnedCharts]);
 
   // Persist chat histories to local storage so they survive refreshes
   useEffect(() => {
@@ -36,6 +46,7 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
   useEffect(() => {
      setChartTypeOverride(null);
      setShowSQL(false);
+     setViewMode('chart');
      setPrompt('');
      setSidePrompt('');
   }, [activeDataset?.id]);
@@ -103,6 +114,16 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
       e.preventDefault();
       handleSubmit(sidePrompt, true);
     }
+  };
+
+  const handlePinChart = () => {
+    if (currentData) {
+       setPinnedCharts(prev => [{ ...currentData, id: Date.now() }, ...prev]);
+    }
+  };
+
+  const handleUnpinChart = (id) => {
+    setPinnedCharts(prev => prev.filter(c => c.id !== id));
   };
 
   // Find the latest AI data object to display in the main view
@@ -181,6 +202,18 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
                         
                         <div className="chart-type-selector" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                            <button 
+                             onClick={() => setViewMode(viewMode === 'chart' ? 'table' : 'chart')}
+                             style={{ padding: '6px 14px', borderRadius: '6px', fontSize: '13px', background: 'var(--surface-hover)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', marginRight: '8px' }}
+                           >
+                             {viewMode === 'chart' ? 'Data Table' : 'Show Chart'}
+                           </button>
+                           <button 
+                             onClick={handlePinChart}
+                             style={{ padding: '6px 14px', borderRadius: '6px', fontSize: '13px', background: 'var(--surface-hover)', border: '1px solid var(--accent-blue)', color: 'var(--accent-blue)', marginRight: '8px', fontWeight: 600 }}
+                           >
+                             📌 Pin Chart
+                           </button>
+                           <button 
                              onClick={() => setShowSQL(!showSQL)}
                              style={{ padding: '6px 14px', borderRadius: '6px', fontSize: '13px', background: 'var(--surface-hover)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', marginRight: '8px' }}
                            >
@@ -216,7 +249,30 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
                        </div>
                     )}
 
-                    <DynamicChartComponent config={currentData} overrideChartType={chartTypeOverride} />
+                    {viewMode === 'table' ? (
+                       <div className="data-table-container sql-viewer" style={{ padding: '16px', background: 'var(--bg-color)', borderRadius: '8px', overflowX: 'auto', border: '1px solid var(--border-color)', maxHeight: '400px' }}>
+                           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px', textAlign: 'left' }}>
+                              <thead>
+                                 <tr style={{ borderBottom: '1px solid var(--accent-blue)', color: 'var(--text-secondary)' }}>
+                                    {currentData.data && currentData.data.length > 0 && Object.keys(currentData.data[0]).map(key => (
+                                       <th key={key} style={{ padding: '12px 8px' }}>{key}</th>
+                                    ))}
+                                 </tr>
+                              </thead>
+                              <tbody>
+                                 {currentData.data && currentData.data.map((row, i) => (
+                                    <tr key={i} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                                       {Object.values(row).map((val, j) => (
+                                          <td key={j} style={{ padding: '12px 8px', color: 'var(--text-primary)' }}>{val}</td>
+                                       ))}
+                                    </tr>
+                                 ))}
+                              </tbody>
+                           </table>
+                       </div>
+                    ) : (
+                       <DynamicChartComponent config={currentData} overrideChartType={chartTypeOverride} />
+                    )}
                 </div>
              </div>
           ) : (
@@ -229,6 +285,22 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
                   <button onClick={() => setPrompt("Create a bar chart of the top performing categories")}>"Create a bar chart of top performing categories"</button>
                </div>
             </div>
+          )}
+
+          {pinnedCharts.length > 0 && !isLoading && !isSideLoading && (
+             <div className="pinned-charts-section animate-slide-up" style={{ marginTop: '40px', paddingBottom: '40px' }}>
+                <h3 className="chart-title">Pinned Dashboards</h3>
+                <div className="pinned-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(45%, 1fr))', gap: '24px' }}>
+                   {pinnedCharts.map(chart => (
+                      <div key={chart.id} className="glass-panel" style={{ padding: '24px', position: 'relative' }}>
+                         <button onClick={() => handleUnpinChart(chart.id)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'var(--surface-hover)', borderRadius: '50%', width: '28px', height: '28px', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}>✕</button>
+                         <div style={{ fontSize: '12px', color: 'var(--accent-blue)', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 600 }}>{chart.chart_type} Chart</div>
+                         <div style={{ fontSize: '15px', color: 'var(--text-primary)', marginBottom: '20px', paddingRight: '24px' }}>{chart.explanation}</div>
+                         <DynamicChartComponent config={chart} />
+                      </div>
+                   ))}
+                </div>
+             </div>
           )}
         </div>
       </div>
