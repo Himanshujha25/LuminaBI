@@ -9,18 +9,27 @@ const COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899'
 const PIE_COLORS = ['url(#colorPie0)', 'url(#colorPie1)', 'url(#colorPie2)', 'url(#colorPie3)', 'url(#colorPie4)', 'url(#colorPie5)'];
 
 function DynamicChartComponent({ config, overrideChartType }) {
-  if (!config || !config.data || config.data.length === 0) return <p>No data to display.</p>;
+  if (!config || !config.data || config.data.length === 0) return <p style={{ color: 'white', padding: '20px' }}>No data to display.</p>;
 
   const { chart_type, x_axis_column, y_axis_column, data } = config;
-  const actualChartType = overrideChartType || chart_type;
+  const actualChartType = overrideChartType || chart_type || 'bar';
 
-  // Make sure numeric data is actually parsed as numbers, as SQL might return bigints as strings sometimes
+  // 1. SMART COLUMN DETECTION
+  const availableKeys = Object.keys(data[0] || {});
+  const safeXKey = availableKeys.includes(x_axis_column) ? x_axis_column : availableKeys[0];
+  const safeYKey = availableKeys.includes(y_axis_column) ? y_axis_column : (availableKeys[1] || availableKeys[0]);
+
+  // 2. FAIL-SAFE NUMBER PARSING
   const chartData = data.map(d => ({
     ...d,
-    [y_axis_column]: Number(d[y_axis_column])
+    [safeYKey]: Number(d[safeYKey] || 0) 
   }));
 
-  // Render different charts based on the AI's decision or User's override
+  // DEBUGGING: Check your browser console (F12) to ensure data looks like [{ category: "A", count: 15 }]
+  console.log("Chart Rendering Data:", chartData);
+  console.log("Using X Key:", safeXKey, "| Using Y Key:", safeYKey);
+
+  // 3. RENDER CHART (Removed manual width/height props!)
   const renderChart = () => {
     switch (actualChartType?.toLowerCase()) {
       case 'line':
@@ -33,17 +42,17 @@ function DynamicChartComponent({ config, overrideChartType }) {
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" opacity={0.6} />
-            <XAxis dataKey={x_axis_column} tick={{ fill: 'var(--text-tertiary)' }} axisLine={false} tickLine={false} />
+            <XAxis dataKey={safeXKey} tick={{ fill: 'var(--text-tertiary)' }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fill: 'var(--text-tertiary)' }} axisLine={false} tickLine={false} />
             <Tooltip 
-               contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)', borderColor: 'var(--border-color)', borderRadius: '12px', color: '#fff', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)' }} 
+               contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(8px)', borderColor: 'var(--border-color)', borderRadius: '12px', color: '#fff' }} 
                itemStyle={{ color: '#fff' }}
-               cursor={{stroke: 'var(--accent-blue)', strokeWidth: 2, strokeDasharray: '4 4'}}
             />
             <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="circle" />
-            <Line type="monotone" dataKey={y_axis_column} stroke="url(#colorLine)" strokeWidth={4} dot={{ r: 4, strokeWidth: 2, fill: 'var(--surface-color)' }} activeDot={{ r: 8, strokeWidth: 0, fill: '#3b82f6', style: {filter: 'drop-shadow(0px 0px 8px rgba(59, 130, 246, 0.8))'} }} />
+            <Line type="monotone" dataKey={safeYKey} stroke="url(#colorLine)" strokeWidth={4} dot={{ r: 4, strokeWidth: 2, fill: 'var(--surface-color)' }} activeDot={{ r: 8, strokeWidth: 0, fill: '#3b82f6' }} />
           </LineChart>
         );
+
       case 'area':
         return (
           <AreaChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
@@ -54,31 +63,32 @@ function DynamicChartComponent({ config, overrideChartType }) {
                </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" opacity={0.6} />
-            <XAxis dataKey={x_axis_column} tick={{ fill: 'var(--text-tertiary)' }} axisLine={false} tickLine={false} />
+            <XAxis dataKey={safeXKey} tick={{ fill: 'var(--text-tertiary)' }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fill: 'var(--text-tertiary)' }} axisLine={false} tickLine={false} />
             <Tooltip 
-               contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)', borderColor: 'var(--border-color)', borderRadius: '12px', color: '#fff', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)' }} 
+               contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(8px)', borderColor: 'var(--border-color)', borderRadius: '12px', color: '#fff' }} 
                itemStyle={{ color: '#fff' }}
             />
             <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="circle" />
-            <Area type="monotone" dataKey={y_axis_column} stroke="#8b5cf6" fill="url(#colorArea)" strokeWidth={3} activeDot={{ r: 8, strokeWidth: 0, fill: '#8b5cf6', style: {filter: 'drop-shadow(0px 0px 8px rgba(139, 92, 246, 0.8))'} }} />
+            <Area type="monotone" dataKey={safeYKey} stroke="#8b5cf6" fill="url(#colorArea)" strokeWidth={3} />
           </AreaChart>
         );
+
       case 'scatter':
         return (
           <ScatterChart margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" opacity={0.6} />
-            <XAxis dataKey={x_axis_column} name={x_axis_column} tick={{ fill: 'var(--text-tertiary)' }} axisLine={false} tickLine={false} />
-            <YAxis dataKey={y_axis_column} name={y_axis_column} tick={{ fill: 'var(--text-tertiary)' }} axisLine={false} tickLine={false} />
+            <XAxis dataKey={safeXKey} name={safeXKey} tick={{ fill: 'var(--text-tertiary)' }} axisLine={false} tickLine={false} />
+            <YAxis dataKey={safeYKey} name={safeYKey} tick={{ fill: 'var(--text-tertiary)' }} axisLine={false} tickLine={false} />
             <Tooltip 
                cursor={{ strokeDasharray: '3 3', stroke: 'var(--border-color)' }} 
-               contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)', borderColor: 'var(--border-color)', borderRadius: '12px', color: '#fff', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)' }} 
-               itemStyle={{ color: '#fff' }}
+               contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(8px)', borderColor: 'var(--border-color)', borderRadius: '12px', color: '#fff' }} 
             />
             <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="circle" />
-            <Scatter name={y_axis_column} data={chartData} fill="#ec4899" shape="circle" style={{ filter: 'drop-shadow(0px 4px 6px rgba(236, 72, 153, 0.4))' }} />
+            <Scatter name={safeYKey} data={chartData} fill="#ec4899" shape="circle" />
           </ScatterChart>
         );
+
       case 'pie':
         return (
           <PieChart>
@@ -91,32 +101,22 @@ function DynamicChartComponent({ config, overrideChartType }) {
               ))}
             </defs>
             <Tooltip 
-               contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)', borderColor: 'var(--border-color)', borderRadius: '12px', color: '#fff', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)' }} 
+               contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(8px)', borderColor: 'var(--border-color)', borderRadius: '12px', color: '#fff' }} 
                itemStyle={{ color: '#fff' }}
             />
             <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="circle" />
             <Pie
               data={chartData}
-              dataKey={y_axis_column}
-              nameKey={x_axis_column}
+              dataKey={safeYKey}
+              nameKey={safeXKey}
               cx="50%"
               cy="50%"
               outerRadius={120}
               innerRadius={60}
-              label={({ cx, cy, midAngle, innerRadius, outerRadius, value, index }) => {
-                const RADIAN = Math.PI / 180;
-                const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-                const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                const y = cy + radius * Math.sin(-midAngle * RADIAN);
-                return (
-                  <text x={x} y={y} fill="currentColor" fontWeight={600} textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central">
-                    {value}
-                  </text>
-                );
-              }}
+              label={({ name, value }) => `${name}: ${value}`}
             >
               {chartData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} stroke="var(--surface-color)" strokeWidth={3} style={{ filter: 'drop-shadow(0px 8px 16px rgba(0,0,0,0.15))', outline: 'none' }} />
+                <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} stroke="var(--surface-color)" strokeWidth={3} style={{ outline: 'none' }} />
               ))}
             </Pie>
           </PieChart>
@@ -133,24 +133,24 @@ function DynamicChartComponent({ config, overrideChartType }) {
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" opacity={0.6} />
-            <XAxis dataKey={x_axis_column} tick={{ fill: 'var(--text-tertiary)' }} axisLine={false} tickLine={false} />
+            <XAxis dataKey={safeXKey} tick={{ fill: 'var(--text-tertiary)' }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fill: 'var(--text-tertiary)' }} axisLine={false} tickLine={false} />
             <Tooltip 
-               contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(8px)', borderColor: 'var(--border-color)', borderRadius: '12px', color: '#fff', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)' }} 
+               contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(8px)', borderColor: 'var(--border-color)', borderRadius: '12px', color: '#fff' }} 
                itemStyle={{ color: '#fff' }}
                cursor={{fill: 'var(--border-color)', opacity: 0.4 }} 
             />
             <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="circle" />
-            <Bar dataKey={y_axis_column} fill="url(#colorBar)" radius={[6, 6, 0, 0]} maxBarSize={60} />
+            <Bar dataKey={safeYKey} fill="url(#colorBar)" radius={[6, 6, 0, 0]} maxBarSize={60} />
           </BarChart>
         );
     }
   };
 
-  // Wrap in a ResponsiveContainer so it looks good on any screen
+  // The wrapper div MUST have a strict pixel height, and ResponsiveContainer handles the rest natively
   return (
-    <div style={{ width: '100%', height: 400 }}>
-      <ResponsiveContainer>
+    <div style={{ width: '100%', height: '400px', minHeight: '400px', position: 'relative' }}>
+      <ResponsiveContainer width="100%" height="100%">
         {renderChart()}
       </ResponsiveContainer>
     </div>

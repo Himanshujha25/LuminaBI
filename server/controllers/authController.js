@@ -33,6 +33,8 @@ const register = async (req, res) => {
         const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: '7d' });
         
         res.status(201).json({ token, user, message: "Registration successful" });
+        console.log("User registered successfully");
+        console.log(user);
     } catch (err) {
         console.error("Register error:", err);
         res.status(500).json({ error: "Server error during registration." });
@@ -60,6 +62,8 @@ const login = async (req, res) => {
         const token = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: '7d' });
         
         res.json({ token, user: { id: user.id, name: user.name, email: user.email }, message: "Login successful" });
+        console.log("User logged in successfully");
+        console.log(user);
     } catch (err) {
         console.error("Login error:", err);
         res.status(500).json({ error: "Server error during login." });

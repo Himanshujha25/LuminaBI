@@ -163,6 +163,8 @@ const uploadCSV = async (req, res) => {
             message: `Successfully processed ${totalRows} rows. Data ready for analysis!`, 
             dataset: metaResult.rows[0]
         });
+        console.log("Dataset saved successfully");
+        console.log(metaResult.rows[0]);
     } catch(err) {
         if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
         console.error("Error saving dataset:", err);
@@ -174,6 +176,8 @@ const getDatasets = async (req, res) => {
     try {
         const result = await pool.query('SELECT id, name, table_name, created_at FROM datasets ORDER BY created_at DESC');
         res.json(result.rows);
+        console.log("Datasets fetched successfully");
+        console.log(result.rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -197,6 +201,7 @@ const deleteDataset = async (req, res) => {
         await pool.query('DELETE FROM datasets WHERE id = $1', [id]);
 
         return res.json({ message: 'Dataset permanently deleted and dropped from db.' });
+        console.log("Dataset deleted successfully");
     } catch (err) {
         console.error('Delete error', err);
         return res.status(500).json({ error: 'Failed to delete dataset: ' + err.message });

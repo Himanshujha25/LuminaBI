@@ -15,6 +15,7 @@ function App() {
   const [isManageOpen, setIsManageOpen] = useState(false);
   const [datasets, setDatasets] = useState([]);
   const [activeDataset, setActiveDataset] = useState(null);
+  const [globalUploadState, setGlobalUploadState] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
 
   useEffect(() => {
@@ -89,6 +90,7 @@ function App() {
         toggleTheme={toggleTheme} 
         isDark={isDark}
         onLogout={handleLogout}
+        uploadState={globalUploadState}
       />
       <main className="main-content">
         <MainDashboard 
@@ -101,6 +103,7 @@ function App() {
         isOpen={isUploadOpen} 
         onClose={() => setIsUploadOpen(false)} 
         onUploadSuccess={handleUploadSuccess}
+        onGlobalSync={setGlobalUploadState}
       />
       <ManageModal 
         isOpen={isManageOpen} 

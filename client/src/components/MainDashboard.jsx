@@ -392,28 +392,81 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
         </div>
       </div>
 
-      {/* Assistant Sidebar */}
       <aside className="assistant-sidebar glass-panel">
         <div className="sidebar-header">
           <MessageSquare size={18} />
           <h3 style={{ margin: 0, fontSize: '16px' }}>Assistant Chat</h3>
         </div>
         
-        <div className="chat-history">
+       <div className="chat-history">
           {history.length === 0 && !isSideLoading ? (
             <p className="empty-chat text-tertiary">No questions asked yet. Ask a question to start the conversation.</p>
           ) : (
-            history.map((msg, i) => (
-              <div key={i} className={`chat-bubble ${msg.role === 'user' ? 'user-bubble' : 'ai-bubble'}`}>
-                <div className="bubble-content">{msg.text}</div>
-                {msg.role === 'ai' && msg.data && (
-                  <div className="chat-chart-preview" onClick={() => window.scrollTo(0,0)}>
-                    <Activity size={14}/> <span>Generated {msg.data.chart_type} chart</span>
-                  </div>
-                )}
-              </div>
-            ))
+            history.map((msg, i) => {
+              
+              // --- THE FRONTEND FIX: SMART DYNAMIC FALLBACK ---
+              // If the AI forgets the chips, we generate context-aware ones automatically!
+              let chips = [];
+              if (msg.role === 'ai' && msg.data) {
+                 if (msg.data.suggested_follow_ups && msg.data.suggested_follow_ups.length > 0) {
+                     // 1. Use AI's chips if they exist
+                     chips = msg.data.suggested_follow_ups;
+                 } else if (msg.data.data_query) {
+                     // 2. AI forgot! Let's build dynamic ones based on the columns
+                     const xCol = msg.data.x_axis_column || 'categories';
+                     const altChart = msg.data.chart_type === 'pie' ? 'bar' : 'pie';
+                     chips = [
+                         `Show me the top 5 ${xCol}`,
+                         `Display this as a ${altChart} chart instead`
+                     ];
+                 } else {
+                     // 3. Fallback for general text chat
+                     chips = ["Tell me more about this data", "What are the key takeaways?"];
+                 }
+              }
+
+              return (
+                <div key={i} className={`chat-bubble ${msg.role === 'user' ? 'user-bubble' : 'ai-bubble'}`}>
+                  <div className="bubble-content">{msg.text}</div>
+                  
+                  
+                  {/* --- Render the Chips --- */}
+                  {msg.role === 'ai' && chips.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '16px', borderTop: '1px dashed var(--border-color)', paddingTop: '12px' }}>
+                      <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', textTransform: 'uppercase', fontWeight: 600 }}>
+                         Suggested Next Steps
+                      </span>
+                      {chips.map((followUp, idx) => (
+                        <button 
+                           key={idx}
+                           onClick={() => handleSubmit(followUp, true)} 
+                           style={{ 
+                             textAlign: 'left', padding: '8px 12px', background: 'var(--surface-color)', 
+                             border: '1px solid var(--border-color)', borderRadius: '6px', 
+                             color: 'var(--accent-blue)', fontSize: '12px', cursor: 'pointer', 
+                             transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '8px'
+                           }}
+                           onMouseOver={(e) => {
+                              e.currentTarget.style.background = 'var(--surface-hover)';
+                              e.currentTarget.style.borderColor = 'var(--accent-blue)';
+                           }}
+                           onMouseOut={(e) => {
+                              e.currentTarget.style.background = 'var(--surface-color)';
+                              e.currentTarget.style.borderColor = 'var(--border-color)';
+                           }}
+                        >
+                          <Sparkles size={12} />
+                          <span style={{ lineHeight: '1.3' }}>{followUp}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })
           )}
+          
+          {/* Loading State */}
           {isSideLoading && (
              <div className="chat-bubble ai-bubble">
                 <div className="bubble-content" style={{ display: 'flex', alignItems: 'center' }}>
@@ -433,13 +486,13 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
                 onChange={e => setSidePrompt(e.target.value)} 
                 onKeyDown={handleSideKeyPress}
                 placeholder="Ask follow-up..." 
-                style={{ flex: 1, border: 'none', background: 'transparent', outline: 'none', fontSize: '14px' }} 
+                style={{ flex: 1, border: 'none', background: 'transparent', outline: 'none', fontSize: '14px', color: 'var(--text-primary)' }} 
                 disabled={isLoading || isSideLoading || !activeDataset}
               />
               <button 
                 onClick={() => handleSubmit(sidePrompt, true)} 
                 disabled={isLoading || isSideLoading || !sidePrompt.trim() || !activeDataset}
-                style={{ background: 'var(--accent-blue)', color: 'white', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                style={{ background: 'var(--accent-blue)', color: 'white', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: (isLoading || isSideLoading || !sidePrompt.trim() || !activeDataset) ? 'not-allowed' : 'pointer', opacity: (isLoading || isSideLoading || !sidePrompt.trim() || !activeDataset) ? 0.5 : 1 }}
               >
                 <Send size={14} />
               </button>
