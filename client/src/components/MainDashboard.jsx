@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Send, MessageSquare, ListFilter, Sparkles, Activity } from 'lucide-react';
+import { Search, Send, MessageSquare, ListFilter, Sparkles, Activity, Download, Image as ImageIcon } from 'lucide-react';
+import html2canvas from 'html2canvas';
 import axios from 'axios';
 import DynamicChartComponent from '../ChartComponent';
 import './MainDashboard.css';
@@ -169,6 +170,31 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
     setPinnedCharts(prev => prev.filter(c => c.id !== id));
   };
 
+  const exportAsPNG = async (elementId, filename) => {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    try {
+      const canvas = await html2canvas(element, { backgroundColor: '#0f172a', scale: 2 });
+      const link = document.createElement('a');
+      link.download = `${filename}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (e) { console.error('Failed to export image', e); }
+  };
+
+  const exportAsCSV = (dataList, filename) => {
+    if (!dataList || dataList.length === 0) return;
+    const headers = Object.keys(dataList[0]);
+    const csvContent = [
+      headers.join(','),
+      ...dataList.map(row => headers.map(h => `"${row[h]}"`).join(','))
+    ].join('\n');
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
+    link.download = `${filename}.csv`;
+    link.click();
+  };
+
   // Find the latest AI data object to display in the main view
   const currentData = history.slice().reverse().find(h => h.role === 'ai' && h.data)?.data;
 
@@ -282,6 +308,13 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
                                  {ct}
                               </button>
                            ))}
+                           <div style={{ width: '1px', height: '20px', background: 'var(--border-color)', margin: '0 8px' }}></div>
+                           <button onClick={() => exportAsCSV(currentData.data, 'lumina_data_export')} title="Download CSV Data" style={{ padding: '6px', borderRadius: '6px', background: 'var(--surface-hover)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', display: 'flex' }}>
+                               <Download size={16} />
+                           </button>
+                           <button onClick={() => exportAsPNG('main-chart-export', 'lumina_chart_export')} title="Download Chart PNG" style={{ padding: '6px', borderRadius: '6px', background: 'var(--surface-hover)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', display: 'flex' }}>
+                               <ImageIcon size={16} />
+                           </button>
                         </div>
                     </div>
 
@@ -314,7 +347,9 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
                            </table>
                        </div>
                     ) : (
-                       <DynamicChartComponent config={currentData} overrideChartType={chartTypeOverride} />
+                       <div id="main-chart-export" style={{ padding: '8px', borderRadius: '12px', background: 'var(--surface-color)' }}>
+                           <DynamicChartComponent config={currentData} overrideChartType={chartTypeOverride} />
+                       </div>
                     )}
                 </div>
              </div>
@@ -336,10 +371,16 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
                 <div className="pinned-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(45%, 1fr))', gap: '24px' }}>
                    {pinnedCharts.map(chart => (
                       <div key={chart.id} className="glass-panel" style={{ padding: '24px', position: 'relative' }}>
-                         <button onClick={() => handleUnpinChart(chart.id)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'var(--surface-hover)', borderRadius: '50%', width: '28px', height: '28px', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}>✕</button>
+                         <div style={{ position: 'absolute', top: '16px', right: '16px', display: 'flex', gap: '8px' }}>
+                             <button onClick={() => exportAsCSV(chart.data, `pinned_data_${chart.id}`)} title="Export CSV Data" style={{ background: 'var(--surface-hover)', borderRadius: '6px', padding: '4px 8px', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><Download size={14} /></button>
+                             <button onClick={() => exportAsPNG(`pinned-chart-${chart.id}`, `pinned_chart_${chart.id}`)} title="Export Chart" style={{ background: 'var(--surface-hover)', borderRadius: '6px', padding: '4px 8px', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><ImageIcon size={14} /></button>
+                             <button onClick={() => handleUnpinChart(chart.id)} title="Unpin" style={{ background: 'var(--surface-hover)', borderRadius: '6px', padding: '4px 8px', border: '1px solid var(--border-color)', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>✕</button>
+                         </div>
                          <div style={{ fontSize: '12px', color: 'var(--accent-blue)', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 600 }}>{chart.chart_type} Chart</div>
-                         <div style={{ fontSize: '15px', color: 'var(--text-primary)', marginBottom: '20px', paddingRight: '24px' }}>{chart.explanation}</div>
-                         <DynamicChartComponent config={chart} />
+                         <div style={{ fontSize: '15px', color: 'var(--text-primary)', marginBottom: '20px', paddingRight: '100px' }}>{chart.explanation}</div>
+                         <div id={`pinned-chart-${chart.id}`} style={{ padding: '8px', borderRadius: '12px', background: 'var(--surface-color)' }}>
+                             <DynamicChartComponent config={chart} />
+                         </div>
                       </div>
                    ))}
                 </div>
