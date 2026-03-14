@@ -72,7 +72,7 @@ const uploadCSV = async (req, res) => {
     let colMap = {};
     let metadataColumns = [];
     let batch = [];
-    const BATCH_SIZE = 500; // Optimal batch size for PostgreSQL params limits (max 65535)
+    const BATCH_SIZE = 3000; 
     let totalRows = 0;
 
     // Process the stream as a Promise so we manage stream operations
@@ -124,7 +124,7 @@ const uploadCSV = async (req, res) => {
             if (batch.length >= BATCH_SIZE) {
                 stream.pause();
                 const currentBatch = [...batch];
-                batch = []; // Clear array specifically here
+                batch = []; 
                 
                 insertBatch(dbTableName, headers, colMap, currentBatch)
                     .then(() => stream.resume())
@@ -149,35 +149,45 @@ const uploadCSV = async (req, res) => {
 
     try {
         await processCSV;
-        
-        // Clean up multer temp storage
         if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
 
+        const userId = req.user ? req.user.id : null;
         const insertMetadata = `
-            INSERT INTO datasets (name, table_name, columns)
-            VALUES ($1, $2, $3) RETURNING id, name, table_name
+            INSERT INTO datasets (name, table_name, columns, user_id)
+            VALUES ($1, $2, $3, $4) RETURNING id, name, table_name
         `;
-        const metaResult = await pool.query(insertMetadata, [tablename, dbTableName, JSON.stringify(metadataColumns)]);
+        const metaResult = await pool.query(insertMetadata, [tablename, dbTableName, JSON.stringify(metadataColumns), userId]);
 
         return res.json({ 
             message: `Successfully processed ${totalRows} rows. Data ready for analysis!`, 
             dataset: metaResult.rows[0]
         });
-        console.log("Dataset saved successfully");
-        console.log(metaResult.rows[0]);
     } catch(err) {
         if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
         console.error("Error saving dataset:", err);
-        return res.status(500).json({ error: 'Failed to process dataset: ' + err.message });
+        
+        let clientError = 'Failed to process dataset: ' + err.message;
+        if (err.code === '53100') {
+           clientError = "Your database storage is FULL (512MB limit reached). Please use 'Manage Data' to delete old datasets before uploading new ones.";
+        }
+        
+        return res.status(500).json({ error: clientError });
     }
 };
 
 const getDatasets = async (req, res) => {
     try {
-        const result = await pool.query('SELECT id, name, table_name, created_at FROM datasets ORDER BY created_at DESC');
+        const userId = req.user ? req.user.id : null;
+        let query = 'SELECT id, name, table_name, created_at FROM datasets ORDER BY created_at DESC';
+        let params = [];
+        
+        if (userId) {
+            query = 'SELECT id, name, table_name, created_at FROM datasets WHERE user_id = $1 ORDER BY created_at DESC';
+            params = [userId];
+        }
+
+        const result = await pool.query(query, params);
         res.json(result.rows);
-        console.log("Datasets fetched successfully");
-        console.log(result.rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -185,11 +195,21 @@ const getDatasets = async (req, res) => {
 
 const deleteDataset = async (req, res) => {
     const { id } = req.params;
+    const userId = req.user ? req.user.id : null;
+    
     try {
         // Find the table name to drop it
-        const metaResult = await pool.query('SELECT table_name FROM datasets WHERE id = $1', [id]);
+        let metaQuery = 'SELECT table_name FROM datasets WHERE id = $1';
+        let metaParams = [id];
+        
+        if (userId) {
+            metaQuery = 'SELECT table_name FROM datasets WHERE id = $1 AND user_id = $2';
+            metaParams = [id, userId];
+        }
+
+        const metaResult = await pool.query(metaQuery, metaParams);
         if (metaResult.rows.length === 0) {
-            return res.status(404).json({ error: 'Dataset not found' });
+            return res.status(404).json({ error: 'Dataset not found or unauthorized' });
         }
         
         const tableName = metaResult.rows[0].table_name;
@@ -201,7 +221,6 @@ const deleteDataset = async (req, res) => {
         await pool.query('DELETE FROM datasets WHERE id = $1', [id]);
 
         return res.json({ message: 'Dataset permanently deleted and dropped from db.' });
-        console.log("Dataset deleted successfully");
     } catch (err) {
         console.error('Delete error', err);
         return res.status(500).json({ error: 'Failed to delete dataset: ' + err.message });

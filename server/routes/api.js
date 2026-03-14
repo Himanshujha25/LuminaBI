@@ -11,17 +11,20 @@ const fs = require('fs');
 if (!fs.existsSync('./uploads')){
     fs.mkdirSync('./uploads');
 }
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({ 
+    dest: 'uploads/',
+    limits: { fileSize: 100 * 1024 * 1024 } // 100MB limit
+});
 
 // Auth Routes
 router.post('/auth/register', register);
 router.post('/auth/login', login);
 router.get('/auth/me', protect, getMe);
 
-// CSV Upload Routes (Protected contextually if wanted, but left simple for demo purposes)
-router.post('/datasets/upload', upload.single('file'), uploadCSV);
-router.get('/datasets', getDatasets);
-router.delete('/datasets/:id', deleteDataset);
+// CSV Upload Routes
+router.post('/datasets/upload', protect, upload.single('file'), uploadCSV);
+router.get('/datasets', protect, getDatasets);
+router.delete('/datasets/:id', protect, deleteDataset);
 
 // Chat Routes
 router.get('/datasets/:datasetId/chats', protect, getChats);

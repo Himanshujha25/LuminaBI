@@ -162,6 +162,23 @@ input, textarea {
   animation: fadeIn 0.4s ease forwards;
 }
 
+@keyframes scaleUp {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-scale-up {
+  animation: scaleUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+.animate-shake {
+  animation: shake 0.4s ease-in-out;
+}
+
 /* --- SKELETON LOADING ANIMATION --- */
 @keyframes shimmer {
   0% { background-position: -200% 0; }
@@ -234,4 +251,66 @@ input, textarea {
 .draggable-card.dragging {
   opacity: 0.5;
   cursor: grabbing;
+}
+
+/* --- TOAST NOTIFICATIONS --- */
+.toast-notification {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  min-width: 320px;
+  max-width: 450px;
+  z-index: 1000;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  border: 1px solid var(--border-color);
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.toast-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.toast-content {
+  flex: 1;
+}
+
+.toast-title {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.toast-message {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.toast-close {
+  color: var(--text-tertiary);
+  padding: 4px;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.toast-close:hover {
+  opacity: 1;
+}
+
+@media (max-width: 768px) {
+  .toast-notification {
+    left: 16px;
+    right: 16px;
+    bottom: 80px; /* Above mobile bottom bar */
+    min-width: auto;
+  }
 }

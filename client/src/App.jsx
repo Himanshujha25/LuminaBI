@@ -7,6 +7,7 @@ import MainDashboard from './components/MainDashboard';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import { CheckCircle, AlertCircle, X } from 'lucide-react';
 import axios from 'axios';
 
 function App() {
@@ -17,6 +18,15 @@ function App() {
   const [activeDataset, setActiveDataset] = useState(null);
   const [globalUploadState, setGlobalUploadState] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
+  const [toast, setToast] = useState(null);
+
+  // Auto-hide toast
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
@@ -49,7 +59,7 @@ function App() {
 
   const handleDeleteDataset = async (id) => {
     try {
-      await axios.delete(`https://luminabi.onrender.com/api/datasets/${id}`);
+      await axios.delete(`http://localhost:5000/api/datasets/${id}`);
       const updated = datasets.filter(d => d.id !== id);
       setDatasets(updated);
       if (activeDataset && activeDataset.id === id) {
@@ -62,7 +72,7 @@ function App() {
 
   const fetchDatasets = async () => {
     try {
-      const res = await axios.get('https://luminabi.onrender.com/api/datasets');
+      const res = await axios.get('http://localhost:5000/api/datasets');
       setDatasets(res.data);
       if (res.data.length > 0 && !activeDataset) {
         setActiveDataset(res.data[0]);
@@ -75,6 +85,11 @@ function App() {
   const handleUploadSuccess = (newDataset) => {
     setDatasets([newDataset, ...datasets]);
     setActiveDataset(newDataset);
+    setToast({ 
+      title: "Success", 
+      message: `Dataset "${newDataset.name}" is now ready!`,
+      type: "success"
+    });
   };
 
   const ProtectedRoute = ({ children }) => {
@@ -111,6 +126,20 @@ function App() {
         datasets={datasets}
         onDelete={handleDeleteDataset}
       />
+
+      {/* Modern Toast Notification */}
+      {toast && (
+        <div className="toast-notification glass-panel animate-slide-up">
+           <div className="toast-icon">
+             {toast.type === 'success' ? <CheckCircle color="#10b981" size={20} /> : <AlertCircle color="#ef4444" size={20} />}
+           </div>
+           <div className="toast-content">
+              <div className="toast-title">{toast.title}</div>
+              <div className="toast-message">{toast.message}</div>
+           </div>
+           <button className="toast-close" onClick={() => setToast(null)}><X size={16} /></button>
+        </div>
+      )}
     </div>
   );
 

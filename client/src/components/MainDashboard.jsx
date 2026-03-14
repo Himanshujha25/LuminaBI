@@ -393,7 +393,7 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
                       <div className="kpi-icon"><Activity size={20} color="var(--accent-blue)"/></div>
                       <div className="kpi-data">
                          <span className="kpi-label">Visualization Type</span>
-                         <span className="kpi-value">{currentData.chart_type.toUpperCase()}</span>
+                         <span className="kpi-value">{(currentData.chart_type || 'chart').toUpperCase()}</span>
                       </div>
                    </div>
                    <div className="kpi-card glass-panel" style={{ flex: 2 }}>
