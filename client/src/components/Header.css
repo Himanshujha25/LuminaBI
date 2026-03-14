@@ -122,3 +122,29 @@
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
 }
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .app-header {
+    padding: 12px 16px;
+  }
+  .logo-text {
+    display: none;
+  }
+  .btn-upload span, .btn-manage span {
+    display: none;
+  }
+  .btn-upload, .btn-manage {
+    padding: 8px;
+    border-radius: 50%;
+  }
+  .header-actions {
+    gap: 8px;
+  }
+  .global-upload-indicator {
+    max-width: 140px;
+    padding: 4px 10px;
+    font-size: 11px;
+    gap: 6px;
+  }
+}

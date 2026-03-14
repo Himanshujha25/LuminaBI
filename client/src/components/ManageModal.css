@@ -1,42 +1,82 @@
 .manage-modal {
-  max-width: 500px;
+  max-width: 550px;
   width: 90%;
+}
+
+.close-btn {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  color: var(--text-tertiary);
+  background: var(--surface-color);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  z-index: 10;
+}
+.close-btn:hover {
+  color: var(--text-primary);
+  background: var(--surface-hover);
+  transform: rotate(90deg) scale(1.1);
+  border-color: var(--text-secondary);
 }
 
 .modal-header {
   text-align: center;
   margin-bottom: 32px;
 }
+.modal-header h2 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
 
 .modal-icon-wrapper.blue-icon {
-  background: rgba(59, 130, 246, 0.1);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(79, 70, 229, 0.1) 100%);
   color: var(--accent-blue);
-  width: 64px;
-  height: 64px;
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 16px;
-  box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+  margin: 0 auto 20px;
+  box-shadow: 0 0 30px rgba(59, 130, 246, 0.2);
+  transition: transform 0.3s ease;
+}
+.modal-icon-wrapper.blue-icon:hover {
+  transform: translateY(-4px) scale(1.05);
 }
 
 .datasets-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  max-height: 400px;
+  gap: 16px;
+  max-height: 420px;
   overflow-y: auto;
-  padding-right: 8px;
+  padding-right: 12px;
 }
 
 .datasets-list::-webkit-scrollbar {
   width: 6px;
 }
-
 .datasets-list::-webkit-scrollbar-thumb {
   background: var(--border-color);
-  border-radius: 4px;
+  border-radius: 8px;
+}
+.datasets-list::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
 }
 
 .empty-datasets-state {
@@ -44,62 +84,95 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px 0;
+  padding: 48px 0;
   color: var(--text-tertiary);
   gap: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-lg);
 }
 
 .dataset-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: 18px 24px;
   border: 1px solid var(--border-color);
   background: var(--surface-color);
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
 }
 
 .dataset-item:hover {
   border-color: var(--accent-blue);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -4px rgba(37, 99, 235, 0.15);
+  transform: translateY(-4px);
+  background: linear-gradient(90deg, var(--surface-color) 0%, var(--surface-hover) 100%);
 }
 
 .dataset-info {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .dataset-name {
   font-weight: 600;
+  font-size: 16px;
   color: var(--text-primary);
+  letter-spacing: 0.2px;
 }
 
 .dataset-meta {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-tertiary);
+  font-weight: 500;
 }
 
 .btn-delete {
-  background: transparent;
+  background: var(--surface-color);
   border: 1px solid var(--border-color);
-  color: #ef4444;
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
+  color: var(--text-secondary);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .btn-delete:hover {
-  background: rgba(239, 68, 68, 0.1);
+  background: #ef4444;
+  color: white;
   border-color: #ef4444;
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
 .btn-delete:active {
   transform: scale(0.95);
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+  .manage-modal {
+    padding: 32px 24px;
+    border-radius: var(--radius-lg);
+  }
+  .dataset-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px;
+  }
+  .btn-delete {
+    align-self: flex-end;
+  }
+  .modal-icon-wrapper.blue-icon {
+    width: 60px;
+    height: 60px;
+  }
 }

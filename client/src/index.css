@@ -86,6 +86,19 @@ input, textarea {
   overflow: hidden;
 }
 
+/* Allow full page scroll on smaller screens */
+@media (max-width: 1024px) {
+  .layout-container {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+  .main-content {
+    overflow: visible;
+    flex-direction: column;
+  }
+}
+
 /* Scrollbar Styling */
 ::-webkit-scrollbar {
   width: 8px;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UploadCloud, File, CheckCircle, AlertCircle, X, Database, Loader2 } from 'lucide-react';
 import axios from 'axios';
 import './UploadModal.css';
@@ -40,6 +40,15 @@ const UploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
     }
   };
 
+  const completelyReset = () => {
+     setFile(null);
+     setTableName('');
+     setStep(1);
+     setUploadProgress(0);
+     setError(null);
+     onClose();
+  };
+
   const uploadFile = async () => {
     if (!file || !tableName) return;
     
@@ -64,20 +73,16 @@ const UploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
       setStep(3);
       onUploadSuccess(res.data.dataset);
       
+      // Auto close modal after showing success message
+      setTimeout(() => {
+        completelyReset();
+      }, 2000);
+      
     } catch (err) {
       console.error("Upload Error:", err);
       setError(err.response?.data?.error || err.message || 'An error occurred during upload.');
       setStep(1); // Kick them back to step 1 to see the error and try again
     }
-  };
-
-  const completelyReset = () => {
-     setFile(null);
-     setTableName('');
-     setStep(1);
-     setUploadProgress(0);
-     setError(null);
-     onClose();
   };
 
   return (
@@ -184,13 +189,10 @@ const UploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
             <div className="success-icon-circle" style={{ margin: '0 auto 24px auto' }}>
               <CheckCircle size={48} color="#10b981" />
             </div>
-            <h2>Upload Successful!</h2>
+            <h2>File Uploaded Successfully</h2>
             <p className="text-secondary" style={{ marginTop: '12px', marginBottom: '32px' }}>
-              Your data has been successfully mapped and indexed. Our AI is now ready to answer your questions.
+              Your data has been successfully mapped and indexed. Closing modal...
             </p>
-            <button className="btn-primary" onClick={completelyReset} style={{ width: '100%' }}>
-              Go to Dashboard
-            </button>
           </div>
         )}
 

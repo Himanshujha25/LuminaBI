@@ -343,19 +343,201 @@
 /* ==================================================== */
 /* RESPONSIVE LAYOUT FIXES FOR SMALLER SCREENS          */
 /* ==================================================== */
-@media (max-width: 1100px) {
+
+@media (max-width: 1200px) {
+  .dashboard-wrapper {
+    padding: 16px;
+    gap: 16px;
+  }
+}
+
+@media (max-width: 1024px) {
+  /* Tablet / Foldables Layout */
   .dashboard-wrapper {
     flex-direction: column;
     height: auto;
     min-height: 100vh;
+    padding: 0; /* Let dashboard items touch edge slightly if needed, or pad internally */
+    gap: 0;
+  }
+  
+  .dashboard-main {
+    padding: 20px;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  .dashboard-content {
+    overflow: visible; /* CRITICAL FIX: Stops the awkward double scrollbar on mobile! */
   }
   
   .assistant-sidebar {
     width: 100%;
-    height: 500px;
+    height: auto;
+    min-height: 500px;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    background: var(--surface-color);
+    box-shadow: 0 -10px 40px -10px rgba(0, 0, 0, 0.05); /* Soft shadow indicating it sits above/below */
+  }
+}
+
+@media (max-width: 768px) {
+  /* Mobile Layout */
+  .dashboard-main {
+    padding: 16px;
+  }
+
+  .search-header {
+    padding-bottom: 20px;
   }
   
+  .dataset-selector-wrapper {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .dataset-selector {
+    width: 100%;
+    padding: 10px 14px; /* More tap-friendly */
+    font-size: 15px;
+  }
+
+  .search-container {
+    flex-direction: column;
+    padding: 14px;
+    border-radius: var(--radius-xl);
+    background: var(--surface-color);
+  }
+
+  .search-input {
+    width: 100%;
+    margin-bottom: 16px;
+    font-size: 16px;
+    padding: 4px 0;
+  }
+
+  .search-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 14px 24px;
+    font-size: 16px;
+    border-radius: var(--radius-lg);
+  }
+
   .kpi-header {
     flex-direction: column;
+    gap: 16px;
+  }
+
+  .kpi-card {
+    padding: 20px;
+    flex-direction: row;
+    align-items: center;
+    border-radius: var(--radius-lg);
+  }
+
+  .main-chart-container {
+    padding: 20px 16px;
+    border-radius: var(--radius-lg);
+  }
+
+  /* Wrap chart action buttons securely */
+  .main-chart-container > div:first-child {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 16px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 16px;
+    margin-bottom: 24px !important;
+  }
+
+  .chart-title {
+    font-size: 18px;
+    margin-bottom: 8px !important;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  .chart-type-selector {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 8px !important;
+    width: 100%;
+  }
+  
+  .chart-type-selector button {
+    margin-right: 0 !important;
+    flex: 1 1 calc(33.333% - 8px); /* Neatly tile 3 buttons per row */
+    text-align: center;
+    justify-content: center;
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+    border-radius: var(--radius-md) !important;
+  }
+
+  .chart-type-selector button[title="Download CSV Data"], 
+  .chart-type-selector button[title="Download Chart PNG"] {
+    flex: 0 0 auto;
+    padding: 10px !important;
+  }
+
+  /* Hide vertical divider on mobile to save space */
+  .chart-type-selector > div[style*="width: 1px"] {
+    display: none;
+  }
+
+  .pinned-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  
+  .empty-icon {
+    width: 80px;
+    height: 80px;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Small Phones */
+  .dashboard-main {
+    padding: 12px;
+  }
+  
+  .search-container {
+    padding: 12px;
+  }
+
+  .kpi-icon {
+    width: 48px;
+    height: 48px;
+  }
+  
+  .kpi-value {
+    font-size: 20px;
+  }
+  
+  .chart-type-selector button {
+    flex: 1 1 calc(50% - 8px); /* Tile 2 buttons per row */
+  }
+
+  .assistant-sidebar {
+    min-height: 450px;
+  }
+  
+  .side-search-container {
+    padding: 6px 12px !important;
+  }
+  
+  .suggestion-chips {
+    flex-direction: column;
+    width: 100%;
+  }
+  .suggestion-chips button {
+    width: 100%;
   }
 }
