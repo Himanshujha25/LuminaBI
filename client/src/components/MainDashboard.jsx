@@ -1,9 +1,12 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Search, Send, MessageSquare, ListFilter, Sparkles, Activity, Download, Image as ImageIcon, Menu, X, GripHorizontal, Trash2 } from 'lucide-react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { Search, Send, MessageSquare, ListFilter, Sparkles, Activity, Download, Image as ImageIcon, Menu, X, GripHorizontal, Trash2, LayoutDashboard, BarChart, TrendingUp, PieChart, AreaChart, TableProperties, Zap } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import axios from 'axios';
 import DynamicChartComponent from '../ChartComponent';
 import './MainDashboard.css';
+
+// Memoize the chart component to prevent expensive re-renders
+const MemoizedChart = React.memo(DynamicChartComponent);
 
 const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
   const [prompt, setPrompt] = useState('');
@@ -56,9 +59,13 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
 
   // Fetch chat history from DB when dataset changes
   useEffect(() => {
+    let controller = new AbortController();
     if (activeDataset?.id && !chatHistories[activeDataset.id]) {
         setIsSideLoading(true);
-        axios.get(`http://localhost:5000/api/datasets/${activeDataset.id}/chats`)
+        axios.get(`http://localhost:5000/api/datasets/${activeDataset.id}/chats`, { 
+          signal: controller.signal,
+          timeout: 10000 
+        })
           .then(res => {
              const formatted = res.data.map(row => ({
                  id: row.id,
@@ -68,9 +75,14 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
              }));
              setChatHistories(prev => ({ ...prev, [activeDataset.id]: formatted }));
           })
-          .catch(err => console.error("Failed to fetch chat history:", err))
+          .catch(err => {
+            if (err.name !== 'CanceledError') {
+              console.error("Failed to fetch chat history:", err);
+            }
+          })
           .finally(() => setIsSideLoading(false));
     }
+    return () => controller.abort();
   }, [activeDataset?.id]);
 
   useEffect(() => {
@@ -107,6 +119,8 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
         prompt: finalPrompt,
         datasetId: activeDataset.id,
         history: history.slice(-6) 
+      }, { 
+        timeout: 30000 // 30s timeout for AI reasoning
       });
       
       if (res.data.error) {
@@ -140,6 +154,7 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
         });
       }
     } catch (err) {
+      if (err.name === 'CanceledError') return;
       const errorMsg = "Failed to generate insights. Our servers might be busy.";
       setError(errorMsg);
       setChatHistories(prev => ({
@@ -279,19 +294,22 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
     link.href = URL.createObjectURL(new Blob([csvContent], { type: 'text/csv;charset=utf-8;' }));
     link.download = `${filename}.csv`;
     link.click();
+    URL.revokeObjectURL(link.href); // Memory cleanup
   };
 
-  const currentData = history.slice().reverse().find(h => h.role === 'ai' && h.data)?.data;
+  const currentData = useMemo(() => {
+    return history.slice().reverse().find(h => h.role === 'ai' && h.data)?.data;
+  }, [history]);
 
   return (
     <div className="dashboard-wrapper">
       
       <button 
-        className="mobile-assistant-toggle glass-panel animate-fade-in" 
+        className="mobile-assistant-toggle animate-fade-in" 
         onClick={() => setIsSidebarOpen(true)}
         title="Open AI Assistant"
       >
-        <MessageSquare size={24} color="var(--accent-blue)" />
+        <Sparkles size={26} />
       </button>
 
       <div className="dashboard-main">
@@ -334,119 +352,154 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
 
         <div className="dashboard-content">
           {isLoading ? (
-            <div className="processing-view animate-fade-in">
-              <div className="skeleton-loader glass-panel">
-                <div className="spinner-lg"></div>
-                <h2>Analyzing Data</h2>
-                <p className="text-tertiary">Processing natural language and optimizing dynamic SQL query...</p>
-                <div className="progress-bar"><div className="progress-fill"></div></div>
-              </div>
+            <div className="animate-fade-in" style={{ padding: '20px 0' }}>
+               <div className="skeleton-title skeleton" style={{ width: '40%', height: '32px', marginBottom: '32px' }}></div>
+               <div className="kpi-header" style={{ marginBottom: '32px' }}>
+                  <div className="skeleton-kpi skeleton" style={{ flex: 1, minHeight: '100px' }}></div>
+                  <div className="skeleton-kpi skeleton" style={{ flex: 2, minHeight: '100px' }}></div>
+               </div>
+               <div className="skeleton-chart skeleton" style={{ height: '400px' }}></div>
             </div>
           ) : currentData ? (
              <div className="chart-view animate-slide-up">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                    <div style={{ background: 'var(--accent-light)', padding: '6px', borderRadius: '8px' }}>
+                        <Sparkles size={16} color="var(--accent-blue)" />
+                    </div>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--accent-blue)', textTransform: 'uppercase', letterSpacing: '1px' }}>AI-Informed Summary</span>
+                </div>
+
                 <div className="kpi-header">
                    <div className="kpi-card glass-panel">
                       <div className="kpi-icon"><Activity size={20} color="var(--accent-blue)"/></div>
                       <div className="kpi-data">
-                         <span className="kpi-label">AI Suggested Info</span>
-                         <span className="kpi-value">{currentData.chart_type.toUpperCase()} CHART</span>
+                         <span className="kpi-label">Visualization Type</span>
+                         <span className="kpi-value">{currentData.chart_type.toUpperCase()}</span>
                       </div>
                    </div>
                    <div className="kpi-card glass-panel" style={{ flex: 2 }}>
-                      <span className="kpi-label">Summary</span>
-                      <p className="kpi-desc text-secondary">{currentData.explanation}</p>
+                      <span className="kpi-label">Executive Summary</span>
+                      <p className="kpi-desc text-secondary" style={{ fontSize: '15px', lineHeight: '1.6' }}>{currentData.explanation}</p>
                    </div>
                 </div>
+
                 <div className="main-chart-container glass-panel">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', flexWrap: 'wrap', gap: '16px' }}>
-                        <h3 className="chart-title" style={{ borderBottom: 'none', marginBottom: 0, paddingBottom: 0 }}>Visualized Data</h3>
+                    <div className="chart-controls-header">
+                        <h3 className="chart-title-main">Dynamic Data Visualization</h3>
                         
-                        <div className="chart-type-selector" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                           <button onClick={() => setViewMode(viewMode === 'chart' ? 'table' : 'chart')} className="ui-btn">
-                             {viewMode === 'chart' ? 'Data Table' : 'Show Chart'}
+                        <div className="chart-type-selector">
+                           <button onClick={() => setViewMode(viewMode === 'chart' ? 'table' : 'chart')} className={`ui-btn ${viewMode === 'table' ? 'active' : ''}`}>
+                             <ListFilter size={14} /> {viewMode === 'chart' ? 'Table View' : 'Chart View'}
                            </button>
-                           <button onClick={handlePinChart} className="ui-btn" style={{ background: pinState === 'success' ? '#10b981' : (pinState === 'duplicate' ? '#f59e0b' : 'var(--surface-hover)'), borderColor: pinState === 'success' ? '#10b981' : (pinState === 'duplicate' ? '#f59e0b' : 'var(--accent-blue)'), color: pinState !== 'idle' ? '#fff' : 'var(--accent-blue)', fontWeight: 600 }}>
-                             {pinState === 'success' ? '✅ Pinned Below!' : (pinState === 'duplicate' ? '⚠️ Already Pinned!' : '📌 Pin Chart')}
-                           </button>
-                           <button onClick={() => setShowSQL(!showSQL)} className="ui-btn">
-                             {showSQL ? 'Hide SQL' : 'View SQL'}
-                           </button>
-                           {['bar', 'line', 'area', 'pie', 'scatter'].map(ct => (
+                           {viewMode === 'chart' && ['bar', 'line', 'area', 'pie'].map(ct => (
                               <button 
                                  key={ct} 
                                  onClick={() => setChartTypeOverride(ct)} 
                                  className={`ui-btn ${((chartTypeOverride || currentData.chart_type) === ct) ? 'active' : ''}`}
-                                 style={{ textTransform: 'capitalize' }}
                               >
-                                 {ct}
+                                 {ct.charAt(0).toUpperCase() + ct.slice(1)}
                               </button>
                            ))}
                            <div className="divider-vert"></div>
-                           <button onClick={() => exportAsCSV(currentData.data, 'lumina_data_export')} title="Download CSV" className="ui-btn icon-only"><Download size={16} /></button>
-                           <button onClick={() => exportAsPNG('main-chart-export', 'lumina_chart_export')} title="Download Chart PNG" className="ui-btn icon-only"><ImageIcon size={16} /></button>
+                           <button onClick={() => setShowSQL(!showSQL)} className={`ui-btn ${showSQL ? 'active' : ''}`}>
+                             <Zap size={14} /> SQL
+                           </button>
+                           <button 
+                             onClick={handlePinChart} 
+                             className="ui-btn" 
+                             style={{ 
+                               background: pinState === 'success' ? '#10b981' : (pinState === 'duplicate' ? '#f59e0b' : 'var(--surface-hover)'), 
+                               color: pinState !== 'idle' ? '#fff' : 'var(--accent-blue)'
+                             }}
+                           >
+                             <LayoutDashboard size={14} /> {pinState === 'success' ? 'Pinned' : (pinState === 'duplicate' ? 'Duplicate' : 'Pin Grid')}
+                           </button>
+                           <div className="divider-vert"></div>
+                           <button onClick={() => exportAsCSV(currentData.data, 'lumina_export')} title="CSV" className="ui-btn icon-only"><Download size={16} /></button>
+                           <button onClick={() => exportAsPNG('main-chart-export', 'lumina_insight')} title="PNG" className="ui-btn icon-only"><ImageIcon size={16} /></button>
                         </div>
                     </div>
 
                     {showSQL && (
-                       <div className="sql-viewer animate-fade-in" style={{ padding: '16px', background: 'var(--bg-color)', borderRadius: '8px', marginBottom: '24px', fontFamily: 'monospace', fontSize: '14px', border: '1px solid var(--border-color)', overflowX: 'auto' }}>
-                          <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginBottom: '8px', textTransform: 'uppercase' }}>Generated PostgreSQL</div>
-                          <code style={{ color: 'var(--accent-blue)' }}>{currentData.sql_used}</code>
+                       <div className="sql-viewer animate-fade-in">
+                          <div className="sql-label">PostgreSQL Generated Engine</div>
+                          <code>{currentData.sql_used}</code>
                        </div>
                     )}
 
-                    {((chartTypeOverride || currentData.chart_type) === 'table' || viewMode === 'table') ? (
-                       <div className="data-table-container sql-viewer animate-fade-in" style={{ padding: '16px', background: 'var(--bg-color)', borderRadius: '8px', overflowX: 'auto', border: '1px solid var(--border-color)', maxHeight: '400px' }}>
-                           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px', textAlign: 'left' }}>
-                              <thead>
-                                 <tr style={{ borderBottom: '1px solid var(--accent-blue)', color: 'var(--text-secondary)' }}>
-                                    {currentData.data && currentData.data.length > 0 && Object.keys(currentData.data[0]).map(key => (
-                                       <th key={key} style={{ padding: '12px 8px' }}>{key}</th>
-                                    ))}
-                                 </tr>
-                              </thead>
-                              <tbody>
-                                 {currentData.data && currentData.data.slice(0, 100).map((row, i) => (
-                                    <tr key={i} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                                       {Object.values(row).map((val, j) => (
-                                          <td key={j} style={{ padding: '12px 8px', color: 'var(--text-primary)' }}>{val}</td>
-                                       ))}
-                                    </tr>
-                                 ))}
-                              </tbody>
-                           </table>
-                           {currentData.data && currentData.data.length > 100 && (
-                               <div style={{ padding: '12px', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: '12px', fontStyle: 'italic', borderTop: '1px solid var(--border-color)', marginTop: '8px' }}>
-                                  Showing top 100 rows for browser performance. Click the download button above to export all {currentData.data.length} records in a CSV.
-                               </div>
-                           )}
-                       </div>
+                    {viewMode === 'table' ? (
+                        <div id="main-chart-export" className="animate-fade-in" style={{ overflowX: 'auto', borderRadius: '12px', background: 'var(--surface-color)', border: '1px solid var(--border-color)' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
+                               <thead>
+                                  <tr style={{ background: 'var(--bg-color)', borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
+                                     {currentData.data && currentData.data.length > 0 && Object.keys(currentData.data[0]).map(key => (
+                                        <th key={key} style={{ padding: '16px 12px', fontWeight: 600 }}>{key}</th>
+                                     ))}
+                                  </tr>
+                               </thead>
+                               <tbody>
+                                  {currentData.data && currentData.data.slice(0, 100).map((row, i) => (
+                                     <tr key={i} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                                        {Object.values(row).map((val, j) => (
+                                           <td key={j} style={{ padding: '14px 12px', color: 'var(--text-primary)' }}>{val}</td>
+                                        ))}
+                                     </tr>
+                                  ))}
+                               </tbody>
+                            </table>
+                        </div>
                     ) : (
-                       <div id="main-chart-export" className="animate-fade-in" style={{ padding: '8px', borderRadius: '12px', background: 'var(--surface-color)' }}>
-                           <DynamicChartComponent config={currentData} overrideChartType={chartTypeOverride} />
-                       </div>
+                        <div id="main-chart-export" className="animate-fade-in" style={{ padding: '16px', borderRadius: '12px', background: 'var(--surface-color)' }}>
+                            <MemoizedChart config={currentData} overrideChartType={chartTypeOverride} />
+                        </div>
                     )}
                 </div>
              </div>
           ) : (
-            <div className="empty-state">
-               <div className="empty-icon glass-panel"><ListFilter size={48} color="var(--accent-blue)"/></div>
-               <h2>Welcome to your AI Dashboard</h2>
-               <p className="text-secondary">Upload a CSV or select an existing dataset, then ask a question to generate instant insights.</p>
-               <div className="suggestion-chips">
-                  <button onClick={() => setPrompt("Show me the data breakdown as a pie chart")}>"Show me the data breakdown as a pie chart"</button>
-                  <button onClick={() => setPrompt("Create a bar chart of the top performing categories")}>"Create a bar chart of top performing categories"</button>
+            <div className="empty-state animate-fade-in" style={{ padding: '60px 0' }}>
+               <div className="discovery-header" style={{ textAlign: 'center', marginBottom: '60px' }}>
+                  <div className="empty-icon glass-panel" style={{ margin: '0 auto 32px auto', width: '90px', height: '90px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Sparkles size={44} className="gradient-text" style={{ animation: 'pulse 2s infinite' }} />
+                  </div>
+                  <h1 style={{ fontSize: '3.2rem', fontWeight: 900, marginBottom: '16px', letterSpacing: '-2px', lineHeight: '1.1' }}>
+                    Lumina <span className="gradient-text">Conversational BI</span>
+                  </h1>
+                  <p className="text-secondary" style={{ fontSize: '1.2rem', maxWidth: '650px', margin: '0 auto', lineHeight: '1.6' }}>
+                    The industry standard for rapid data exploration. Ask anything—from trend analysis to complex aggregations—and let the AI visualize the future.
+                  </p>
+               </div>
+
+               <div className="suggestion-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', width: '100%', maxWidth: '1000px', margin: '0 auto' }}>
+                  <div className="suggestion-card glass-panel" onClick={() => setPrompt("Give me a monthly trend of orders")}>
+                     <Activity size={28} color="var(--accent-blue)" />
+                     <h3 style={{ margin: '12px 0 8px 0', fontSize: '18px' }}>Predictive Trends</h3>
+                     <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>"Show me the monthly trend of order volume for the last quarter."</p>
+                  </div>
+                  <div className="suggestion-card glass-panel" onClick={() => setPrompt("What is the revenue breakdown by product category?")}>
+                     <PieChart size={28} color="#a855f7" />
+                     <h3 style={{ margin: '12px 0 8px 0', fontSize: '18px' }}>Composition Analysis</h3>
+                     <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>"What is the revenue breakdown by product category as a pie chart?"</p>
+                  </div>
+                  <div className="suggestion-card glass-panel" onClick={() => setPrompt("Compare the performance of our top 3 regions")}>
+                     <ListFilter size={28} color="#10b981" />
+                     <h3 style={{ margin: '12px 0 8px 0', fontSize: '18px' }}>Comparative BI</h3>
+                     <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>"Compare the performance of our top 3 regions by customer growth."</p>
+                  </div>
                </div>
             </div>
           )}
 
           {pinnedCharts.length > 0 && !isLoading && !isSideLoading && (
-             <div className="pinned-charts-section animate-slide-up" style={{ marginTop: '40px', paddingBottom: '40px' }}>
-                <h3 className="chart-title" style={{ marginBottom: '20px' }}>Pinned Dashboards</h3>
-                <div className="pinned-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(45%, 1fr))', gap: '24px' }}>
+             <div className="pinned-charts-section animate-slide-up" style={{ marginTop: '60px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
+                    <h2 style={{ fontSize: '24px', fontWeight: 800 }}>Executive Dashboard Grid</h2>
+                    <span style={{ fontSize: '13px', color: 'var(--text-tertiary)', fontWeight: 600 }}>{pinnedCharts.length} INSIGHTS PINNED</span>
+                </div>
+                <div className="pinned-grid">
                    {pinnedCharts.map((chart, index) => (
                       <div 
                         key={chart.id} 
-                        className="draggable-card glass-panel" 
+                        className="draggable-card" 
                         draggable
                         onDragStart={(e) => {
                            dragItem.current = index;
@@ -459,18 +512,24 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
                         }}
                         onDragOver={(e) => e.preventDefault()}
                       >
-                         <div className="drag-handle" title="Drag to reorder">
-                            <GripHorizontal size={20} color="var(--text-tertiary)" />
+                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                <div className="drag-handle" title="Drag to reorder">
+                                    <GripHorizontal size={20} color="var(--text-tertiary)" />
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '11px', color: 'var(--accent-blue)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '1px' }}>{chart.chart_type} Insight</div>
+                                    <h4 style={{ margin: 0, fontSize: '16px', color: 'var(--text-primary)' }}>{chart.explanation}</h4>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                <button onClick={() => exportAsCSV(chart.data, `pinned_data_${chart.id}`)} title="Export CSV" className="ui-btn icon-only small"><Download size={14} /></button>
+                                <button onClick={() => exportAsPNG(`pinned-chart-${chart.id}`, `pinned_chart_${chart.id}`)} title="Export PNG" className="ui-btn icon-only small"><ImageIcon size={14} /></button>
+                                <button onClick={() => handleUnpinChart(chart.id)} title="Remove from grid" className="ui-btn icon-only small danger">✕</button>
+                            </div>
                          </div>
-                         <div style={{ position: 'absolute', top: '16px', right: '16px', display: 'flex', gap: '8px' }}>
-                             <button onClick={() => exportAsCSV(chart.data, `pinned_data_${chart.id}`)} title="Export CSV Data" className="ui-btn icon-only small"><Download size={14} /></button>
-                             <button onClick={() => exportAsPNG(`pinned-chart-${chart.id}`, `pinned_chart_${chart.id}`)} title="Export Chart" className="ui-btn icon-only small"><ImageIcon size={14} /></button>
-                             <button onClick={() => handleUnpinChart(chart.id)} title="Unpin" className="ui-btn icon-only small danger">✕</button>
-                         </div>
-                         <div style={{ fontSize: '12px', color: 'var(--accent-blue)', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 600 }}>{chart.chart_type} Chart</div>
-                         <div style={{ fontSize: '15px', color: 'var(--text-primary)', marginBottom: '20px', paddingRight: '100px', paddingLeft: '32px' }}>{chart.explanation}</div>
-                         <div id={`pinned-chart-${chart.id}`} style={{ padding: '8px', borderRadius: '12px', background: 'var(--surface-color)' }}>
-                             <DynamicChartComponent config={chart} />
+                         <div id={`pinned-chart-${chart.id}`} style={{ padding: '16px', borderRadius: '12px', background: 'var(--surface-color)', boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.03)' }}>
+                             <MemoizedChart config={chart} />
                          </div>
                       </div>
                    ))}

@@ -162,16 +162,76 @@ input, textarea {
   animation: fadeIn 0.4s ease forwards;
 }
 
-/* Spinner */
-.spinner {
-  border: 3px solid var(--border-color);
-  border-top: 3px solid var(--accent-blue);
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  animation: spin 1s linear infinite;
+/* --- SKELETON LOADING ANIMATION --- */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+
+.skeleton {
+  background: linear-gradient(90deg, 
+    var(--surface-hover) 25%, 
+    var(--border-color) 50%, 
+    var(--surface-hover) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+.skeleton-text { height: 16px; margin-bottom: 8px; width: 100%; }
+.skeleton-title { height: 24px; margin-bottom: 16px; width: 60%; }
+.skeleton-chart { height: 300px; width: 100%; border-radius: 12px; }
+.skeleton-kpi { height: 100px; width: 100%; border-radius: 12px; }
+
+.pinned-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(480px, 1fr));
+  gap: 32px;
+  padding-bottom: 64px;
+}
+
+@media (max-width: 1024px) {
+  .pinned-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
+.draggable-card {
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  padding: 24px;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.draggable-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--accent-gradient);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.draggable-card:hover::before {
+  opacity: 1;
+}
+
+.draggable-card:hover {
+  transform: translateY(-8px) scale(1.01);
+  box-shadow: var(--shadow-xl);
+  border-color: var(--accent-blue);
+}
+
+.draggable-card.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
 }
