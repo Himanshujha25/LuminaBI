@@ -30,17 +30,23 @@ const Signup = ({ setToken }) => {
 
   return (
     <div className="auth-container">
+      {/* Background Decorations */}
+      <div className="auth-bg-decor">
+        <div className="auth-orb auth-orb-1"></div>
+        <div className="auth-orb auth-orb-2"></div>
+      </div>
+
       <Link to="/" className="auth-logo">
         <div className="logo-icon-small"><BarChart2 size={24} color="#fff" /></div>
         <span className="logo-text">Lumina<span className="gradient-text">BI</span></span>
       </Link>
       
-      <div className="auth-card glass-panel animate-slide-up">
+      <div className="auth-card animate-slide-up">
         <h2>Create an account</h2>
         <p className="text-secondary">Start getting instant AI insights from your data.</p>
 
         {error && (
-            <div className="upload-error" style={{marginTop: '20px', marginBottom: 0}}>
+            <div className="auth-error animate-shake" style={{marginTop: '24px', marginBottom: 0}}>
                 <AlertCircle size={18} />
                 <span>{error}</span>
             </div>
@@ -50,34 +56,56 @@ const Signup = ({ setToken }) => {
           <div className="input-group">
             <label>Full Name</label>
             <div className="input-with-icon">
-              <User className="input-icon" size={18} />
-              <input type="text" value={name} onChange={e => setName(e.target.value)} required placeholder="Jane Doe" className="premium-input" />
+              <User className="input-icon" size={20} />
+              <input 
+                type="text" 
+                value={name} 
+                onChange={e => setName(e.target.value)} 
+                required 
+                placeholder="Jane Doe" 
+                className="premium-input" 
+              />
             </div>
           </div>
           
           <div className="input-group">
             <label>Email Address</label>
             <div className="input-with-icon">
-              <Mail className="input-icon" size={18} />
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="name@email.com" className="premium-input" />
+              <Mail className="input-icon" size={20} />
+              <input 
+                type="email" 
+                value={email} 
+                onChange={e => setEmail(e.target.value)} 
+                required 
+                placeholder="name@email.com" 
+                className="premium-input" 
+              />
             </div>
           </div>
           
           <div className="input-group">
             <label>Password</label>
             <div className="input-with-icon">
-              <Lock className="input-icon" size={18} />
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} placeholder="••••••••" className="premium-input" />
+              <Lock className="input-icon" size={20} />
+              <input 
+                type="password" 
+                value={password} 
+                onChange={e => setPassword(e.target.value)} 
+                required 
+                minLength={6} 
+                placeholder="••••••••" 
+                className="premium-input" 
+              />
             </div>
           </div>
           
-          <button type="submit" className="btn-primary" disabled={loading} style={{width: '100%', marginTop: '8px'}}>
-            {loading ? 'Creating account...' : <><span style={{marginRight: '8px'}}>Sign up</span> <ArrowRight size={18} /></>}
+          <button type="submit" className="btn-primary" disabled={loading} style={{width: '100%', marginTop: '12px', padding: '16px'}}>
+            {loading ? 'Processing...' : <><span style={{marginRight: '8px'}}>Get Started</span> <ArrowRight size={18} /></>}
           </button>
         </form>
         
         <p className="auth-footer text-secondary">
-          Already have an account? <Link to="/login">Log in</Link>
+          Already have an account? <Link to="/login">Sign in</Link>
         </p>
       </div>
     </div>

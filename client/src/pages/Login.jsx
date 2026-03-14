@@ -29,17 +29,23 @@ const Login = ({ setToken }) => {
 
   return (
     <div className="auth-container">
+      {/* Background Decorations */}
+      <div className="auth-bg-decor">
+        <div className="auth-orb auth-orb-1"></div>
+        <div className="auth-orb auth-orb-2"></div>
+      </div>
+
       <Link to="/" className="auth-logo">
         <div className="logo-icon-small"><BarChart2 size={24} color="#fff" /></div>
         <span className="logo-text">Lumina<span className="gradient-text">BI</span></span>
       </Link>
       
-      <div className="auth-card glass-panel animate-slide-up">
+      <div className="auth-card animate-slide-up">
         <h2>Welcome back</h2>
         <p className="text-secondary">Enter your details to access your dashboard.</p>
         
         {error && (
-            <div className="upload-error" style={{marginTop: '20px', marginBottom: 0}}>
+            <div className="auth-error animate-shake" style={{marginTop: '24px', marginBottom: 0}}>
                 <AlertCircle size={18} />
                 <span>{error}</span>
             </div>
@@ -49,26 +55,40 @@ const Login = ({ setToken }) => {
           <div className="input-group">
             <label>Email Address</label>
             <div className="input-with-icon">
-              <Mail className="input-icon" size={18} />
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="name@email.com" className="premium-input" />
+              <Mail className="input-icon" size={20} />
+              <input 
+                type="email" 
+                value={email} 
+                onChange={e => setEmail(e.target.value)} 
+                required 
+                placeholder="name@email.com" 
+                className="premium-input" 
+              />
             </div>
           </div>
           
           <div className="input-group">
             <label>Password</label>
             <div className="input-with-icon">
-              <Lock className="input-icon" size={18} />
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)} required placeholder="••••••••" className="premium-input" />
+              <Lock className="input-icon" size={20} />
+              <input 
+                type="password" 
+                value={password} 
+                onChange={e => setPassword(e.target.value)} 
+                required 
+                placeholder="••••••••" 
+                className="premium-input" 
+              />
             </div>
           </div>
           
-          <button type="submit" className="btn-primary" disabled={loading} style={{width: '100%', marginTop: '8px'}}>
-            {loading ? 'Logging in...' : <><span style={{marginRight: '8px'}}>Log in</span> <ArrowRight size={18} /></>}
+          <button type="submit" className="btn-primary" disabled={loading} style={{width: '100%', marginTop: '12px', padding: '16px'}}>
+            {loading ? 'Authenticating...' : <><span style={{marginRight: '8px'}}>Sign In</span> <ArrowRight size={18} /></>}
           </button>
         </form>
         
         <p className="auth-footer text-secondary">
-          Don't have an account? <Link to="/signup">Sign up</Link>
+          New to LuminaBI? <Link to="/signup">Create account</Link>
         </p>
       </div>
     </div>
