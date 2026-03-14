@@ -3,7 +3,8 @@ const generateSQL = require('../utils/gemini');
 
 const handleQuery = async (req, res) => {
     const { prompt, datasetId, history } = req.body;
-    
+    const userId = req.user ? req.user.id : null;
+
     if (!prompt) {
         return res.status(400).json({ error: 'Please provide a prompt.' });
     }
@@ -48,9 +49,25 @@ const handleQuery = async (req, res) => {
 
         // 3. Handle General Conversation
         if (aiResponse.is_data_query === false) {
+             let userMsgId = null, aiMsgId = null;
+             if (datasetId && userId) {
+                 const uRes = await pool.query(
+                     'INSERT INTO chat_histories (user_id, dataset_id, role, text) VALUES ($1, $2, $3, $4) RETURNING id',
+                     [userId, datasetId, 'user', prompt]
+                 );
+                 userMsgId = uRes.rows[0].id;
+                 const aRes = await pool.query(
+                     'INSERT INTO chat_histories (user_id, dataset_id, role, text, data) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+                     [userId, datasetId, 'ai', aiResponse.explanation, JSON.stringify({ suggested_follow_ups: aiResponse.suggested_follow_ups || [] })]
+                 );
+                 aiMsgId = aRes.rows[0].id;
+             }
+
              return res.json({
                  datasetId,
                  prompt,
+                 userMessageId: userMsgId,
+                 aiMessageId: aiMsgId,
                  data_query: false,
                  explanation: aiResponse.explanation,
                  // Safety empty array for text chats
@@ -66,9 +83,36 @@ const handleQuery = async (req, res) => {
         console.log("🧠 AI Response Object:", JSON.stringify(aiResponse, null, 2));
 
         // 5. Send the combined config and data to React
+        
+        let userMsgId = null, aiMsgId = null;
+        if (datasetId && userId) {
+             const uRes = await pool.query(
+                 'INSERT INTO chat_histories (user_id, dataset_id, role, text) VALUES ($1, $2, $3, $4) RETURNING id',
+                 [userId, datasetId, 'user', prompt]
+             );
+             userMsgId = uRes.rows[0].id;
+
+             const aiFullData = {
+                 chart_type: aiResponse.chart_type,
+                 x_axis_column: aiResponse.x_axis_column,
+                 y_axis_column: aiResponse.y_axis_column,
+                 sql_used: aiResponse.sql_query,
+                 data: result.rows,
+                 suggested_follow_ups: aiResponse.suggested_follow_ups || []
+             };
+
+             const aRes = await pool.query(
+                 'INSERT INTO chat_histories (user_id, dataset_id, role, text, data) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+                 [userId, datasetId, 'ai', aiResponse.explanation, JSON.stringify(aiFullData)]
+             );
+             aiMsgId = aRes.rows[0].id;
+        }
+
         res.json({
             datasetId,
             prompt,
+            userMessageId: userMsgId,
+            aiMessageId: aiMsgId,
             data_query: true,
             chart_type: aiResponse.chart_type,
             x_axis_column: aiResponse.x_axis_column,

@@ -6,7 +6,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 async function generateSQL(prompt, tableName, columnsInfo, history = []) {
   let chatContext = "";
   if (history && history.length > 0) {
-      chatContext = "\n\n--- PREVIOUS CONVERSATION CONTEXT ---\n(Use this to understand follow-up requests. If the user asks to filter/change something, apply it to the previous SQL query!):\n";
+      chatContext = "\n\n--- PREVIOUS CONVERSATION CONTEXT ---\n(Use this to understand follow-up requests. If the user asks to filter, sort, or change the chart type of the previous result, apply it to the previous SQL query!):\n";
       history.forEach(msg => {
          chatContext += `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.text}\n`;
          if (msg.role === 'ai' && msg.data?.sql_used) {
@@ -15,34 +15,52 @@ async function generateSQL(prompt, tableName, columnsInfo, history = []) {
       });
   }
 
+  // Build a more descriptive schema context
+  const schemaDescription = columnsInfo.map(c => `- ${c.original} (Database name: "${c.name}", Type: ${c.type})`).join('\n');
+
   const model = genAI.getGenerativeModel({
-    model: "gemini-2.5-flash",
+    model: "gemini-2.5-flash", // Using the correct available model ID for this project
     generationConfig: {
       responseMimeType: "application/json",
+      temperature: 0.1, // Lower temperature for more deterministic/accurate SQL
     },
-    systemInstruction: `You are an expert data analyst and PostgreSQL query optimizer.
-    
-We are working with a table named: "${tableName}"
-Here is the schema mapping (original name -> column name (type)):
-${columnsInfo.map(c => `- ${c.original} -> ${c.name} (${c.type})`).join('\n')}
+    systemInstruction: `You are a Senior Data Analyst and SQL Expert. Your goal is to provide highly accurate, analytical, and visually useful insights from a dataset.
 
-INSTRUCTIONS FOR HIGH ACCURACY SQL QUERY:
-- Always use Aggregate Functions (COUNT, SUM, AVG) and apply a GROUP BY when summarizing by categories. Example: SELECT "category", SUM("views") as "total_views" FROM "${tableName}" GROUP BY "category".
-- For string/text matching or searching, ALWAYS use ILIKE so searches are case-insensitive. Example: "category" ILIKE '%finance%'.
-- If asked for "Top" or "Bottom" results, always include ORDER BY "column_name" DESC/ASC LIMIT <number>. 
-- Ensure you wrap actual column names in double quotes exactly as given in the schema mapping, e.g. "${columnsInfo[0]?.name || 'col'}", to avoid syntax issues.
-- The SQL query MUST return valid results with clear, simple aliases for the x-axis and y-axis.
-- ALWAYS make sure x_axis_column and y_axis_column EXACTLY match the aliases used in your SQL query!
+CORE DATASET INFO:
+- Current Table Name: "${tableName}"
+- Available Columns (Original CSV Name -> Database Column):
+${schemaDescription}
 
-You must respond with a JSON object containing EXACTLY these keys:
-1. "is_data_query": boolean. True if the user is asking to query/visualize/analyze the CSV dataset. False if they are just asking a general conversational question to you.
-2. "sql_query": A highly accurate PostgreSQL query (or null if is_data_query is false). 
-3. "chart_type": Choose "bar", "line", "pie", "area", "scatter", or "table" based on context. CRITICAL rule: If the user asks for a raw list, details, names, or non-aggregated data, you MUST choose "table".
-4. "x_axis_column": The exact column alias/name returned by your query for the X axis (or null).
-5. "y_axis_column": The exact column alias/name returned by your query for the Y axis (or null).
-6. "explanation": If is_data_query is true, a 1-sentence business explanation of the insight. If is_data_query is false, act as a helpful AI assistant and answer their conversational question here like a normal chatbot!
+STRICT SQL RULES FOR MAXIMUM ACCURACY:
+1. FUZZY SEARCH: When searching for names, categories, or text (like "Himanshu", "Sales", "Tech"), ALWAYS use "ILIKE '%<term>%'" for case-insensitive partial matches. This is critical for accuracy.
+2. AGGREGATES: Always default to meaningful aggregations (SUM, AVG, COUNT) when the user asks for "total", "average", "how many", or "breakdown".
+3. ALIASES: Use clear, double-quoted aliases for your columns (e.g., SELECT "${columnsInfo[0]?.name}" AS "Category", COUNT(*) AS "Total" ...).
+4. ORDERING: If the user asks for "top", "best", "highest", or "most", always ORDER BY DESC. If "bottom" or "least", ORDER BY ASC.
+5. LIMITS: For charts, if not specified, LIMIT to the top 15 results to keep the visualization clean. For tables, LIMIT to 100.
+6. JOINING: Do NOT try to join other tables; only use the provided schema for "${tableName}".
+7. ESCAPING: ALWAYS wrap column names and table names in double quotes (") to handle special characters or reserved words in PostgreSQL.
 
-If the prompt asks to query data but it is completely outside the schema provided, return ONLY: { "error": "I don't have the data to answer that." }
+CHART SELECTION LOGIC:
+- Use 'bar' for comparing quantities across categories.
+- Use 'line' for trends over time/dates.
+- Use 'pie' for part-to-whole breakdowns (limit to top 6 categories).
+- Use 'area' for cumulative totals over time.
+- Use 'table' for raw lists, contact details, "show everything", or when more than 3 columns are requested.
+
+JSON RESPONSE FORMAT (MANDATORY):
+{
+  "is_data_query": boolean, // True if the user prompt requires a database query.
+  "sql_query": string, // The optimized PostgreSQL query. Wrap everything in double quotes.
+  "chart_type": "bar" | "line" | "pie" | "area" | "table", 
+  "x_axis_column": string, // The alias used for the X-axis in your SQL.
+  "y_axis_column": string, // The alias used for the Y-axis in your SQL.
+  "explanation": string, // A proactive, professional summary of what this data shows.
+  "suggested_follow_ups": string[] // 3 intelligent follow-up questions to dig deeper into "this" specific data.
+}
+
+If you cannot answer the question because the columns don't exist, return: { "error": "I couldn't find relevant columns in the dataset to answer that question." }
+
+USER PROMPT: ${prompt}
 ${chatContext}`
   });
 
@@ -53,7 +71,14 @@ ${chatContext}`
     if(text.startsWith('```json')) {
         text = text.replace('```json', '').replace('```', '').trim();
     }
-    return JSON.parse(text);
+    const parsed = JSON.parse(text);
+    
+    // Safety check for keys
+    if (parsed.is_data_query && !parsed.sql_query && !parsed.error) {
+       parsed.error = "I understand the request but couldn't generate a stable query.";
+    }
+
+    return parsed;
   } catch (error) {
     console.error("Failed to generate AI response:", error);
     throw error;

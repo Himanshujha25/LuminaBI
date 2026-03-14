@@ -24,6 +24,18 @@ async function setup() {
             )
         `);
         console.log("Metadata table 'datasets' is ready.");
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS chat_histories (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                dataset_id INTEGER REFERENCES datasets(id) ON DELETE CASCADE,
+                role VARCHAR(50) NOT NULL,
+                text TEXT,
+                data JSONB,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        console.log("Chat histories table is ready.");
     } catch (err) {
         console.error("Error creating datasets table:", err);
     }

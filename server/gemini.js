@@ -85,7 +85,7 @@ ${dbContext.relationships.map(r => `- ${r}`).join('\n')}
   };
 
   const model = genAI.getGenerativeModel({
-    model: "gemini-2.5-pro", // Upgraded to 'pro' for maximum reasoning on complex schemas
+    model: "gemini-2.5-pro", // Using the correct available model ID for this project
     generationConfig: {
       temperature: 0.0, // Zero creativity, maximum precision
       responseMimeType: "application/json",

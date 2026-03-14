@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Send, MessageSquare, ListFilter, Sparkles, Activity, Download, Image as ImageIcon, Menu, X, GripHorizontal } from 'lucide-react';
+import { Search, Send, MessageSquare, ListFilter, Sparkles, Activity, Download, Image as ImageIcon, Menu, X, GripHorizontal, Trash2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import axios from 'axios';
 import DynamicChartComponent from '../ChartComponent';
@@ -15,11 +15,7 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
   const dragItem = useRef(null);
   const dragOverItem = useRef(null);
 
-  const [chatHistories, setChatHistories] = useState(() => {
-    const saved = localStorage.getItem('lumina_chat_histories');
-    if (saved) return JSON.parse(saved);
-    return {};
-  });
+  const [chatHistories, setChatHistories] = useState({});
   
   const [chartTypeOverride, setChartTypeOverride] = useState(null);
   const [showSQL, setShowSQL] = useState(false);
@@ -51,16 +47,31 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
     localStorage.setItem('lumina_pinned_charts', JSON.stringify(pinnedCharts));
   }, [pinnedCharts]);
 
-  useEffect(() => {
-    localStorage.setItem('lumina_chat_histories', JSON.stringify(chatHistories));
-  }, [chatHistories]);
-
   const history = activeDataset ? (chatHistories[activeDataset.id] || []) : [];
   const chatEndRef = useRef(null);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [history, isSidebarOpen]);
+
+  // Fetch chat history from DB when dataset changes
+  useEffect(() => {
+    if (activeDataset?.id && !chatHistories[activeDataset.id]) {
+        setIsSideLoading(true);
+        axios.get(`http://localhost:5000/api/datasets/${activeDataset.id}/chats`)
+          .then(res => {
+             const formatted = res.data.map(row => ({
+                 id: row.id,
+                 role: row.role,
+                 text: row.text,
+                 data: row.data || null
+             }));
+             setChatHistories(prev => ({ ...prev, [activeDataset.id]: formatted }));
+          })
+          .catch(err => console.error("Failed to fetch chat history:", err))
+          .finally(() => setIsSideLoading(false));
+    }
+  }, [activeDataset?.id]);
 
   useEffect(() => {
      setChartTypeOverride(null);
@@ -85,12 +96,14 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
 
     if (!isSideSearch) setIsSidebarOpen(true);
 
+    // Add optimistic UI message (without ID yet)
+    const optimisticUserMsg = { role: 'user', text: finalPrompt };
     setChatHistories(prev => ({
-       ...prev, [activeDataset.id]: [...(prev[activeDataset.id] || []), { role: 'user', text: finalPrompt }]
+       ...prev, [activeDataset.id]: [...(prev[activeDataset.id] || []), optimisticUserMsg]
     }));
 
     try {
-      const res = await axios.post('https://luminabi.onrender.com/api/query', { 
+      const res = await axios.post('http://localhost:5000/api/query', { 
         prompt: finalPrompt,
         datasetId: activeDataset.id,
         history: history.slice(-6) 
@@ -98,17 +111,33 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
       
       if (res.data.error) {
         setError(res.data.error);
-        setChatHistories(prev => ({
-           ...prev, [activeDataset.id]: [...(prev[activeDataset.id] || []), { role: 'ai', text: res.data.error }]
-        }));
+        setChatHistories(prev => {
+           const oldH = prev[activeDataset.id] || [];
+           // Update optimistic user msg with DB ID
+           if (res.data.userMessageId && oldH.length > 0) {
+              oldH[oldH.length - 1].id = res.data.userMessageId;
+           }
+           return { ...prev, [activeDataset.id]: [...oldH, { role: 'ai', text: res.data.error }] };
+        });
       } else {
-        setChatHistories(prev => ({
-           ...prev, [activeDataset.id]: [...(prev[activeDataset.id] || []), {
-              role: 'ai', 
-              text: res.data.explanation,
-              data: res.data.data_query !== false ? res.data : null 
-           }]
-        }));
+        setChatHistories(prev => {
+           const oldH = prev[activeDataset.id] || [];
+           if (res.data.userMessageId && oldH.length > 0) {
+              oldH[oldH.length - 1].id = res.data.userMessageId;
+           }
+           return { 
+              ...prev, 
+              [activeDataset.id]: [
+                 ...oldH, 
+                 {
+                    id: res.data.aiMessageId,
+                    role: 'ai', 
+                    text: res.data.explanation,
+                    data: res.data.data_query !== false ? res.data : null 
+                 }
+              ] 
+           };
+        });
       }
     } catch (err) {
       const errorMsg = "Failed to generate insights. Our servers might be busy.";
@@ -164,6 +193,54 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
 
   const handleUnpinChart = (id) => {
     setPinnedCharts(prev => prev.filter(c => c.id !== id));
+  };
+
+  const handleClearChat = async () => {
+    if (!activeDataset) return;
+    if (window.confirm('Are you sure you want to clear the entire chat history for this dataset?')) {
+      try {
+        await axios.delete(`http://localhost:5000/api/datasets/${activeDataset.id}/chats`);
+        setChatHistories(prev => ({ ...prev, [activeDataset.id]: [] }));
+        setPrompt('');
+        setSidePrompt('');
+        setError(null);
+      } catch (err) {
+        console.error("Failed to clear chat", err);
+        alert("Failed to clear chat history from server.");
+      }
+    }
+  };
+
+  const handleRemoveMessage = async (index) => {
+    if (!activeDataset) return;
+    
+    // Attempt to delete from backend right away. If no ID (like optimistic UI, it might fail)
+    const msg = history[index];
+    if (msg.id) {
+       try {
+          await axios.delete(`http://localhost:5000/api/chats/${msg.id}`);
+       } catch (e) {
+          console.error("Failed to delete from backend", e);
+       }
+    }
+
+    setChatHistories(prev => {
+      const newHistory = [...(prev[activeDataset.id] || [])];
+      
+      // If we remove a user message, also remove the subsequent AI message if it exists
+      if (newHistory[index].role === 'user' && newHistory[index+1]?.role === 'ai') {
+        const nextMsg = newHistory[index+1];
+        if (nextMsg.id) axios.delete(`http://localhost:5000/api/chats/${nextMsg.id}`).catch(()=>null);
+        newHistory.splice(index, 2);
+      } else if (newHistory[index].role === 'ai' && newHistory[index-1]?.role === 'user') {
+        const prevMsg = newHistory[index-1];
+        if (prevMsg.id) axios.delete(`http://localhost:5000/api/chats/${prevMsg.id}`).catch(()=>null);
+        newHistory.splice(index-1, 2); // If removing an AI message, also remove the user message before it
+      } else {
+        newHistory.splice(index, 1);
+      }
+      return { ...prev, [activeDataset.id]: newHistory };
+    });
   };
 
   // --- NATIVE DRAG AND DROP HANDLER ---
@@ -416,9 +493,21 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
             <MessageSquare size={18} color="var(--accent-blue)" />
             <h3 style={{ margin: 0, fontSize: '16px' }}>Assistant Chat</h3>
           </div>
-          <button className="mobile-close-sidebar" onClick={() => setIsSidebarOpen(false)}>
-            <X size={20} />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {history.length > 0 && (
+              <button 
+                className="ui-btn danger icon-only small" 
+                onClick={handleClearChat}
+                title="Clear Chat History"
+                style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', padding: '4px', cursor: 'pointer' }}
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
+            <button className="mobile-close-sidebar" onClick={() => setIsSidebarOpen(false)}>
+              <X size={20} />
+            </button>
+          </div>
         </div>
         
        <div className="chat-history">
@@ -443,7 +532,16 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
               }
 
               return (
-                <div key={i} className={`chat-bubble ${msg.role === 'user' ? 'user-bubble' : 'ai-bubble'}`}>
+                <div key={i} className={`chat-bubble ${msg.role === 'user' ? 'user-bubble' : 'ai-bubble'}`} style={{ position: 'relative', paddingRight: '28px' }}>
+                  <button 
+                    onClick={() => handleRemoveMessage(i)}
+                    title="Remove message"
+                    style={{ position: 'absolute', top: '6px', right: '6px', background: 'transparent', border: 'none', color: 'inherit', opacity: 0.5, cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    onMouseEnter={e => e.currentTarget.style.opacity = 1}
+                    onMouseLeave={e => e.currentTarget.style.opacity = 0.5}
+                  >
+                     <X size={14} />
+                  </button>
                   <div className="bubble-content">{msg.text}</div>
                   
                   {msg.role === 'ai' && chips.length > 0 && (
