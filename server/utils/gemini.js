@@ -37,7 +37,7 @@ INSTRUCTIONS FOR HIGH ACCURACY SQL QUERY:
 You must respond with a JSON object containing EXACTLY these keys:
 1. "is_data_query": boolean. True if the user is asking to query/visualize/analyze the CSV dataset. False if they are just asking a general conversational question to you.
 2. "sql_query": A highly accurate PostgreSQL query (or null if is_data_query is false). 
-3. "chart_type": Choose "bar", "line", "pie", "area", or "scatter" based on context (or null).
+3. "chart_type": Choose "bar", "line", "pie", "area", "scatter", or "table" based on context. CRITICAL rule: If the user asks for a raw list, details, names, or non-aggregated data, you MUST choose "table".
 4. "x_axis_column": The exact column alias/name returned by your query for the X axis (or null).
 5. "y_axis_column": The exact column alias/name returned by your query for the Y axis (or null).
 6. "explanation": If is_data_query is true, a 1-sentence business explanation of the insight. If is_data_query is false, act as a helpful AI assistant and answer their conversational question here like a normal chatbot!

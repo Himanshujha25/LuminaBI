@@ -19,8 +19,8 @@ function DynamicChartComponent({ config, overrideChartType }) {
   const safeXKey = availableKeys.includes(x_axis_column) ? x_axis_column : availableKeys[0];
   const safeYKey = availableKeys.includes(y_axis_column) ? y_axis_column : (availableKeys[1] || availableKeys[0]);
 
-  // 2. FAIL-SAFE NUMBER PARSING
-  const chartData = data.map(d => ({
+  // 2. FAIL-SAFE NUMBER PARSING (AND 200 ROW LIMIT TO PREVENT BROWSER CRASH)
+  const chartData = data.slice(0, 200).map(d => ({
     ...d,
     [safeYKey]: Number(d[safeYKey] || 0) 
   }));

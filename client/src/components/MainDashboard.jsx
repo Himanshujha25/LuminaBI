@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Send, MessageSquare, ListFilter, Sparkles, Activity, Download, Image as ImageIcon } from 'lucide-react';
+import { Search, Send, MessageSquare, ListFilter, Sparkles, Activity, Download, Image as ImageIcon, Menu, X } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import axios from 'axios';
 import DynamicChartComponent from '../ChartComponent';
@@ -20,6 +20,7 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
   const [viewMode, setViewMode] = useState('chart'); // 'chart' | 'table'
   const [sidePrompt, setSidePrompt] = useState('');
   const [pinState, setPinState] = useState('idle'); // 'idle' | 'success' | 'duplicate'
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Mobile sidebar drawer state
   const [pinnedCharts, setPinnedCharts] = useState(() => {
     const saved = localStorage.getItem('lumina_pinned_charts');
     if (saved) {
@@ -58,7 +59,7 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
   // Auto-scroll chat
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [history]);
+  }, [history, isSidebarOpen]);
 
   // Clean UI overrides when switching the active analysis Dataset
   useEffect(() => {
@@ -81,6 +82,9 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
     setSidePrompt('');
     setChartTypeOverride(null); // clear old override
     setShowSQL(false);
+
+    // Auto-open sidebar on mobile if they submitted a main prompt so they can see AI thinking/response
+    if (!isSideSearch) setIsSidebarOpen(true);
 
     // Add user message to history
     setChatHistories(prev => ({
@@ -200,6 +204,16 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
 
   return (
     <div className="dashboard-wrapper">
+      
+      {/* MOBILE FLOATING ASSISTANT TOGGLE BUTTON */}
+      <button 
+        className="mobile-assistant-toggle glass-panel animate-fade-in" 
+        onClick={() => setIsSidebarOpen(true)}
+        title="Open AI Assistant"
+      >
+        <MessageSquare size={24} color="var(--accent-blue)" />
+      </button>
+
       <div className="dashboard-main">
         {/* Search header area */}
         <div className="search-header">
@@ -325,7 +339,7 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
                        </div>
                     )}
 
-                    {viewMode === 'table' ? (
+                    {((chartTypeOverride || currentData.chart_type) === 'table' || viewMode === 'table') ? (
                        <div className="data-table-container sql-viewer" style={{ padding: '16px', background: 'var(--bg-color)', borderRadius: '8px', overflowX: 'auto', border: '1px solid var(--border-color)', maxHeight: '400px' }}>
                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px', textAlign: 'left' }}>
                               <thead>
@@ -336,7 +350,7 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
                                  </tr>
                               </thead>
                               <tbody>
-                                 {currentData.data && currentData.data.map((row, i) => (
+                                 {currentData.data && currentData.data.slice(0, 100).map((row, i) => (
                                     <tr key={i} style={{ borderBottom: '1px solid var(--border-color)' }}>
                                        {Object.values(row).map((val, j) => (
                                           <td key={j} style={{ padding: '12px 8px', color: 'var(--text-primary)' }}>{val}</td>
@@ -345,6 +359,11 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
                                  ))}
                               </tbody>
                            </table>
+                           {currentData.data && currentData.data.length > 100 && (
+                               <div style={{ padding: '12px', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: '12px', fontStyle: 'italic', borderTop: '1px solid var(--border-color)', marginTop: '8px' }}>
+                                  Showing top 100 rows for browser performance. Click the download button above to export all {currentData.data.length} records in a CSV.
+                               </div>
+                           )}
                        </div>
                     ) : (
                        <div id="main-chart-export" style={{ padding: '8px', borderRadius: '12px', background: 'var(--surface-color)' }}>
@@ -388,14 +407,31 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
           )}
           
           {/* Invisible div to help with scrolling */}
-          <div style={{ paddingBottom: '20px' }} />
+          <div style={{ paddingBottom: '90px' }} />
         </div>
       </div>
 
-      <aside className="assistant-sidebar glass-panel">
-        <div className="sidebar-header">
-          <MessageSquare size={18} />
-          <h3 style={{ margin: 0, fontSize: '16px' }}>Assistant Chat</h3>
+      {/* SIDEBAR BACKDROP FOR MOBILE */}
+      {isSidebarOpen && (
+        <div className="sidebar-backdrop" onClick={() => setIsSidebarOpen(false)}></div>
+      )}
+
+      {/* ASSISTANT SIDEBAR */}
+      <aside className={`assistant-sidebar glass-panel ${isSidebarOpen ? 'open' : ''}`}>
+        
+        {/* MOBILE DRAG HANDLE - Purely Visual to signify it's a bottom sheet */}
+        <div className="mobile-drag-handle" onClick={() => setIsSidebarOpen(false)}>
+           <div className="drag-pill"></div>
+        </div>
+
+        <div className="sidebar-header" style={{ justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <MessageSquare size={18} />
+            <h3 style={{ margin: 0, fontSize: '16px' }}>Assistant Chat</h3>
+          </div>
+          <button className="mobile-close-sidebar" onClick={() => setIsSidebarOpen(false)}>
+            <X size={20} />
+          </button>
         </div>
         
        <div className="chat-history">
