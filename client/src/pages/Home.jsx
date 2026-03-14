@@ -6,6 +6,10 @@ import './Home.css';
 const Home = () => {
   return (
     <div className="home-container">
+      {/* Animated Background Orbs */}
+      <div className="bg-orb orb-1"></div>
+      <div className="bg-orb orb-2"></div>
+      
       {/* Navbar for Landing */}
       <nav className="home-nav glass-panel">
         <div className="home-logo">
