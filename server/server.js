@@ -1,11 +1,13 @@
 const express = require("express");
 const cors = require("cors");
+const compression = require("compression");
 const apiRoutes = require('./routes/api');
 const setupDb = require('./db/setup');
 const { handleQuery } = require('./controllers/queryController');
 require('dotenv').config();
 
 const app = express();
+app.use(compression()); // Compress all responses
 app.use(cors({
   origin: [
     "http://localhost:5173",

@@ -1,5 +1,7 @@
 const pool = require('../db/db');
 const generateSQL = require('../utils/gemini');
+const { schemaCache, insightCache } = require('../utils/cache');
+const crypto = require('crypto');
 
 const handleQuery = async (req, res) => {
     const { prompt, datasetId, history } = req.body;
@@ -10,19 +12,28 @@ const handleQuery = async (req, res) => {
     }
 
     try {
-        let tableName = 'videos'; // default if no dataset provided
+        let tableName = 'videos';
         let columnsInfo = [];
 
         if (datasetId) {
-            // fetch dataset schema dynamically based on the dataset selected in frontend
-            const datasetRes = await pool.query('SELECT table_name, columns FROM datasets WHERE id = $1', [datasetId]);
-            if (datasetRes.rowCount === 0) {
-                return res.status(404).json({ error: 'Dataset not found.' });
+            // Check schema cache first
+            const cacheKey = `schema_${datasetId}`;
+            const cachedSchema = schemaCache.get(cacheKey);
+            
+            if (cachedSchema) {
+                tableName = cachedSchema.tableName;
+                columnsInfo = cachedSchema.columnsInfo;
+            } else {
+                const datasetRes = await pool.query('SELECT table_name, columns FROM datasets WHERE id = $1', [datasetId]);
+                if (datasetRes.rowCount === 0) {
+                    return res.status(404).json({ error: 'Dataset not found.' });
+                }
+                tableName = datasetRes.rows[0].table_name;
+                columnsInfo = datasetRes.rows[0].columns;
+                // Store in cache
+                schemaCache.set(cacheKey, { tableName, columnsInfo });
             }
-            tableName = datasetRes.rows[0].table_name;
-            columnsInfo = datasetRes.rows[0].columns;
         } else {
-            // Hardcoded fallback schema
              columnsInfo = [
                 { original: 'timestamp', name: 'timestamp', type: 'TIMESTAMP' },
                 { original: 'video_id', name: 'video_id', type: 'TEXT' },
@@ -39,8 +50,17 @@ const handleQuery = async (req, res) => {
              ];
         }
 
-        // 1. Get the JSON object from Gemini
-        const aiResponse = await generateSQL(prompt, tableName, columnsInfo, history);
+        // 1. Check Insight Cache for repeat questions
+        const historyHash = history ? crypto.createHash('md5').update(JSON.stringify(history.slice(-3))).digest('hex') : 'no_hist';
+        const insightKey = `insight_${datasetId || 'default'}_${prompt}_${historyHash}`;
+        let aiResponse = insightCache.get(insightKey);
+
+        if (!aiResponse) {
+            aiResponse = await generateSQL(prompt, tableName, columnsInfo, history);
+            if (!aiResponse.error) {
+                insightCache.set(insightKey, aiResponse);
+            }
+        }
 
         // 2. Handle AI Hallucinations/Out-of-Scope questions
         if (aiResponse.error) {

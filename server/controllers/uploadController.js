@@ -1,6 +1,9 @@
 const fs = require('fs');
 const csv = require('csv-parser');
 const pool = require('../db/db');
+const { from: copyFrom } = require('pg-copy-streams');
+const { schemaCache } = require('../utils/cache');
+const { pipeline } = require('stream/promises');
 
 // Detect basic column types
 const detectType = (value) => {
@@ -25,153 +28,74 @@ const sanitizeIdentifier = (name) => {
     return clean || 'col';
 };
 
-// Batch Insert Function
-async function insertBatch(tableName, headers, colMap, rows) {
-    if(rows.length === 0) return;
-
-    // Construct parameterized multi-row insert for safety and speed
-    const columns = headers.map(h => `"${colMap[h]}"`).join(', ');
-    
-    let valuesArr = [];
-    let paramIndex = 1;
-    let valuePlaceholders = [];
-    
-    for (let row of rows) {
-        let rowPlaceholders = [];
-        for (let h of headers) {
-             let val = row[h];
-             if (val === null || val === undefined || val.trim() === '') {
-                  valuesArr.push(null);
-             } else {
-                  valuesArr.push(val);
-             }
-             rowPlaceholders.push(`$${paramIndex}`);
-             paramIndex++;
-        }
-        valuePlaceholders.push(`(${rowPlaceholders.join(', ')})`);
-    }
-    
-    const query = `INSERT INTO ${tableName} (${columns}) VALUES ${valuePlaceholders.join(', ')}`;
-    await pool.query(query, valuesArr);
-}
 
 const uploadCSV = async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    const { tablename } = req.body; 
+    const { tablename } = req.body;
     if (!tablename) {
-        return res.status(400).json({ error: 'Please provide a tablename form field.' });
+        return res.status(400).json({ error: 'Please provide a tablename.' });
     }
 
     const dbTableName = 'dt_' + Date.now() + '_' + sanitizeIdentifier(tablename);
-    
-    let isTableCreated = false;
+    let columns = [];
     let headers = [];
-    let colMap = {};
-    let metadataColumns = [];
-    let batch = [];
-    const BATCH_SIZE = 3000; 
-    let totalRows = 0;
-
-    // Process the stream as a Promise so we manage stream operations
-    const processCSV = new Promise((resolve, reject) => {
-        const stream = fs.createReadStream(req.file.path).pipe(csv());
-
-        stream.on('headers', (streamHeaders) => {
-             headers = streamHeaders.map(h => h.trim()).filter(h => h.length > 0);
-             if (headers.length === 0) {
-                 reject(new Error('No headers found in CSV.'));
-             }
-        });
-
-        stream.on('data', async (data) => {
-            batch.push(data);
-            totalRows++;
-            
-            // On first row we detect types and create table dynamically
-            if (!isTableCreated && batch.length === 1) {
-                stream.pause();
-                try {
-                    const colDefs = [];
-                    headers.forEach((header) => {
-                        let colName = sanitizeIdentifier(header);
-                        let count = 1;
-                        while(Object.values(colMap).includes(colName)) {
-                            colName = colName + '_' + count;
-                            count++;
-                        }
-                        colMap[header] = colName;
-                        
-                        const rawVal = batch[0][header];
-                        const type = detectType(rawVal);
-                        
-                        colDefs.push(`"${colName}" ${type}`);
-                        metadataColumns.push({ original: header, name: colName, type });
-                    });
-                    
-                    const createTableQuery = `CREATE TABLE ${dbTableName} (${colDefs.join(', ')})`;
-                    await pool.query(createTableQuery);
-                    isTableCreated = true;
-                    stream.resume();
-                } catch(err) {
-                    reject(err);
-                }
-            }
-
-            // Once batch size is reached, pause stream, write to DB, empty batch, resume
-            if (batch.length >= BATCH_SIZE) {
-                stream.pause();
-                const currentBatch = [...batch];
-                batch = []; 
-                
-                insertBatch(dbTableName, headers, colMap, currentBatch)
-                    .then(() => stream.resume())
-                    .catch(err => reject(err));
-            }
-        });
-
-        stream.on('end', async () => {
-             try {
-                // If there's any remaining data in the final batch, process it
-                if (batch.length > 0) {
-                    await insertBatch(dbTableName, headers, colMap, batch);
-                }
-                resolve();
-             } catch(err) {
-                 reject(err);
-             }
-        });
-        
-        stream.on('error', (err) => reject(err));
-    });
 
     try {
-        await processCSV;
+        // 1. First Pass: Detect structure
+        const firstRowPromise = new Promise((resolve, reject) => {
+            const stream = fs.createReadStream(req.file.path).pipe(csv());
+            stream.on('headers', (h) => { headers = h; });
+            stream.on('data', (row) => {
+                stream.destroy();
+                resolve(row);
+            });
+            stream.on('error', reject);
+        });
+
+        const firstRow = await firstRowPromise;
+        const colDefs = [];
+        headers.forEach(h => {
+             const colName = sanitizeIdentifier(h);
+             const type = detectType(firstRow[h]);
+             colDefs.push(`"${colName}" ${type}`);
+             columns.push({ original: h, name: colName, type });
+        });
+
+        // 2. Create Table
+        await pool.query(`CREATE TABLE "${dbTableName}" (${colDefs.join(', ')})`);
+
+        // 3. Second Pass: High-Speed Streaming COPY
+        const client = await pool.connect();
+        try {
+            const ingestStream = client.query(copyFrom(`COPY "${dbTableName}" FROM STDIN WITH (FORMAT csv, HEADER true)`));
+            const sourceStream = fs.createReadStream(req.file.path);
+            
+            await pipeline(sourceStream, ingestStream);
+        } finally {
+            client.release();
+        }
+
+        // 4. Cleanup and Metadata
         if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
 
         const userId = req.user ? req.user.id : null;
-        const insertMetadata = `
-            INSERT INTO datasets (name, table_name, columns, user_id)
-            VALUES ($1, $2, $3, $4) RETURNING id, name, table_name
-        `;
-        const metaResult = await pool.query(insertMetadata, [tablename, dbTableName, JSON.stringify(metadataColumns), userId]);
+        const metaRes = await pool.query(
+            'INSERT INTO datasets (name, table_name, columns, user_id) VALUES ($1, $2, $3, $4) RETURNING id',
+            [tablename, dbTableName, JSON.stringify(columns), userId]
+        );
 
-        return res.json({ 
-            message: `Successfully processed ${totalRows} rows. Data ready for analysis!`, 
-            dataset: metaResult.rows[0]
+        res.json({ 
+            message: "Batch processing complete. Dataset ingested at maximum speed.",
+            dataset: { id: metaRes.rows[0].id, name: tablename, table_name: dbTableName }
         });
-    } catch(err) {
+
+    } catch (err) {
         if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
-        console.error("Error saving dataset:", err);
-        
-        let clientError = 'Failed to process dataset: ' + err.message;
-        if (err.code === '53100') {
-           clientError = "Your database storage is FULL (512MB limit reached). Please use 'Manage Data' to delete old datasets before uploading new ones.";
-        }
-        
-        return res.status(500).json({ error: clientError });
+        console.error("Batch Upload Error:", err);
+        res.status(500).json({ error: "High-speed batch processing failed: " + err.message });
     }
 };
 
@@ -219,6 +143,9 @@ const deleteDataset = async (req, res) => {
         
         // Remove from metadata tracking
         await pool.query('DELETE FROM datasets WHERE id = $1', [id]);
+        
+        // --- ENHANCEMENT: Invalidate Schema Cache ---
+        schemaCache.del(`schema_${id}`);
 
         return res.json({ message: 'Dataset permanently deleted and dropped from db.' });
     } catch (err) {

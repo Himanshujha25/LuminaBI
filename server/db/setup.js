@@ -36,6 +36,12 @@ async function setup() {
             )
         `);
         console.log("Chat histories table is ready.");
+
+        // Speed up lookups
+        await pool.query('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)');
+        await pool.query('CREATE INDEX IF NOT EXISTS idx_datasets_user ON datasets(user_id)');
+        await pool.query('CREATE INDEX IF NOT EXISTS idx_chat_dataset ON chat_histories(dataset_id)');
+        console.log("Indices created successfully.");
     } catch (err) {
         console.error("Error creating datasets table:", err);
     }
