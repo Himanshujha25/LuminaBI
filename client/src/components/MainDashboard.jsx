@@ -17,6 +17,7 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
   // DRAG AND DROP REFS
   const dragItem = useRef(null);
   const dragOverItem = useRef(null);
+  const chatScrollRef = useRef(null);
 
   const [chatHistories, setChatHistories] = useState({});
   
@@ -85,6 +86,17 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
     return () => controller.abort();
   }, [activeDataset?.id]);
 
+  // Handle mobile viewport height stabilization
+  useEffect(() => {
+    const handleResize = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
+    window.addEventListener('resize', handleResize);
+    handleResize();
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   useEffect(() => {
      setChartTypeOverride(null);
      setShowSQL(false);
@@ -92,6 +104,13 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
      setPrompt('');
      setSidePrompt('');
   }, [activeDataset?.id]);
+
+  // Auto-scroll chat history
+  useEffect(() => {
+    if (chatScrollRef.current) {
+      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+    }
+  }, [history, isSideLoading]);
 
   const handleSubmit = async (overridePrompt, isSideSearch = false) => {
     const finalPrompt = overridePrompt || prompt;
@@ -569,7 +588,7 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
           </div>
         </div>
         
-       <div className="chat-history">
+        <div className="chat-history" ref={chatScrollRef}>
           {history.length === 0 && !isSideLoading ? (
             <div className="empty-chat text-tertiary">
                <Sparkles size={24} style={{ margin: '0 auto 12px auto', opacity: 0.5 }} />

@@ -533,8 +533,9 @@
     left: 0;
     right: 0;
     width: 100%;
-    height: 85vh;
-    max-height: 85vh;
+    /* Use dynamic vh to prevent jumping when keyboard appears */
+    height: calc(var(--vh, 1vh) * 85);
+    max-height: calc(var(--vh, 1vh) * 85);
     min-height: auto;
     border-radius: 24px 24px 0 0;
     border: 1px solid var(--border-color);
@@ -542,8 +543,10 @@
     background: var(--surface-color);
     box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.4); 
     z-index: 150;
-    transform: translateY(105%);
+    transform: translateY(110%);
     transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    /* Prevent the body from being pushed/pulled while typing */
+    overscroll-behavior: contain;
   }
 
   .assistant-sidebar.open {
@@ -905,6 +908,8 @@
   background: var(--surface-color);
   border-bottom-left-radius: var(--radius-lg);
   border-bottom-right-radius: var(--radius-lg);
+  /* Ensure it stays at the bottom during keyboard resize */
+  padding-bottom: env(safe-area-inset-bottom, 16px);
 }
 
 .side-search-container {
