@@ -653,17 +653,11 @@
   }
 
   .main-chart-container {
-    padding: 20px 16px;
-    border-radius: var(--radius-xl);
-    margin: 0 -4px;
-    border: none;
-    box-shadow: var(--shadow-md);
-  }
-
-  .main-chart-container {
     padding: 16px;
     margin: 0;
     border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    background: var(--surface-color);
   }
 
   .chart-controls-header {
@@ -725,8 +719,18 @@
   }
 
   .mobile-assistant-toggle {
-    bottom: 100px;
+    bottom: 110px; /* Increased to avoid bottom navigation if any */
     right: 20px;
+  }
+
+  .pinned-chart-explanation {
+    font-size: 14px;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+  }
+
+  .pinned-chart-tag {
+    font-size: 10px;
   }
 }
 
@@ -859,16 +863,45 @@
   border-color: var(--accent-blue);
 }
 
+.pinned-chart-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.pinned-chart-tag {
+  font-size: 11px;
+  color: var(--accent-blue);
+  text-transform: uppercase;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.pinned-chart-explanation {
+  margin: 0;
+  font-size: 16px;
+  color: var(--text-primary);
+  font-weight: 600;
+  line-height: 1.4;
+  /* Multi-line truncation for long explanations on mobile */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .drag-handle {
-  position: absolute;
-  top: 18px;
-  left: 12px;
   cursor: grab;
   opacity: 0.5;
   transition: opacity 0.2s;
   background: var(--surface-hover);
   padding: 4px;
   border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .draggable-card:hover .drag-handle {

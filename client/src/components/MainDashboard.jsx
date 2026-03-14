@@ -536,9 +536,9 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
                                 <div className="drag-handle" title="Drag to reorder">
                                     <GripHorizontal size={20} color="var(--text-tertiary)" />
                                 </div>
-                                <div>
-                                    <div style={{ fontSize: '11px', color: 'var(--accent-blue)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '1px' }}>{chart.chart_type} Insight</div>
-                                    <h4 style={{ margin: 0, fontSize: '16px', color: 'var(--text-primary)' }}>{chart.explanation}</h4>
+                                <div className="pinned-chart-info">
+                                    <div className="pinned-chart-tag">{chart.chart_type} Insight</div>
+                                    <h4 className="pinned-chart-explanation">{chart.explanation}</h4>
                                 </div>
                             </div>
                             <div style={{ display: 'flex', gap: '8px' }}>

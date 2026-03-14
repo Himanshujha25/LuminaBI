@@ -75,15 +75,24 @@ function DynamicChartComponent({ config, overrideChartType }) {
               </filter>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" opacity={0.6} />
-            <XAxis dataKey={safeXKey} tick={{ fill: 'var(--text-tertiary)' }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fill: 'var(--text-tertiary)' }} tickFormatter={formatNumber} axisLine={false} tickLine={false} />
+            <XAxis 
+              dataKey={safeXKey} 
+              tick={{ fill: 'var(--text-tertiary)', fontSize: isMobile ? 10 : 12 }} 
+              axisLine={false} 
+              tickLine={false}
+              interval={isMobile ? "preserveStartEnd" : 0}
+              angle={isMobile ? -30 : 0}
+              textAnchor={isMobile ? "end" : "middle"}
+              height={isMobile ? 60 : 30}
+            />
+            <YAxis tick={{ fill: 'var(--text-tertiary)', fontSize: isMobile ? 10 : 12 }} tickFormatter={formatNumber} axisLine={false} tickLine={false} />
             <Tooltip 
                formatter={(value) => [formatNumber(value), safeYKey]}
                contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(8px)', borderColor: 'var(--border-color)', borderRadius: '12px', color: '#fff', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.5)' }} 
                itemStyle={{ color: '#fff', fontWeight: 600 }}
             />
-            <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="circle" />
-            <Line type="monotone" dataKey={safeYKey} stroke={`url(#colorLine-${instanceId})`} strokeWidth={4} filter={`url(#shadow-${instanceId})`} dot={{ r: 4, strokeWidth: 2, fill: 'var(--surface-color)' }} activeDot={{ r: 8, strokeWidth: 0, fill: '#3b82f6' }} animationDuration={1000} strokeFallback="#3b82f6" />
+            <Legend wrapperStyle={{ paddingTop: isMobile ? '5px' : '20px' }} iconType="circle" />
+            <Line type="monotone" dataKey={safeYKey} stroke={`url(#colorLine-${instanceId})`} strokeWidth={4} filter={`url(#shadow-${instanceId})`} dot={{ r: 4, strokeWidth: 2, fill: 'var(--surface-color)' }} activeDot={{ r: 8, strokeWidth: 0, fill: '#3b82f6' }} animationDuration={500} strokeFallback="#3b82f6" />
           </LineChart>
         );
 
@@ -97,14 +106,23 @@ function DynamicChartComponent({ config, overrideChartType }) {
                </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" opacity={0.6} />
-            <XAxis dataKey={safeXKey} tick={{ fill: 'var(--text-tertiary)' }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fill: 'var(--text-tertiary)' }} tickFormatter={formatNumber} axisLine={false} tickLine={false} />
+            <XAxis 
+              dataKey={safeXKey} 
+              tick={{ fill: 'var(--text-tertiary)', fontSize: isMobile ? 10 : 12 }} 
+              axisLine={false} 
+              tickLine={false}
+              interval={isMobile ? "preserveStartEnd" : 0}
+              angle={isMobile ? -30 : 0}
+              textAnchor={isMobile ? "end" : "middle"}
+              height={isMobile ? 60 : 30}
+            />
+            <YAxis tick={{ fill: 'var(--text-tertiary)', fontSize: isMobile ? 10 : 12 }} tickFormatter={formatNumber} axisLine={false} tickLine={false} />
             <Tooltip 
                formatter={(value) => [formatNumber(value), safeYKey]}
                contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(8px)', borderColor: 'var(--border-color)', borderRadius: '12px', color: '#fff' }} 
             />
-            <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="circle" />
-            <Area type="monotone" dataKey={safeYKey} stroke="#8b5cf6" fill={`url(#colorArea-${instanceId})`} strokeWidth={3} animationDuration={1000} fillOpacity={0.6} />
+            <Legend wrapperStyle={{ paddingTop: isMobile ? '5px' : '20px' }} iconType="circle" />
+            <Area type="monotone" dataKey={safeYKey} stroke="#8b5cf6" fill={`url(#colorArea-${instanceId})`} strokeWidth={3} animationDuration={500} fillOpacity={0.6} />
           </AreaChart>
         );
 
@@ -112,15 +130,24 @@ function DynamicChartComponent({ config, overrideChartType }) {
         return (
           <ScatterChart margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" opacity={0.6} />
-            <XAxis dataKey={safeXKey} name={safeXKey} tick={{ fill: 'var(--text-tertiary)' }} axisLine={false} tickLine={false} />
-            <YAxis dataKey={safeYKey} name={safeYKey} tick={{ fill: 'var(--text-tertiary)' }} tickFormatter={formatNumber} axisLine={false} tickLine={false} />
+            <XAxis 
+              dataKey={safeXKey} 
+              name={safeXKey} 
+              tick={{ fill: 'var(--text-tertiary)', fontSize: isMobile ? 10 : 12 }} 
+              axisLine={false} 
+              tickLine={false}
+              angle={isMobile ? -30 : 0}
+              textAnchor={isMobile ? "end" : "middle"}
+              height={isMobile ? 60 : 30}
+            />
+            <YAxis dataKey={safeYKey} name={safeYKey} tick={{ fill: 'var(--text-tertiary)', fontSize: isMobile ? 10 : 12 }} tickFormatter={formatNumber} axisLine={false} tickLine={false} />
             <Tooltip 
                formatter={(value) => formatNumber(value)}
                cursor={{ strokeDasharray: '3 3', stroke: 'var(--border-color)' }} 
                contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(8px)', borderColor: 'var(--border-color)', borderRadius: '12px', color: '#fff' }} 
             />
-            <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="circle" />
-            <Scatter name={safeYKey} data={chartData} fill="#ec4899" shape="circle" animationDuration={1500} />
+            <Legend wrapperStyle={{ paddingTop: isMobile ? '5px' : '20px' }} iconType="circle" />
+            <Scatter name={safeYKey} data={chartData} fill="#ec4899" shape="circle" animationDuration={750} />
           </ScatterChart>
         );
 
@@ -143,18 +170,18 @@ function DynamicChartComponent({ config, overrideChartType }) {
                contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(8px)', borderColor: 'var(--border-color)', borderRadius: '12px', color: '#fff', border: 'none' }} 
                itemStyle={{ color: '#fff', fontWeight: 'bold' }}
             />
-            <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="circle" />
+            <Legend wrapperStyle={{ paddingTop: isMobile ? '5px' : '20px' }} iconType="circle" />
             <Pie
               data={chartData}
               dataKey={safeYKey}
               nameKey={safeXKey}
               cx="50%"
               cy="50%"
-              outerRadius={130}
-              innerRadius={80} /* Made it a Donut Chart for a modern look */
+              outerRadius={isMobile ? 80 : 130}
+              innerRadius={isMobile ? 50 : 80} /* Made it a Donut Chart for a modern look */
               paddingAngle={5}
               filter={`url(#pieShadow-${instanceId})`}
-              animationDuration={1000}
+              animationDuration={850}
             >
               {chartData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={`url(#colorPie-${instanceId}-${index % COLORS.length})`} stroke="transparent" style={{ outline: 'none' }} />
@@ -174,22 +201,44 @@ function DynamicChartComponent({ config, overrideChartType }) {
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" opacity={0.6} />
-            <XAxis dataKey={safeXKey} tick={{ fill: 'var(--text-tertiary)' }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fill: 'var(--text-tertiary)' }} tickFormatter={formatNumber} axisLine={false} tickLine={false} />
+            <XAxis 
+              dataKey={safeXKey} 
+              tick={{ fill: 'var(--text-tertiary)', fontSize: isMobile ? 10 : 12 }} 
+              axisLine={false} 
+              tickLine={false}
+              interval={isMobile ? "preserveStartEnd" : 0}
+              angle={isMobile ? -30 : 0}
+              textAnchor={isMobile ? "end" : "middle"}
+              height={isMobile ? 60 : 30}
+            />
+            <YAxis tick={{ fill: 'var(--text-tertiary)', fontSize: isMobile ? 10 : 12 }} tickFormatter={formatNumber} axisLine={false} tickLine={false} />
             <Tooltip 
                formatter={(value) => [formatNumber(value), safeYKey]}
                contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(8px)', borderColor: 'var(--border-color)', borderRadius: '12px', color: '#fff' }} 
                cursor={{fill: 'var(--border-color)', opacity: 0.2 }} 
             />
-            <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="circle" />
-            <Bar dataKey={safeYKey} fill={`url(#colorBar-${instanceId})`} radius={[6, 6, 0, 0]} maxBarSize={60} animationDuration={1000} fillFallback="#3b82f6" />
+            <Legend wrapperStyle={{ paddingTop: isMobile ? '5px' : '20px' }} iconType="circle" />
+            <Bar dataKey={safeYKey} fill={`url(#colorBar-${instanceId})`} radius={[6, 6, 0, 0]} maxBarSize={60} animationDuration={500} fillFallback="#3b82f6" />
           </BarChart>
         );
     }
   };
 
+  const [isMobile, setIsMobile] = React.useState(window.innerWidth < 768);
+
+  React.useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
-    <div style={{ width: '100%', height: '400px', minHeight: '400px', position: 'relative' }}>
+    <div style={{ 
+      width: '100%', 
+      height: isMobile ? '300px' : '400px', 
+      minHeight: isMobile ? '300px' : '400px', 
+      position: 'relative' 
+    }}>
       <ResponsiveContainer width="100%" height="100%">
         {renderChart()}
       </ResponsiveContainer>
