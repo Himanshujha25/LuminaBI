@@ -63,7 +63,7 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
     let controller = new AbortController();
     if (activeDataset?.id && !chatHistories[activeDataset.id]) {
         setIsSideLoading(true);
-        axios.get(`http://localhost:5000/api/datasets/${activeDataset.id}/chats`, { 
+        axios.get(`https://luminabi.onrender.com/api/datasets/${activeDataset.id}/chats`, { 
           signal: controller.signal,
           timeout: 10000 
         })
@@ -134,7 +134,7 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
     }));
 
     try {
-      const res = await axios.post('http://localhost:5000/api/query', { 
+      const res = await axios.post('https://luminabi.onrender.com/api/query', { 
         prompt: finalPrompt,
         datasetId: activeDataset.id,
         history: history.slice(-6) 
@@ -233,7 +233,7 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
     if (!activeDataset) return;
     if (window.confirm('Are you sure you want to clear the entire chat history for this dataset?')) {
       try {
-        await axios.delete(`http://localhost:5000/api/datasets/${activeDataset.id}/chats`);
+        await axios.delete(`https://luminabi.onrender.com/api/datasets/${activeDataset.id}/chats`);
         setChatHistories(prev => ({ ...prev, [activeDataset.id]: [] }));
         setPrompt('');
         setSidePrompt('');
@@ -252,7 +252,7 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
     const msg = history[index];
     if (msg.id) {
        try {
-          await axios.delete(`http://localhost:5000/api/chats/${msg.id}`);
+          await axios.delete(`https://luminabi.onrender.com/api/chats/${msg.id}`);
        } catch (e) {
           console.error("Failed to delete from backend", e);
        }
@@ -264,11 +264,11 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
       // If we remove a user message, also remove the subsequent AI message if it exists
       if (newHistory[index].role === 'user' && newHistory[index+1]?.role === 'ai') {
         const nextMsg = newHistory[index+1];
-        if (nextMsg.id) axios.delete(`http://localhost:5000/api/chats/${nextMsg.id}`).catch(()=>null);
+        if (nextMsg.id) axios.delete(`https://luminabi.onrender.com/api/chats/${nextMsg.id}`).catch(()=>null);
         newHistory.splice(index, 2);
       } else if (newHistory[index].role === 'ai' && newHistory[index-1]?.role === 'user') {
         const prevMsg = newHistory[index-1];
-        if (prevMsg.id) axios.delete(`http://localhost:5000/api/chats/${prevMsg.id}`).catch(()=>null);
+        if (prevMsg.id) axios.delete(`https://luminabi.onrender.com/api/chats/${prevMsg.id}`).catch(()=>null);
         newHistory.splice(index-1, 2); // If removing an AI message, also remove the user message before it
       } else {
         newHistory.splice(index, 1);
