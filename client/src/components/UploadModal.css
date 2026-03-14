@@ -252,7 +252,9 @@
     flex-direction: column;
     gap: 12px;
   }
-  .btn-primary, .btn-secondary {
+  .modal-actions .btn-primary, 
+  .modal-actions .btn-secondary,
+  .auth-card .btn-primary {
     width: 100%;
     padding: 14px;
   }

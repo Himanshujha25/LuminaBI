@@ -176,6 +176,13 @@
   .home-nav-links {
     gap: 12px;
   }
+
+  .home-nav-links .btn-primary, 
+  .home-nav-links .btn-secondary {
+    padding: 8px 16px;
+    font-size: 14px;
+    white-space: nowrap;
+  }
   
   .hero-section {
     padding: 60px 20px;
