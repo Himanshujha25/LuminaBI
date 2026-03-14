@@ -16,6 +16,14 @@ const formatNumber = (num) => {
 };
 
 function DynamicChartComponent({ config, overrideChartType }) {
+  const [isMobile, setIsMobile] = React.useState(window.innerWidth < 768);
+
+  React.useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Unique ID for gradients to prevent clashing when multiple charts exist
   const instanceId = React.useId().replace(/:/g, "");
 
@@ -223,14 +231,6 @@ function DynamicChartComponent({ config, overrideChartType }) {
         );
     }
   };
-
-  const [isMobile, setIsMobile] = React.useState(window.innerWidth < 768);
-
-  React.useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   return (
     <div style={{ 

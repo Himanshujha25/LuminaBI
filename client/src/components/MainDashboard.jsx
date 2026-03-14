@@ -334,7 +334,7 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
       <div className="dashboard-main">
         <div className="search-header">
           <div className="dataset-selector-wrapper">
-            <span className="text-secondary" style={{fontSize: '14px'}}>Analyzing:</span>
+            <span className="dataset-selector-label">Analyzing:</span>
             <select 
               className="dataset-selector" 
               value={activeDataset?.id || ''} 
@@ -396,9 +396,9 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
                          <span className="kpi-value">{(currentData.chart_type || 'chart').toUpperCase()}</span>
                       </div>
                    </div>
-                   <div className="kpi-card glass-panel" style={{ flex: 2 }}>
+                   <div className="kpi-card glass-panel executive-summary-card">
                       <span className="kpi-label">Executive Summary</span>
-                      <p className="kpi-desc text-secondary" style={{ fontSize: '15px', lineHeight: '1.6' }}>{currentData.explanation}</p>
+                      <p className="kpi-desc text-secondary">{currentData.explanation}</p>
                    </div>
                 </div>
 
@@ -475,36 +475,36 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
                 </div>
              </div>
           ) : (
-            <div className="empty-state animate-fade-in" style={{ padding: '60px 0' }}>
-               <div className="discovery-header" style={{ textAlign: 'center', marginBottom: '60px' }}>
-                  <div className="empty-icon glass-panel" style={{ margin: '0 auto 32px auto', width: '90px', height: '90px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Sparkles size={44} className="gradient-text" style={{ animation: 'pulse 2s infinite' }} />
+            <div className="empty-state animate-fade-in">
+               <div className="discovery-header">
+                  <div className="empty-icon glass-panel">
+                    <Sparkles size={44} className="gradient-text" />
                   </div>
-                  <h1 style={{ fontSize: '3.2rem', fontWeight: 900, marginBottom: '16px', letterSpacing: '-2px', lineHeight: '1.1' }}>
+                  <h1>
                     Lumina <span className="gradient-text">Conversational BI</span>
                   </h1>
-                  <p className="text-secondary" style={{ fontSize: '1.2rem', maxWidth: '650px', margin: '0 auto', lineHeight: '1.6' }}>
-                    The industry standard for rapid data exploration. Ask anything—from trend analysis to complex aggregations—and let the AI visualize the future.
+                  <p className="text-secondary">
+                    The industry standard for rapid data exploration. Ask anything—from trend analysis to many more—and let the AI visualize the future.
                   </p>
                </div>
 
-               <div className="suggestion-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', width: '100%', maxWidth: '1000px', margin: '0 auto' }}>
+               <div className="suggestion-grid">
                   <div className="suggestion-card glass-panel" onClick={() => setPrompt("Give me a monthly trend of orders")}>
-                     <Activity size={28} color="var(--accent-blue)" />
-                     <h3 style={{ margin: '12px 0 8px 0', fontSize: '18px' }}>Predictive Trends</h3>
-                     <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>"Show me the monthly trend of order volume for the last quarter."</p>
+                     <div className="suggestion-icon-box blue"><Activity size={24} /></div>
+                     <h3 className="suggestion-title">Predictive Trends</h3>
+                     <p className="suggestion-text">"Show me the monthly trend of order volume for the last quarter."</p>
                   </div>
                   <div className="suggestion-card glass-panel" onClick={() => setPrompt("What is the revenue breakdown by product category?")}>
-                     <PieChart size={28} color="#a855f7" />
-                     <h3 style={{ margin: '12px 0 8px 0', fontSize: '18px' }}>Composition Analysis</h3>
-                     <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>"What is the revenue breakdown by product category as a pie chart?"</p>
+                     <div className="suggestion-icon-box purple"><PieChart size={24} /></div>
+                     <h3 className="suggestion-title">Composition Analysis</h3>
+                     <p className="suggestion-text">"What is the revenue breakdown by product category as a pie chart?"</p>
                   </div>
                   <div className="suggestion-card glass-panel" onClick={() => setPrompt("Compare the performance of our top 3 regions")}>
-                     <ListFilter size={28} color="#10b981" />
-                     <h3 style={{ margin: '12px 0 8px 0', fontSize: '18px' }}>Comparative BI</h3>
-                     <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>"Compare the performance of our top 3 regions by customer growth."</p>
+                     <div className="suggestion-icon-box green"><ListFilter size={24} /></div>
+                     <h3 className="suggestion-title">Comparative BI</h3>
+                     <p className="suggestion-text">"Compare the performance of our top 3 regions by customer growth."</p>
                   </div>
-               </div>
+                </div>
             </div>
           )}
 

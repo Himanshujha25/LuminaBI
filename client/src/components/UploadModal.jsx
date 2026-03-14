@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   UploadCloud, File, CheckCircle, AlertCircle, X, 
   Loader2, Gauge, Zap, Clock, Database, ChevronRight, 
-  Server, ShieldCheck, Activity, Box, Terminal, Cpu
+  Server, ShieldCheck, Activity, Box, Terminal, Cpu, Settings
 } from 'lucide-react';
 import axios from 'axios';
 import './UploadModal.css';
