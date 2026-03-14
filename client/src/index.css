@@ -99,6 +99,100 @@ input, textarea {
   }
 }
 
+/* --- Shared Premium Modal System --- */
+.modal-overlay-minimal {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(8, 10, 15, 0.85);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+}
+
+.modal-container-minimal {
+  width: 100%;
+  max-width: 480px;
+  background: #ffffff;
+  border-radius: 28px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.35);
+  padding: 44px;
+  animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme='dark'] .modal-container-minimal {
+  background: #11141d;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.top-progress-indicator {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--surface-hover);
+}
+
+.indicator-fill {
+  height: 100%;
+  background: var(--accent-blue);
+  box-shadow: 0 0 10px rgba(37, 99, 235, 0.4);
+  transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.phase-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 36px;
+}
+
+.phase-count {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--accent-blue);
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+
+.phase-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.close-trigger {
+  color: var(--text-tertiary);
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.close-trigger:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+@keyframes scaleUp {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in { animation: fadeIn 0.3s ease; }
+.animate-scale-up { animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+
 /* Scrollbar Styling */
 ::-webkit-scrollbar {
   width: 8px;
