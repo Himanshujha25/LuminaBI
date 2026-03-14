@@ -52,7 +52,7 @@ const UploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
     formData.append('tablename', tableName);
 
     try {
-      const res = await axios.post('http://localhost:5000/api/datasets/upload', formData, {
+      const res = await axios.post('https://luminabi.onrender.com/api/datasets/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         onUploadProgress: (progressEvent) => {
            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);

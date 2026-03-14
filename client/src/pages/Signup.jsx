@@ -17,7 +17,7 @@ const Signup = ({ setToken }) => {
     setError(null);
     setLoading(true);
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/register', { name, email, password });
+      const res = await axios.post('https://luminabi.onrender.com/api/auth/register', { name, email, password });
       setToken(res.data.token);
       localStorage.setItem('token', res.data.token);
       navigate('/dashboard');

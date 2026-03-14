@@ -88,7 +88,7 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
     }));
 
     try {
-      const res = await axios.post('http://localhost:5000/api/query', { 
+      const res = await axios.post('https://luminabi.onrender.com/api/query', { 
         prompt: finalPrompt,
         datasetId: activeDataset.id,
         history: history.slice(-6) // send last 6 messages mapped to THIS dataset

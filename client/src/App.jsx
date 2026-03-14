@@ -49,7 +49,7 @@ function App() {
 
   const handleDeleteDataset = async (id) => {
     try {
-      await axios.delete(`http://localhost:5000/api/datasets/${id}`);
+      await axios.delete(`https://luminabi.onrender.com/api/datasets/${id}`);
       const updated = datasets.filter(d => d.id !== id);
       setDatasets(updated);
       if (activeDataset && activeDataset.id === id) {
@@ -62,7 +62,7 @@ function App() {
 
   const fetchDatasets = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/datasets');
+      const res = await axios.get('https://luminabi.onrender.com/api/datasets');
       setDatasets(res.data);
       if (res.data.length > 0 && !activeDataset) {
         setActiveDataset(res.data[0]);
