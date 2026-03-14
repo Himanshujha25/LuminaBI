@@ -97,16 +97,17 @@
 .btn-primary {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   background: var(--surface-hover);
   color: var(--text-primary);
   border: 1px solid var(--border-color);
-  padding: 10px 20px;
+  padding: 10px 24px;
   border-radius: 9999px;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .btn-primary:hover {
