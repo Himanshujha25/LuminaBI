@@ -9,6 +9,7 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import { CheckCircle, AlertCircle, X } from 'lucide-react';
 import axios from 'axios';
+import { API_URL } from './config';
 
 function App() {
   const [isDark, setIsDark] = useState(false);
@@ -59,7 +60,7 @@ function App() {
 
   const handleDeleteDataset = async (id) => {
     try {
-      await axios.delete(`https://luminabi.onrender.com/api/datasets/${id}`);
+      await axios.delete(`${API_URL}/datasets/${id}`);
       const updated = datasets.filter(d => d.id !== id);
       setDatasets(updated);
       if (activeDataset && activeDataset.id === id) {
@@ -72,7 +73,7 @@ function App() {
 
   const fetchDatasets = async () => {
     try {
-      const res = await axios.get('https://luminabi.onrender.com/api/datasets');
+      const res = await axios.get(`${API_URL}/datasets`);
       setDatasets(res.data);
       if (res.data.length > 0 && !activeDataset) {
         setActiveDataset(res.data[0]);

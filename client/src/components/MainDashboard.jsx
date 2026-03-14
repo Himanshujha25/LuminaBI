@@ -489,17 +489,17 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
                </div>
 
                <div className="suggestion-grid">
-                  <div className="suggestion-card glass-panel" onClick={() => setPrompt("Give me a monthly trend of orders")}>
+                  <div className="suggestion-card glass-panel" onClick={() => handleSubmit("Give me a monthly trend of orders")}>
                      <div className="suggestion-icon-box blue"><Activity size={24} /></div>
                      <h3 className="suggestion-title">Predictive Trends</h3>
                      <p className="suggestion-text">"Show me the monthly trend of order volume for the last quarter."</p>
                   </div>
-                  <div className="suggestion-card glass-panel" onClick={() => setPrompt("What is the revenue breakdown by product category?")}>
+                  <div className="suggestion-card glass-panel" onClick={() => handleSubmit("What is the revenue breakdown by product category?")}>
                      <div className="suggestion-icon-box purple"><PieChart size={24} /></div>
                      <h3 className="suggestion-title">Composition Analysis</h3>
                      <p className="suggestion-text">"What is the revenue breakdown by product category as a pie chart?"</p>
                   </div>
-                  <div className="suggestion-card glass-panel" onClick={() => setPrompt("Compare the performance of our top 3 regions")}>
+                  <div className="suggestion-card glass-panel" onClick={() => handleSubmit("Compare the performance of our top 3 regions")}>
                      <div className="suggestion-icon-box green"><ListFilter size={24} /></div>
                      <h3 className="suggestion-title">Comparative BI</h3>
                      <p className="suggestion-text">"Compare the performance of our top 3 regions by customer growth."</p>

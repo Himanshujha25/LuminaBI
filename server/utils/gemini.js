@@ -19,7 +19,7 @@ async function generateSQL(prompt, tableName, columnsInfo, history = []) {
   const schemaDescription = columnsInfo.map(c => `- ${c.original} (Database name: "${c.name}", Type: ${c.type})`).join('\n');
 
   const model = genAI.getGenerativeModel({
-    model: "gemini-2.5-flash", // Using the correct available model ID for this project
+    model: "gemini-1.5-flash", // Corrected model ID
     generationConfig: {
       responseMimeType: "application/json",
       temperature: 0.1, // Lower temperature for more deterministic/accurate SQL
