@@ -56,10 +56,10 @@ const Signup = ({ setToken }) => {
           </div>
           
           <div className="input-group">
-            <label>Email ID</label>
+            <label>Email Address</label>
             <div className="input-with-icon">
               <Mail className="input-icon" size={18} />
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="you@company.com" className="premium-input" />
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="name@email.com" className="premium-input" />
             </div>
           </div>
           
