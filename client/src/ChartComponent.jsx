@@ -1,35 +1,37 @@
+import React from 'react';
 import { 
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, 
   AreaChart, Area, ScatterChart, Scatter,
   XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, Legend 
 } from "recharts";
 
-// Premium Gradients and Colors for UI
+// Premium Gradients and Colors
 const COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899'];
 const PIE_COLORS = ['url(#colorPie0)', 'url(#colorPie1)', 'url(#colorPie2)', 'url(#colorPie3)', 'url(#colorPie4)', 'url(#colorPie5)'];
 
+// Number formatter for beautiful tooltips (e.g. 1000000 -> 1,000,000)
+const formatNumber = (num) => {
+  if (typeof num !== 'number') return num;
+  return new Intl.NumberFormat('en-US').format(num);
+};
+
 function DynamicChartComponent({ config, overrideChartType }) {
-  if (!config || !config.data || config.data.length === 0) return <p style={{ color: 'white', padding: '20px' }}>No data to display.</p>;
+  if (!config || !config.data || config.data.length === 0) return <p style={{ color: 'var(--text-secondary)', padding: '20px', textAlign: 'center' }}>No data to display.</p>;
 
   const { chart_type, x_axis_column, y_axis_column, data } = config;
   const actualChartType = overrideChartType || chart_type || 'bar';
 
-  // 1. SMART COLUMN DETECTION
+  // Smart Column Detection
   const availableKeys = Object.keys(data[0] || {});
   const safeXKey = availableKeys.includes(x_axis_column) ? x_axis_column : availableKeys[0];
   const safeYKey = availableKeys.includes(y_axis_column) ? y_axis_column : (availableKeys[1] || availableKeys[0]);
 
-  // 2. FAIL-SAFE NUMBER PARSING (AND 200 ROW LIMIT TO PREVENT BROWSER CRASH)
+  // Parse Numbers safely
   const chartData = data.slice(0, 200).map(d => ({
     ...d,
     [safeYKey]: Number(d[safeYKey] || 0) 
   }));
 
-  // DEBUGGING: Check your browser console (F12) to ensure data looks like [{ category: "A", count: 15 }]
-  console.log("Chart Rendering Data:", chartData);
-  console.log("Using X Key:", safeXKey, "| Using Y Key:", safeYKey);
-
-  // 3. RENDER CHART (Removed manual width/height props!)
   const renderChart = () => {
     switch (actualChartType?.toLowerCase()) {
       case 'line':
@@ -40,16 +42,20 @@ function DynamicChartComponent({ config, overrideChartType }) {
                 <stop offset="5%" stopColor="#3b82f6" stopOpacity={1}/>
                 <stop offset="95%" stopColor="#8b5cf6" stopOpacity={1}/>
               </linearGradient>
+              <filter id="shadow" height="200%">
+                <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#3b82f6" floodOpacity="0.3"/>
+              </filter>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" opacity={0.6} />
             <XAxis dataKey={safeXKey} tick={{ fill: 'var(--text-tertiary)' }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fill: 'var(--text-tertiary)' }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fill: 'var(--text-tertiary)' }} tickFormatter={formatNumber} axisLine={false} tickLine={false} />
             <Tooltip 
-               contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(8px)', borderColor: 'var(--border-color)', borderRadius: '12px', color: '#fff' }} 
-               itemStyle={{ color: '#fff' }}
+               formatter={(value) => [formatNumber(value), safeYKey]}
+               contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(8px)', borderColor: 'var(--border-color)', borderRadius: '12px', color: '#fff', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.5)' }} 
+               itemStyle={{ color: '#fff', fontWeight: 600 }}
             />
             <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="circle" />
-            <Line type="monotone" dataKey={safeYKey} stroke="url(#colorLine)" strokeWidth={4} dot={{ r: 4, strokeWidth: 2, fill: 'var(--surface-color)' }} activeDot={{ r: 8, strokeWidth: 0, fill: '#3b82f6' }} />
+            <Line type="monotone" dataKey={safeYKey} stroke="url(#colorLine)" strokeWidth={4} filter="url(#shadow)" dot={{ r: 4, strokeWidth: 2, fill: 'var(--surface-color)' }} activeDot={{ r: 8, strokeWidth: 0, fill: '#3b82f6' }} animationDuration={1500} />
           </LineChart>
         );
 
@@ -59,18 +65,18 @@ function DynamicChartComponent({ config, overrideChartType }) {
             <defs>
                <linearGradient id="colorArea" x1="0" y1="0" x2="0" y2="1">
                  <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8}/>
-                 <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                 <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.05}/>
                </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" opacity={0.6} />
             <XAxis dataKey={safeXKey} tick={{ fill: 'var(--text-tertiary)' }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fill: 'var(--text-tertiary)' }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fill: 'var(--text-tertiary)' }} tickFormatter={formatNumber} axisLine={false} tickLine={false} />
             <Tooltip 
+               formatter={(value) => [formatNumber(value), safeYKey]}
                contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(8px)', borderColor: 'var(--border-color)', borderRadius: '12px', color: '#fff' }} 
-               itemStyle={{ color: '#fff' }}
             />
             <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="circle" />
-            <Area type="monotone" dataKey={safeYKey} stroke="#8b5cf6" fill="url(#colorArea)" strokeWidth={3} />
+            <Area type="monotone" dataKey={safeYKey} stroke="#8b5cf6" fill="url(#colorArea)" strokeWidth={3} animationDuration={1500} />
           </AreaChart>
         );
 
@@ -79,13 +85,14 @@ function DynamicChartComponent({ config, overrideChartType }) {
           <ScatterChart margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" opacity={0.6} />
             <XAxis dataKey={safeXKey} name={safeXKey} tick={{ fill: 'var(--text-tertiary)' }} axisLine={false} tickLine={false} />
-            <YAxis dataKey={safeYKey} name={safeYKey} tick={{ fill: 'var(--text-tertiary)' }} axisLine={false} tickLine={false} />
+            <YAxis dataKey={safeYKey} name={safeYKey} tick={{ fill: 'var(--text-tertiary)' }} tickFormatter={formatNumber} axisLine={false} tickLine={false} />
             <Tooltip 
+               formatter={(value) => formatNumber(value)}
                cursor={{ strokeDasharray: '3 3', stroke: 'var(--border-color)' }} 
                contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(8px)', borderColor: 'var(--border-color)', borderRadius: '12px', color: '#fff' }} 
             />
             <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="circle" />
-            <Scatter name={safeYKey} data={chartData} fill="#ec4899" shape="circle" />
+            <Scatter name={safeYKey} data={chartData} fill="#ec4899" shape="circle" animationDuration={1500} />
           </ScatterChart>
         );
 
@@ -95,14 +102,18 @@ function DynamicChartComponent({ config, overrideChartType }) {
             <defs>
               {COLORS.map((color, i) => (
                 <linearGradient key={`pieGrad-${i}`} id={`colorPie${i}`} x1="0" y1="0" x2="1" y2="1">
-                   <stop offset="0%" stopColor={color} stopOpacity={0.6}/>
+                   <stop offset="0%" stopColor={color} stopOpacity={0.7}/>
                    <stop offset="100%" stopColor={color} stopOpacity={1}/>
                 </linearGradient>
               ))}
+              <filter id="pieShadow" height="130%">
+                <feDropShadow dx="0" dy="8" stdDeviation="6" floodColor="#000" floodOpacity="0.2"/>
+              </filter>
             </defs>
             <Tooltip 
-               contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(8px)', borderColor: 'var(--border-color)', borderRadius: '12px', color: '#fff' }} 
-               itemStyle={{ color: '#fff' }}
+               formatter={(value) => formatNumber(value)}
+               contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(8px)', borderColor: 'var(--border-color)', borderRadius: '12px', color: '#fff', border: 'none' }} 
+               itemStyle={{ color: '#fff', fontWeight: 'bold' }}
             />
             <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="circle" />
             <Pie
@@ -111,12 +122,14 @@ function DynamicChartComponent({ config, overrideChartType }) {
               nameKey={safeXKey}
               cx="50%"
               cy="50%"
-              outerRadius={120}
-              innerRadius={60}
-              label={({ name, value }) => `${name}: ${value}`}
+              outerRadius={130}
+              innerRadius={80} /* Made it a Donut Chart for a modern look */
+              paddingAngle={5}
+              filter="url(#pieShadow)"
+              animationDuration={1500}
             >
               {chartData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} stroke="var(--surface-color)" strokeWidth={3} style={{ outline: 'none' }} />
+                <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} stroke="transparent" style={{ outline: 'none' }} />
               ))}
             </Pie>
           </PieChart>
@@ -134,20 +147,19 @@ function DynamicChartComponent({ config, overrideChartType }) {
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" opacity={0.6} />
             <XAxis dataKey={safeXKey} tick={{ fill: 'var(--text-tertiary)' }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fill: 'var(--text-tertiary)' }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fill: 'var(--text-tertiary)' }} tickFormatter={formatNumber} axisLine={false} tickLine={false} />
             <Tooltip 
+               formatter={(value) => [formatNumber(value), safeYKey]}
                contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(8px)', borderColor: 'var(--border-color)', borderRadius: '12px', color: '#fff' }} 
-               itemStyle={{ color: '#fff' }}
-               cursor={{fill: 'var(--border-color)', opacity: 0.4 }} 
+               cursor={{fill: 'var(--border-color)', opacity: 0.2 }} 
             />
             <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="circle" />
-            <Bar dataKey={safeYKey} fill="url(#colorBar)" radius={[6, 6, 0, 0]} maxBarSize={60} />
+            <Bar dataKey={safeYKey} fill="url(#colorBar)" radius={[6, 6, 0, 0]} maxBarSize={60} animationDuration={1500} />
           </BarChart>
         );
     }
   };
 
-  // The wrapper div MUST have a strict pixel height, and ResponsiveContainer handles the rest natively
   return (
     <div style={{ width: '100%', height: '400px', minHeight: '400px', position: 'relative' }}>
       <ResponsiveContainer width="100%" height="100%">
