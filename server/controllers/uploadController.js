@@ -8,7 +8,7 @@ const detectType = (value) => {
     value = value.trim();
     if (!isNaN(value) && !isNaN(parseFloat(value))) {
         if (value.includes('.')) return 'DOUBLE PRECISION';
-        return 'INTEGER';
+        return 'BIGINT';
     }
     if (!isNaN(Date.parse(value)) && /[-/]/.test(value)) {
         return 'TIMESTAMP';
