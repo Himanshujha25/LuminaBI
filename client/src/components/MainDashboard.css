@@ -620,6 +620,10 @@
     width: 80px;
     height: 80px;
   }
+
+  .mobile-assistant-toggle {
+    bottom: 90px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -656,4 +660,196 @@
   .suggestion-chips button {
     width: 100%;
   }
+}
+
+/* --- CUSTOM SCROLLBARS FOR DASHBOARD CONTENT --- */
+.dashboard-content::-webkit-scrollbar,
+.chat-history::-webkit-scrollbar {
+  width: 8px;
+}
+.dashboard-content::-webkit-scrollbar-track,
+.chat-history::-webkit-scrollbar-track {
+  background: transparent;
+}
+.dashboard-content::-webkit-scrollbar-thumb,
+.chat-history::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 10px;
+}
+.dashboard-content::-webkit-scrollbar-thumb:hover,
+.chat-history::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}
+
+/* --- REUSABLE UI BUTTONS --- */
+.ui-btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  background: var(--surface-hover);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.ui-btn:hover {
+  background: var(--accent-light);
+  color: var(--accent-blue);
+  border-color: var(--accent-blue);
+}
+
+.ui-btn.active {
+  background: var(--accent-blue);
+  color: #fff;
+  border-color: var(--accent-blue);
+  box-shadow: 0 4px 10px -2px rgba(59, 130, 246, 0.4);
+}
+
+.ui-btn.icon-only {
+  padding: 6px;
+}
+.ui-btn.icon-only.small {
+  padding: 4px 8px;
+}
+.ui-btn.danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border-color: #ef4444;
+}
+.divider-vert {
+  width: 1px;
+  height: 20px;
+  background: var(--border-color);
+  margin: 0 4px;
+}
+
+/* --- DRAG AND DROP STYLES --- */
+.draggable-card {
+  padding: 24px;
+  position: relative;
+  transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+  cursor: grab;
+  /* Premium glass shadow */
+  box-shadow: 0 4px 15px -5px rgba(0, 0, 0, 0.1);
+}
+
+.draggable-card:active {
+  cursor: grabbing;
+}
+
+.draggable-card.dragging {
+  opacity: 0.4;
+  transform: scale(0.98);
+  border: 2px dashed var(--accent-blue);
+}
+
+.draggable-card:hover {
+  box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+  border-color: var(--accent-blue);
+}
+
+.drag-handle {
+  position: absolute;
+  top: 18px;
+  left: 12px;
+  cursor: grab;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+  background: var(--surface-hover);
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.draggable-card:hover .drag-handle {
+  opacity: 1;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+/* --- ENHANCED CHAT BUBBLES --- */
+.chat-chip-btn {
+  text-align: left;
+  padding: 8px 12px;
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--accent-blue);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-chip-btn:hover {
+  background: var(--accent-light);
+  border-color: var(--accent-blue);
+  transform: translateX(4px);
+}
+
+/* --- SIDEBAR INPUT POLISH --- */
+.sidebar-input-area {
+  padding: 16px;
+  border-top: 1px solid var(--border-color);
+  background: var(--surface-color);
+  border-bottom-left-radius: var(--radius-lg);
+  border-bottom-right-radius: var(--radius-lg);
+}
+
+.side-search-container {
+  display: flex;
+  align-items: center;
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 9999px;
+  padding: 6px 6px 6px 16px;
+  transition: all 0.3s;
+}
+
+.side-search-container:focus-within {
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+.side-search-container input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.side-send-btn {
+  background: var(--accent-blue);
+  color: white;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  transition: all 0.2s;
+}
+
+.side-send-btn:not(:disabled):hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.4);
+  cursor: pointer;
+}
+
+.side-send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

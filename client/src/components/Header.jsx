@@ -11,7 +11,7 @@ const getInitials = (name) => {
 };
 
 const Header = ({ 
-  userName = "Himanshu", // Add userName to your props (defaulted for testing)
+  userName = "Himanshu", 
   onUploadClick, 
   onManageClick, 
   toggleTheme, 
@@ -20,66 +20,96 @@ const Header = ({
   uploadState 
 }) => {
   return (
-    <header className="app-header glass-panel">
-      <div className="header-logo">
-        <div className="logo-icon">
-          <BarChart2 size={24} color="#fff" />
-        </div>
-        <h1 className="logo-text">Lumina <span className="gradient-text">BI</span> Dashboard</h1>
-      </div>
-      
-      <div className="header-actions">
-        {uploadState && uploadState.uploading && (
-           <div className="global-upload-indicator" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '6px 16px', background: 'var(--surface-color)', borderRadius: '99px', border: '1px solid var(--accent-blue)', color: 'var(--text-primary)', fontSize: '13px', marginRight: '8px' }}>
-              <Loader2 className="spinner-icon" size={16} style={{ animation: 'spin 1s linear infinite', color: 'var(--accent-blue)' }} />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: '120px' }}>
-                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontWeight: 600 }}>{uploadState.progress === 100 ? 'Processing...' : 'Uploading...'}</span>
-                    <span style={{ color: 'var(--accent-blue)' }}>{uploadState.progress}%</span>
-                 </div>
-                 <div style={{ width: '100%', height: '4px', background: 'var(--surface-hover)', borderRadius: '2px', overflow: 'hidden' }}>
-                    <div style={{ width: `${uploadState.progress}%`, height: '100%', background: 'var(--accent-blue)', transition: 'width 0.2s' }}></div>
-                 </div>
-              </div>
-           </div>
-        )}
-        {uploadState && !uploadState.uploading && uploadState.step === 2 && (
-           <div className="global-upload-indicator animate-fade-in" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 12px', background: 'var(--surface-color)', borderRadius: '99px', border: '1px solid #10b981', color: '#10b981', fontSize: '13px', marginRight: '8px', fontWeight: 600 }}>
-              <CheckCircle size={16} /> Ready
-           </div>
-        )}
-        {uploadState && !uploadState.uploading && uploadState.error && (
-           <div className="global-upload-indicator animate-fade-in" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 12px', background: 'var(--surface-color)', borderRadius: '99px', border: '1px solid #ef4444', color: '#ef4444', fontSize: '13px', marginRight: '8px', fontWeight: 600 }}>
-              <AlertCircle size={16} /> Error
-           </div>
-        )}
-
-        <button className="theme-toggle" onClick={toggleTheme} title="Toggle Theme">
-          {isDark ? <Sun size={20} /> : <Moon size={20} />}
-        </button>
-        <button className="btn-manage" onClick={onManageClick} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--surface-color)', color: 'var(--text-primary)', cursor: 'pointer', transition: 'all 0.2s' }}>
-          <Database size={16} />
-          <span>Manage Data</span>
-        </button>
-        <button className="btn-upload" onClick={onUploadClick}>
-          <UploadCloud size={18} />
-          <span>Upload CSV Data</span>
-        </button>
-
-        <div className="divider-vertical" style={{ width: '1px', height: '24px', background: 'var(--border-color)', margin: '0 8px' }}></div>
-
-        {/* --- USER AVATAR BADGE --- */}
-        <div className="user-profile-badge" title={userName}>
-          <div className="user-avatar">
-            {getInitials(userName)}
+    <>
+      <header className="app-header glass-panel">
+        <div className="header-logo">
+          <div className="logo-icon">
+            <BarChart2 size={24} color="#fff" />
           </div>
+          {/* Enhanced: Hides only "Dashboard" on mobile so "Lumina BI" still shows */}
+          <h1 className="logo-text">
+            Lumina <span className="gradient-text">BI</span> <span className="hide-on-mobile">Dashboard</span>
+          </h1>
         </div>
+        
+        <div className="header-actions">
+          {/* Upload Status Indicators */}
+          {uploadState && uploadState.uploading && (
+             <div className="status-indicator uploading">
+                <Loader2 className="spinner-icon" size={16} />
+                <div className="progress-container">
+                   <div className="progress-text">
+                      <span>{uploadState.progress === 100 ? 'Processing...' : 'Uploading...'}</span>
+                      <span className="progress-percentage">{uploadState.progress}%</span>
+                   </div>
+                   <div className="progress-bar-bg">
+                      <div className="progress-bar-fill" style={{ width: `${uploadState.progress}%` }}></div>
+                   </div>
+                </div>
+             </div>
+          )}
+          {uploadState && !uploadState.uploading && uploadState.step === 2 && (
+             <div className="status-indicator success animate-fade-in">
+                <CheckCircle size={16} /> Ready
+             </div>
+          )}
+          {uploadState && !uploadState.uploading && uploadState.error && (
+             <div className="status-indicator error animate-fade-in">
+                <AlertCircle size={16} /> Error
+             </div>
+          )}
 
-        <button className="btn-logout" onClick={onLogout} title="Log Out">
-          <LogOut size={18} />
-        </button>
-      </div>
-    </header>
+          {/* Desktop Only Tools */}
+          <button className="icon-btn desktop-only" onClick={toggleTheme} title="Toggle Theme">
+            {isDark ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
+          
+          <button className="btn-secondary desktop-only" onClick={onManageClick}>
+            <Database size={16} />
+            <span>Manage Data</span>
+          </button>
+          
+          <button className="btn-primary desktop-only" onClick={onUploadClick}>
+            <UploadCloud size={18} />
+            <span>Upload CSV</span>
+          </button>
+
+          <div className="divider-vertical desktop-only"></div>
+
+          {/* User Avatar - Visible on Desktop AND Mobile */}
+          <div className="user-profile-badge" title={userName}>
+            <div className="user-avatar">
+              {getInitials(userName)}
+            </div>
+          </div>
+
+          <button className="icon-btn btn-logout desktop-only" onClick={onLogout} title="Log Out">
+            <LogOut size={18} />
+          </button>
+        </div>
+      </header>
+
+      {/* Mobile Bottom Navigation Bar */}
+      <nav className="mobile-bottom-bar glass-panel">
+         <button className="mobile-nav-item" onClick={onManageClick}>
+           <Database size={20} />
+           <span>Manage</span>
+         </button>
+         <button className="mobile-nav-item" onClick={onUploadClick}>
+           <div className="upload-nav-icon">
+              <UploadCloud size={24} />
+           </div>
+         </button>
+         <button className="mobile-nav-item" onClick={toggleTheme}>
+           {isDark ? <Sun size={20} /> : <Moon size={20} />}
+           <span>Theme</span>
+         </button>
+         <button className="mobile-nav-item text-danger" onClick={onLogout}>
+           <LogOut size={20} />
+           <span>Logout</span>
+         </button>
+      </nav>
+    </>
   );
 };
 
