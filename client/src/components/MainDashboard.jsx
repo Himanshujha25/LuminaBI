@@ -614,7 +614,7 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
             </div>
           )}
 
-          <div className="pb-24 sm:pb-8" />
+          <div className="pb-40 sm:pb-8" />
         </div>
       </main>
 
