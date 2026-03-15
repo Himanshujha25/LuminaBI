@@ -21,7 +21,8 @@ app.use(cors({
   origin: [
     "http://localhost:5173",
     "https://lumina-bi.vercel.app",
-    "https://luminabi.onrender.com"
+    "https://luminabi.onrender.com",
+    "http://192.168.29.122:5173"
   ],
   credentials: true,
 }));

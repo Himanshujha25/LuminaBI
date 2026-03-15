@@ -545,13 +545,15 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
   }}
   disabled={isExportingPDF}
   className="
-    inline-flex items-center gap-2
-    px-2 py-1
-    rounded-sm
-    text-sm font-small
-    text-indigo-500
-    hover:bg-indigo-700
-    hover:border-indigo-500
+    inline-flex items-center gap-1.5
+    mr-2 sm:mr-0
+    px-3 py-1.5
+    bg-indigo-50 dark:bg-indigo-500/10
+    border border-indigo-200 dark:border-indigo-500/30
+    rounded-lg
+    text-xs sm:text-sm font-semibold
+    text-indigo-600 dark:text-indigo-400
+    hover:bg-indigo-100 dark:hover:bg-indigo-500/20
     transition-all duration-200
     disabled:opacity-50 disabled:cursor-not-allowed
   "
@@ -559,7 +561,7 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
   {isExportingPDF ? (
     <>
       <span
-        className="animate-spin rounded-full border-2 border-white/40 border-t-white"
+        className="animate-spin rounded-full border-2 border-current border-t-transparent"
         style={{ width: 14, height: 14 }}
       />
       Generating...
