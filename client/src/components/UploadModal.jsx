@@ -5,6 +5,7 @@ import {
   Server, ShieldCheck, Activity, Box, Terminal, Cpu, Settings
 } from 'lucide-react';
 import axios from 'axios';
+import { API_URL } from '../config';
 import './UploadModal.css';
 
 const UploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
@@ -91,7 +92,7 @@ const UploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
     formData.append('tablename', tableName);
 
     try {
-      const res = await axios.post('https://luminabi.onrender.com/api/datasets/upload', formData, {
+      const res = await axios.post(`${API_URL}/datasets/upload`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         onUploadProgress: (progressEvent) => {
           const timeElapsed = (Date.now() - uploadStartTime.current) / 1000;

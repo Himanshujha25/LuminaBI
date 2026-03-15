@@ -102,11 +102,11 @@ const uploadCSV = async (req, res) => {
 const getDatasets = async (req, res) => {
     try {
         const userId = req.user ? req.user.id : null;
-        let query = 'SELECT id, name, table_name, created_at FROM datasets ORDER BY created_at DESC';
+        let query = 'SELECT id, name, table_name, columns, created_at FROM datasets ORDER BY created_at DESC';
         let params = [];
         
         if (userId) {
-            query = 'SELECT id, name, table_name, created_at FROM datasets WHERE user_id = $1 ORDER BY created_at DESC';
+            query = 'SELECT id, name, table_name, columns, created_at FROM datasets WHERE user_id = $1 ORDER BY created_at DESC';
             params = [userId];
         }
 
@@ -117,12 +117,32 @@ const getDatasets = async (req, res) => {
     }
 }
 
+const getDatasetPreview = async (req, res) => {
+    const { id } = req.params;
+    const userId = req.user ? req.user.id : null;
+    try {
+        let metaQuery = 'SELECT table_name FROM datasets WHERE id = $1';
+        let metaParams = [id];
+        if (userId) {
+            metaQuery = 'SELECT table_name FROM datasets WHERE id = $1 AND user_id = $2';
+            metaParams = [id, userId];
+        }
+        const metaResult = await pool.query(metaQuery, metaParams);
+        if (metaResult.rows.length === 0) return res.status(404).json({ error: 'Dataset not found.' });
+
+        const tableName = metaResult.rows[0].table_name;
+        const preview = await pool.query(`SELECT * FROM "${tableName}" LIMIT 10`);
+        res.json(preview.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 const deleteDataset = async (req, res) => {
     const { id } = req.params;
     const userId = req.user ? req.user.id : null;
     
     try {
-        // Find the table name to drop it
         let metaQuery = 'SELECT table_name FROM datasets WHERE id = $1';
         let metaParams = [id];
         
@@ -138,13 +158,8 @@ const deleteDataset = async (req, res) => {
         
         const tableName = metaResult.rows[0].table_name;
 
-        // Drop the actual data table
         await pool.query(`DROP TABLE IF EXISTS "${tableName}"`);
-        
-        // Remove from metadata tracking
         await pool.query('DELETE FROM datasets WHERE id = $1', [id]);
-        
-        // --- ENHANCEMENT: Invalidate Schema Cache ---
         schemaCache.del(`schema_${id}`);
 
         return res.json({ message: 'Dataset permanently deleted and dropped from db.' });
@@ -154,4 +169,4 @@ const deleteDataset = async (req, res) => {
     }
 }
 
-module.exports = { uploadCSV, getDatasets, deleteDataset };
+module.exports = { uploadCSV, getDatasets, getDatasetPreview, deleteDataset };

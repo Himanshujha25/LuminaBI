@@ -1,8 +1,6 @@
 const isLocal = window.location.hostname === 'localhost';
 
-export const BASE_URL = isLocal 
-    ? 'http://localhost:5000' 
-    : 'https://luminabi.onrender.com';
+export const BASE_URL = 'https://luminabi.onrender.com';
 
 export const API_URL = `${BASE_URL}/api`;
 export const QUERY_URL = `${API_URL}/query`;

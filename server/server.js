@@ -6,13 +6,24 @@ const setupDb = require('./db/setup');
 const { handleQuery } = require('./controllers/queryController');
 require('dotenv').config();
 
+// ── Crash prevention ──────────────────────────────────────
+process.on('uncaughtException', (err) => {
+  console.error('🔴 [uncaughtException] Server kept alive:', err.message || err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('🔴 [unhandledRejection] Server kept alive:', reason?.message || reason);
+});
+// ─────────────────────────────────────────────────────────
+
 const app = express();
 app.use(compression()); // Compress all responses
 app.use(cors({
   origin: [
     "http://localhost:5173",
-    "https://lumina-bi.vercel.app"
-  ]
+    "https://lumina-bi.vercel.app",
+    "https://luminabi.onrender.com"
+  ],
+  credentials: true,
 }));
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb', extended: true }));
@@ -26,7 +37,10 @@ app.use('/api', apiRoutes);
 // Legacy route fallback for previous UI structure
 app.post("/query", handleQuery);
 
+// Health check
+app.get('/health', (_, res) => res.json({ status: 'ok' }));
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`✅ Server running on http://localhost:${PORT}`);
 });

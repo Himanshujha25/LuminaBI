@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const { uploadCSV, getDatasets, deleteDataset } = require('../controllers/uploadController');
+const { uploadCSV, getDatasets, getDatasetPreview, deleteDataset } = require('../controllers/uploadController');
 const { handleQuery } = require('../controllers/queryController');
 const { getChats, clearChats, deleteMessage } = require('../controllers/chatController');
 const { register, login, getMe } = require('../controllers/authController');
@@ -24,6 +24,7 @@ router.get('/auth/me', protect, getMe);
 // CSV Upload Routes
 router.post('/datasets/upload', protect, upload.single('file'), uploadCSV);
 router.get('/datasets', protect, getDatasets);
+router.get('/datasets/:id/preview', protect, getDatasetPreview);
 router.delete('/datasets/:id', protect, deleteDataset);
 
 // Chat Routes

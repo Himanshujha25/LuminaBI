@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { AUTH_URL } from '../config';
 import { BarChart2, Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react';
 import './Auth.css';
 
@@ -16,7 +17,7 @@ const Login = ({ setToken }) => {
     setError(null);
     setLoading(true);
     try {
-      const res = await axios.post('https://luminabi.onrender.com/api/auth/login', { email, password });
+      const res = await axios.post(`${AUTH_URL}/login`, { email, password });
       setToken(res.data.token);
       localStorage.setItem('token', res.data.token);
       navigate('/dashboard');
