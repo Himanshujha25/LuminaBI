@@ -342,12 +342,6 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
 
               {/* Premium Header & Summary Row */}
               <div className="premium-summary-section">
-                <div className="premium-ai-badge">
-                  <div className="pulse-dot"></div>
-                  <Sparkles size={13} className="badge-icon" />
-                  <span>AI-Informed Insights</span>
-                </div>
-                
                 <div className="premium-kpi-grid">
                   <div className="premium-kpi-card chart-type-card">
                     <div className="kpi-icon-wrapper">
@@ -532,9 +526,9 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
 
           {/* ── PINNED CHARTS ── */}
           {pinnedCharts.length > 0 && !isLoading && (
-            <div className="pt-8 mt-4 border-t border-[var(--border-color)] animate-slide-up">
-              <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-                <div>
+            <div className="pt-8 mt-4 border-t border-[var(--border-color)] animate-slide-up ">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div >
                   <h2 className="text-lg sm:text-xl font-black text-[var(--text-primary)] tracking-tight">Executive Dashboard</h2>
                   <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-tertiary)] mt-0.5">
                     {pinnedCharts.length} chart{pinnedCharts.length !== 1 ? 's' : ''} · drag to reorder
