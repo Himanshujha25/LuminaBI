@@ -1,0 +1,119 @@
+[
+  {
+    "text": "This chart displays the top YouTube content categories by total likes, ensuring that any 'Vlogs' related categories are explicitly included, even if they don't rank in the absolute top 10. This provides a comprehensive view of highly liked content, with a specific focus on 'Vlogs' performance.",
+    "data": {
+      "data": [
+        {
+          "Category": null,
+          "Total Likes": null
+        },
+        {
+          "Category": "Vlogs",
+          "Total Likes": "81171565"
+        },
+        {
+          "Category": "Music",
+          "Total Likes": "81010233"
+        },
+        {
+          "Category": "Tech Reviews",
+          "Total Likes": "80852043"
+        },
+        {
+          "Category": "Gaming",
+          "Total Likes": "80755489"
+        },
+        {
+          "Category": "Education",
+          "Total Likes": "80631080"
+        },
+        {
+          "Category": "Coding",
+          "Total Likes": "80485337"
+        }
+      ],
+      "sql_used": "WITH Top10 AS (\n    SELECT\n        category AS \"Category\",\n        SUM(likes) AS \"Total Likes\"\n    FROM \"dt_1773513164716_youtube_content_creation\"\n    GROUP BY category\n    ORDER BY \"Total Likes\" DESC\n    LIMIT 10\n),\nVlogsCategories AS (\n    SELECT\n        category AS \"Category\",\n        SUM(likes) AS \"Total Likes\"\n    FROM \"dt_1773513164716_youtube_content_creation\"\n    WHERE category ILIKE '%vlogs%'\n    GROUP BY category\n)\nSELECT \"Category\", \"Total Likes\" FROM Top10\nUNION\nSELECT \"Category\", \"Total Likes\" FROM VlogsCategories\nORDER BY \"Total Likes\" DESC\nLIMIT 15;",
+      "chart_type": "bar",
+      "x_axis_column": "Category",
+      "y_axis_column": "Total Likes",
+      "suggested_follow_ups": [
+        "Show me the average likes per video for these categories.",
+        "What are the top 5 regions for 'Vlogs' content?",
+        "Compare the total views and likes for these categories."
+      ]
+    }
+  },
+  {
+    "text": "What are the top 10 categories by total likes, ensuring 'Vlogs' is included if it's not in the top 10?",
+    "data": null
+  },
+  {
+    "text": "This chart displays the total likes for categories containing 'Vlogs'. If 'Vlogs' was not present in the previous top 10 chart, it indicates its total likes were lower than the tenth-ranked category. This provides a direct view of its performance.",
+    "data": {
+      "data": [
+        {
+          "Category": "Vlogs",
+          "Total Likes": "81171565"
+        }
+      ],
+      "sql_used": "SELECT category AS \"Category\", SUM(likes) AS \"Total Likes\" FROM \"dt_1773513164716_youtube_content_creation\" WHERE category ILIKE '%vlogs%' GROUP BY category ORDER BY \"Total Likes\" DESC;",
+      "chart_type": "bar",
+      "x_axis_column": "Category",
+      "y_axis_column": "Total Likes",
+      "suggested_follow_ups": [
+        "Show me the rank of 'Vlogs' among all categories by total likes.",
+        "What are the top 10 categories by total likes, ensuring 'Vlogs' is included if it's not in the top 10?",
+        "Show me the total views for 'Vlogs' categories."
+      ]
+    }
+  },
+  {
+    "text": "why vlogs chrat is not shwing refsher and fix",
+    "data": null
+  },
+  {
+    "text": "This chart illustrates the top 10 YouTube content categories ranked by their total accumulated likes, indicating which content types resonate most positively with viewers. Understanding these categories can help identify popular content niches.",
+    "data": {
+      "data": [
+        {
+          "Category": null,
+          "Total Likes": null
+        },
+        {
+          "Category": "Vlogs",
+          "Total Likes": "81171565"
+        },
+        {
+          "Category": "Music",
+          "Total Likes": "81010233"
+        },
+        {
+          "Category": "Tech Reviews",
+          "Total Likes": "80852043"
+        },
+        {
+          "Category": "Gaming",
+          "Total Likes": "80755489"
+        },
+        {
+          "Category": "Education",
+          "Total Likes": "80631080"
+        },
+        {
+          "Category": "Coding",
+          "Total Likes": "80485337"
+        }
+      ],
+      "sql_used": "SELECT category AS \"Category\", SUM(likes) AS \"Total Likes\" FROM \"dt_1773513164716_youtube_content_creation\" GROUP BY category ORDER BY \"Total Likes\" DESC LIMIT 10;",
+      "chart_type": "bar",
+      "x_axis_column": "Category",
+      "y_axis_column": "Total Likes",
+      "suggested_follow_ups": [
+        "What are the top 10 categories by total comments?",
+        "Show me the average sentiment score for these top categories.",
+        "Which categories have the highest average likes per video?",
+        "Can you show me the total shares for these categories?"
+      ]
+    }
+  }
+]

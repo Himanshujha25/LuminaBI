@@ -82,11 +82,17 @@ function DynamicChartComponent({ config, overrideChartType, compact = false }) {
   };
 
   const safeYKey = findNumericKey();
-  const chartData = data.slice(0, 200).map(d => {
-    const rawVal = d[safeYKey];
-    const parsedVal = parseFloat(rawVal);
-    return { ...d, [safeYKey]: isNaN(parsedVal) ? 0 : parsedVal };
-  });
+  const chartData = data
+    .filter(d => {
+      const xVal = d[safeXKey];
+      return xVal !== null && xVal !== undefined && String(xVal).trim() !== '';
+    })
+    .slice(0, 200)
+    .map(d => {
+      const rawVal = d[safeYKey];
+      const parsedVal = parseFloat(rawVal);
+      return { ...d, [safeYKey]: isNaN(parsedVal) ? 0 : parsedVal };
+    });
 
   // Decide how many labels to show based on container width + data count
   const isSmall = compact || containerWidth < 380 || isMobile;

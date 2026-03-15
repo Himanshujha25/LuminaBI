@@ -1,0 +1,45 @@
+[
+  {
+    "data": {
+      "data": [
+        {
+          "Category": null,
+          "Total Likes": null
+        },
+        {
+          "Category": "Vlogs",
+          "Total Likes": "81171565"
+        },
+        {
+          "Category": "Music",
+          "Total Likes": "81010233"
+        },
+        {
+          "Category": "Tech Reviews",
+          "Total Likes": "80852043"
+        },
+        {
+          "Category": "Gaming",
+          "Total Likes": "80755489"
+        },
+        {
+          "Category": "Education",
+          "Total Likes": "80631080"
+        },
+        {
+          "Category": "Coding",
+          "Total Likes": "80485337"
+        }
+      ],
+      "sql_used": "WITH Top10 AS (\n    SELECT\n        category AS \"Category\",\n        SUM(likes) AS \"Total Likes\"\n    FROM \"dt_1773513164716_youtube_content_creation\"\n    GROUP BY category\n    ORDER BY \"Total Likes\" DESC\n    LIMIT 10\n),\nVlogsCategories AS (\n    SELECT\n        category AS \"Category\",\n        SUM(likes) AS \"Total Likes\"\n    FROM \"dt_1773513164716_youtube_content_creation\"\n    WHERE category ILIKE '%vlogs%'\n    GROUP BY category\n)\nSELECT \"Category\", \"Total Likes\" FROM Top10\nUNION\nSELECT \"Category\", \"Total Likes\" FROM VlogsCategories\nORDER BY \"Total Likes\" DESC\nLIMIT 15;",
+      "chart_type": "bar",
+      "x_axis_column": "Category",
+      "y_axis_column": "Total Likes",
+      "suggested_follow_ups": [
+        "Show me the average likes per video for these categories.",
+        "What are the top 5 regions for 'Vlogs' content?",
+        "Compare the total views and likes for these categories."
+      ]
+    }
+  }
+]
