@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120" width="100%" height="100%">
+  <rect width="100%" height="100%" fill="#0B0F19" rx="16" />
+  
+  <defs>
+    <linearGradient id="barGradient" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#4F46E5" />
+      <stop offset="100%" stop-color="#A855F7" />
+    </linearGradient>
+    
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <g transform="translate(30, 20)">
+    <rect x="0" y="30" width="16" height="50" rx="8" fill="url(#barGradient)" opacity="0.4" filter="url(#glow)"/>
+    <rect x="24" y="10" width="16" height="70" rx="8" fill="url(#barGradient)" opacity="0.4" filter="url(#glow)"/>
+    <rect x="48" y="40" width="16" height="40" rx="8" fill="url(#barGradient)" opacity="0.4" filter="url(#glow)"/>
+
+    <rect x="0" y="30" width="16" height="50" rx="8" fill="url(#barGradient)" />
+    <rect x="24" y="10" width="16" height="70" rx="8" fill="url(#barGradient)" />
+    <rect x="48" y="40" width="16" height="40" rx="8" fill="url(#barGradient)" />
+    
+    <path d="M 68 20 Q 75 20 75 13 Q 75 20 82 20 Q 75 20 75 27 Q 75 20 68 20 Z" fill="#818CF8" />
+    <path d="M 12 10 Q 16 10 16 6 Q 16 10 20 10 Q 16 10 16 14 Q 16 10 12 10 Z" fill="#C084FC" />
+  </g>
+
+  <g transform="translate(130, 75)">
+    <text x="0" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="48" font-weight="900" fill="#F8FAFC" letter-spacing="-1">
+      Lumina
+    </text>
+    <text x="175" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="48" font-weight="900" fill="#818CF8" letter-spacing="-1">
+      BI
+    </text>
+  </g>
+</svg>

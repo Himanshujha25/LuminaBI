@@ -222,53 +222,66 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
         <header className="topbar-shell">
 
           {/* 1. Dataset Selector */}
-          <div ref={datasetDropRef} style={{ position: 'relative', width: '100%', maxWidth: '340px', flexShrink: 0 }}>
-            <button className="dataset-pill" onClick={() => setShowDatasetDropdown(v => !v)}>
-              
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden' }}>
-                <div style={{ padding: '6px', background: 'var(--surface-hover)', borderRadius: '6px', color: 'var(--accent-blue)' }}>
-                  <Database size={16} />
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
+            <div ref={datasetDropRef} style={{ position: 'relative', width: '100%', minWidth: '220px', maxWidth: '340px' }}>
+              <button className="dataset-pill" onClick={() => setShowDatasetDropdown(v => !v)}>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden' }}>
+                  <div style={{ padding: '6px', background: 'var(--surface-hover)', borderRadius: '6px', color: 'var(--accent-blue)' }}>
+                    <Database size={16} />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', overflow: 'hidden' }}>
+                    <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-tertiary)' }}>
+                      Active Workspace
+                    </span>
+                    <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '220px' }}>
+                      {activeDataset?.name || 'Select a dataset...'}
+                    </span>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', overflow: 'hidden' }}>
-                  <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-tertiary)' }}>
-                    Active Workspace
-                  </span>
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '220px' }}>
-                    {activeDataset?.name || 'Select a dataset...'}
-                  </span>
-                </div>
-              </div>
 
-              <ChevronRight 
-                size={16} 
-                style={{ color: 'var(--text-tertiary)', flexShrink: 0, transform: showDatasetDropdown ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }} 
-              />
-            </button>
+                <ChevronRight 
+                  size={16} 
+                  style={{ color: 'var(--text-tertiary)', flexShrink: 0, transform: showDatasetDropdown ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }} 
+                />
+              </button>
 
-            {/* Dataset Dropdown */}
-            {showDatasetDropdown && datasets.length > 0 && (
-              <div className="history-drop animate-fade-in">
-                <div className="history-drop__header">
-                  <Database size={12} /> Your Datasets
+              {/* Dataset Dropdown */}
+              {showDatasetDropdown && datasets.length > 0 && (
+                <div className="history-drop animate-fade-in">
+                  <div className="history-drop__header">
+                    <Database size={12} /> Your Datasets
+                  </div>
+                  <div className="custom-scrollbar" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                    {datasets.map(d => (
+                      <button
+                        key={d.id}
+                        onClick={() => { setActiveDataset(d); setShowDatasetDropdown(false); }}
+                        className="history-drop__item"
+                        style={activeDataset?.id === d.id ? { borderLeftColor: 'var(--accent-blue)', background: 'var(--surface-hover)' } : {}}
+                      >
+                        <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: activeDataset?.id === d.id ? 600 : 500, color: activeDataset?.id === d.id ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                          {d.name}
+                        </span>
+                        {activeDataset?.id === d.id && (
+                          <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--accent-blue)', background: 'var(--accent-light)', padding: '2px 6px', borderRadius: '4px' }}>ACTIVE</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="custom-scrollbar" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                  {datasets.map(d => (
-                    <button
-                      key={d.id}
-                      onClick={() => { setActiveDataset(d); setShowDatasetDropdown(false); }}
-                      className="history-drop__item"
-                      style={activeDataset?.id === d.id ? { borderLeftColor: 'var(--accent-blue)', background: 'var(--surface-hover)' } : {}}
-                    >
-                      <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: activeDataset?.id === d.id ? 600 : 500, color: activeDataset?.id === d.id ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
-                        {d.name}
-                      </span>
-                      {activeDataset?.id === d.id && (
-                        <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--accent-blue)', background: 'var(--accent-light)', padding: '2px 6px', borderRadius: '4px' }}>ACTIVE</span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              )}
+            </div>
+            
+            {/* View Dataset Button */}
+            {activeDataset && (
+              <button
+                onClick={() => setShowPreview(true)}
+                title="Preview Raw Data"
+                className="w-[42px] h-[42px] shrink-0 rounded-lg border border-[var(--border-color)] bg-[var(--surface-color)] shadow-sm flex items-center justify-center text-[var(--text-secondary)] hover:text-indigo-500 hover:border-indigo-400 hover:bg-indigo-50/50 transition-all dark:hover:bg-indigo-500/10"
+              >
+                <Eye size={18} />
+              </button>
             )}
           </div>
 
