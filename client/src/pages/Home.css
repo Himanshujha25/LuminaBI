@@ -176,6 +176,106 @@
   100% { transform: translate(-50px, 50px) scale(0.9); }
 }
 
+/* ─── SYSTEM ARCHITECTURE SECTION ─── */
+.architecture-section {
+  margin-top: 120px;
+  width: 100%;
+  max-width: 1200px;
+}
+
+.section-header {
+  margin-bottom: 48px;
+  text-align: center;
+}
+
+.section-header h2 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-bottom: 12px;
+}
+
+.architecture-flow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.arch-step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 24px;
+  text-align: center;
+  border-radius: var(--radius-xl);
+  min-height: 240px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.arch-step:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.arch-icon-box {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--surface-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.arch-step h4 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+
+.arch-step p {
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.arch-connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.connector-icon {
+  color: var(--text-tertiary);
+  opacity: 0.5;
+}
+
+.home-footer {
+  width: 100%;
+  text-align: center;
+  padding: 40px 20px;
+  border-top: 1px solid var(--border-color);
+  margin-top: auto;
+  position: relative;
+  z-index: 10;
+}
+
+.orb-3 {
+  width: 400px;
+  height: 400px;
+  background: #f59e0b; /* accent-amber */
+  top: 40%;
+  left: 50%;
+  transform: translateX(-50%);
+  animation-delay: -5s;
+}
+
 .home-nav, .hero-section {
   position: relative;
   z-index: 10;
@@ -185,6 +285,21 @@
 @media (max-width: 1024px) {
   .hero-title {
     font-size: 3rem;
+  }
+  .architecture-flow {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 32px;
+  }
+  .arch-step {
+    min-width: calc(50% - 32px);
+    min-height: auto;
+  }
+  .arch-connector {
+    display: none;
+  }
+  .section-header h2 {
+    font-size: 2rem;
   }
 }
 
@@ -236,10 +351,26 @@
     padding: 24px;
   }
   
-  .orb-1, .orb-2 {
+  .orb-1, .orb-2, .orb-3 {
     width: 300px;
     height: 300px;
     filter: blur(60px);
+  }
+  
+  .architecture-section {
+    margin-top: 80px;
+  }
+  .arch-step {
+    min-width: 100%;
+    padding: 24px;
+    align-items: flex-start;
+    text-align: left;
+    flex-direction: row;
+    gap: 20px;
+  }
+  .arch-icon-box {
+    margin-bottom: 0;
+    flex-shrink: 0;
   }
 }
 
