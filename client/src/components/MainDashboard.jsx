@@ -482,13 +482,13 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
 
           {/* ── WELCOME / EMPTY STATE ── */}
           {!isLoading && !currentData && (
-            <div className="flex flex-col items-center justify-center text-center py-12 px-4 animate-fade-in" style={{ minHeight: '54vh' }}>
+            <div className="flex flex-col items-center justify-center text-center py-6 sm:py-12 px-4 animate-fade-in" style={{ minHeight: '50vh' }}>
 
               {/* Glow orb */}
-              <div className="relative mb-8">
+              <div className="relative mb-4 sm:mb-8">
                 <div className="absolute inset-0 rounded-3xl bg-indigo-500/20 blur-2xl scale-150" />
-                <div className="relative w-20 h-20 rounded-2xl glass-panel flex items-center justify-center border border-indigo-500/20">
-                  <Sparkles size={34} className="text-indigo-400" />
+                <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl glass-panel flex items-center justify-center border border-indigo-500/20">
+                  <Sparkles size={28} className="text-indigo-400 sm:w-[34px] sm:h-[34px]" />
                 </div>
               </div>
 
@@ -512,10 +512,14 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
                     className={`suggestion-card glass-panel text-left group w-full ${c.span || ''}`}
                     onClick={() => handleSubmit(c.q)}
                   >
-                    <div className={`suggestion-icon-box ${c.color} mb-4`}>{c.icon}</div>
-                    <h3 className="suggestion-title mb-1">{c.title}</h3>
-                    <p className="suggestion-text">"{c.desc}"</p>
-                    <div className="mt-3 pt-3 border-t border-[var(--border-color)] flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] group-hover:text-indigo-400 transition-colors">
+                    <div className="flex sm:flex-col items-start gap-4 sm:gap-0">
+                      <div className={`suggestion-icon-box shrink-0 ${c.color} mb-0 sm:mb-4`}>{c.icon}</div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="suggestion-title truncate sm:whitespace-normal sm:mb-1">{c.title}</h3>
+                        <p className="suggestion-text line-clamp-2 sm:line-clamp-none">"{c.desc}"</p>
+                      </div>
+                    </div>
+                    <div className="hidden sm:flex mt-3 pt-3 border-t border-[var(--border-color)] items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] group-hover:text-indigo-400 transition-colors">
                       <Sparkles size={9} /> Try this
                     </div>
                   </button>
