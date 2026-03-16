@@ -756,18 +756,26 @@
 
 /* Summary */
 .pinned-card__summary {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--text-secondary);
-  padding: 10px 14px 8px;
-  line-height: 1.55;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  padding: 12px 14px;
+  line-height: 1.6;
   margin: 0;
   min-height: 52px; /* reserve at least two lines */
+  max-height: 90px;
+  overflow-y: auto;
+  border-bottom: 1px solid var(--border-color);
+}
+.pinned-card__summary::-webkit-scrollbar {
+  width: 3px;
+}
+.pinned-card__summary::-webkit-scrollbar-track {
+  background: transparent;
+}
+.pinned-card__summary::-webkit-scrollbar-thumb {
+  background: var(--border-focus);
+  border-radius: 3px;
 }
 
 /* Chart area */
@@ -1035,3 +1043,5 @@
     animation: fadeIn 0.2s ease-out both;
   }
 }
+
+

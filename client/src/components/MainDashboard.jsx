@@ -1,20 +1,24 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Search, Send, MessageSquare, ListFilter, Sparkles, Activity,
   Download, Image as ImageIcon, X, GripHorizontal, Trash2,
-  LayoutDashboard, PieChart, Zap, Eye, FileText, ChevronRight, Database
+  LayoutDashboard, PieChart, Zap, Eye, FileText, ChevronRight, Database, Table
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import axios from 'axios';
 import { API_URL } from '../config';
 import DynamicChartComponent from '../ChartComponent';
 import DatasetPreview from './DatasetPreview';
+import DynamicDashboard from './DynamicDashboard';
 import { generatePDFReport } from '../utils/pdfExport';
+import KpiCards from './KpiCards';
 import './MainDashboard.css';
 
 const MemoizedChart = React.memo(DynamicChartComponent);
 
-const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
+const MainDashboard = ({ activeDataset, datasets, setActiveDataset, toggleTheme, isDark }) => {
+  const navigate = useNavigate();
   const [prompt, setPrompt]                          = useState('');
   const [isLoading, setIsLoading]                   = useState(false);
   const [isSideLoading, setIsSideLoading]           = useState(false);
@@ -29,6 +33,7 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
   const [showPreview, setShowPreview]               = useState(false);
   const [showDatasetDropdown, setShowDatasetDropdown]   = useState(false);
   const [isExportingPDF, setIsExportingPDF]         = useState(false);
+  const [dataSlicerLimit, setDataSlicerLimit]       = useState('All');
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 const userId = user?.id || "guest";
 const PIN_STORAGE_KEY = `lumina_pinned_charts_${userId}`;
@@ -64,7 +69,12 @@ const [pinnedCharts, setPinnedCharts] = useState(() => {
     const ctrl = new AbortController();
     if (activeDataset?.id && !chatHistories[activeDataset.id]) {
       setIsSideLoading(true);
-      axios.get(`${API_URL}/datasets/${activeDataset.id}/chats`, { signal: ctrl.signal, timeout: 10000 })
+      const token = localStorage.getItem('token');
+      axios.get(`${API_URL}/datasets/${activeDataset.id}/chats`, { 
+        signal: ctrl.signal, 
+        timeout: 10000,
+        headers: { Authorization: `Bearer ${token}` }
+      })
         .then(res => setChatHistories(prev => ({ ...prev, [activeDataset.id]: res.data.map(r => ({ id: r.id, role: r.role, text: r.text, data: r.data || null })) })))
         .catch(err => { if (err.name !== 'CanceledError') console.error(err); })
         .finally(() => setIsSideLoading(false));
@@ -97,7 +107,7 @@ const [pinnedCharts, setPinnedCharts] = useState(() => {
 
   // Reset on dataset change
   useEffect(() => {
-    setChartTypeOverride(null); setShowSQL(false); setViewMode('chart'); setPrompt(''); setSidePrompt('');
+    setChartTypeOverride(null); setShowSQL(false); setViewMode('chart'); setPrompt(''); setSidePrompt(''); setDataSlicerLimit('All');
   }, [activeDataset?.id]);
 
   // Auto-scroll chat
@@ -113,10 +123,19 @@ const [pinnedCharts, setPinnedCharts] = useState(() => {
     if (!q || !activeDataset) return;
     isSideSearch ? setIsSideLoading(true) : setIsLoading(true);
     setError(null);
+    setChartTypeOverride(null);
+    setDataSlicerLimit('All');
     setChatHistories(prev => ({ ...prev, [activeDataset.id]: [...(prev[activeDataset.id] || []), { role: 'user', text: q }] }));
     isSideSearch ? setSidePrompt('') : setPrompt('');
     try {
-      const { data } = await axios.post(`${API_URL}/query`, { prompt: q, datasetId: activeDataset.id, history: history.slice(-6) });
+      const token = localStorage.getItem('token');
+      const { data } = await axios.post(`${API_URL}/query`, { 
+        prompt: q, 
+        datasetId: activeDataset.id, 
+        history: history.slice(-6) 
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setChatHistories(prev => ({ ...prev, [activeDataset.id]: [...(prev[activeDataset.id] || []), { id: data.message_id, role: 'ai', text: data.explanation || data.message || 'Here is what I found.', data }] }));
     } catch (err) {
       const msg = `❌ ${err.response?.data?.error || 'Something went wrong'}`;
@@ -129,11 +148,12 @@ const [pinnedCharts, setPinnedCharts] = useState(() => {
   const handleSideKeyPress = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(sidePrompt, true); } };
 
   const handlePinChart = () => {
-    if (!currentData) return;
-    if (pinnedCharts.some(c => c.sql_used === currentData.sql_used && c.chart_type === currentData.chart_type)) {
+    if (!slicedConfig) return;
+    const configToPin = { ...slicedConfig, chart_type: chartTypeOverride || slicedConfig.chart_type };
+    if (pinnedCharts.some(c => c.sql_used === configToPin.sql_used && c.chart_type === configToPin.chart_type && c.data?.length === configToPin.data?.length)) {
       setPinState('duplicate'); setTimeout(() => setPinState('idle'), 2000); return;
     }
-    setPinnedCharts(prev => [...prev, { ...currentData, id: Date.now() }]);
+    setPinnedCharts(prev => [...prev, { ...configToPin, id: Date.now() }]);
     setPinState('success'); setTimeout(() => setPinState('idle'), 2000);
   };
   const handleUnpinChart = id => setPinnedCharts(prev => prev.filter(c => c.id !== id));
@@ -185,6 +205,17 @@ const [pinnedCharts, setPinnedCharts] = useState(() => {
 
   const currentData = useMemo(() => history.slice().reverse().find(h => h.role === 'ai' && h.data)?.data, [history]);
 
+  const slicedData = useMemo(() => {
+    if (!currentData || !currentData.data) return null;
+    if (dataSlicerLimit === 'All') return currentData.data;
+    return currentData.data.slice(0, parseInt(dataSlicerLimit, 10));
+  }, [currentData, dataSlicerLimit]);
+
+  const slicedConfig = useMemo(() => {
+    if (!currentData || !slicedData) return null;
+    return { ...currentData, data: slicedData };
+  }, [currentData, slicedData]);
+
   // ── Reusable UI atoms ──
   const UiBtn = ({ active, danger, disabled, onClick, title, children, className = '' }) => (
     <button
@@ -205,6 +236,33 @@ const [pinnedCharts, setPinnedCharts] = useState(() => {
   );
 
   const Skeleton = ({ className }) => <div className={`skeleton rounded-xl ${className}`} />;
+
+  const renderKPIs = (data, xAxis, yAxis) => {
+    if (!data || data.length === 0) return null;
+    let total = 0;
+    let max = -Infinity;
+    let isNumeric = false;
+    
+    // Find numeric column
+    const keys = Object.keys(data[0]);
+    let numericKey = yAxis;
+    if (!numericKey || isNaN(parseFloat(data[0][numericKey]))) {
+      numericKey = keys.find(k => k !== xAxis && !isNaN(parseFloat(data[0][k])));
+    }
+
+    if (numericKey) {
+      isNumeric = true;
+      data.forEach(row => {
+        const val = parseFloat(row[numericKey]);
+        if (!isNaN(val)) {
+          total += val;
+          if (val > max) max = val;
+        }
+      });
+    }
+
+    return <KpiCards data={data} isNumeric={isNumeric} numericKey={numericKey} total={total} max={max} />;
+  };
 
   // ── CHART TYPE BUTTONS ──
   const chartTypes = ['bar', 'line', 'area', 'pie'];
@@ -278,19 +336,34 @@ const [pinnedCharts, setPinnedCharts] = useState(() => {
             
             {/* View Dataset Button */}
             {activeDataset && (
-              <button
-                onClick={() => setShowPreview(true)}
-                title="Preview Raw Data"
-                className="inline-flex flex-col sm:flex-row items-center gap-1.5 sm:gap-2 px-3 py-2.5 rounded-xl border border-[var(--border-color)] bg-[var(--surface-color)] shadow-sm text-[12px] sm:text-[13px] font-semibold text-[var(--text-secondary)] hover:text-indigo-400 hover:border-indigo-400/50 hover:bg-indigo-500/10 transition-all shrink-0 h-full"
-              >
-                <Eye size={15} />
-                <span className="hidden sm:inline">Preview</span>
-              </button>
+          <button
+  onClick={() => setShowPreview(true)}
+  title="Preview Raw Data"
+  className="group inline-flex items-center justify-center gap-2 h-9 px-4 
+             bg-white dark:bg-neutral-900 
+             border border-neutral-200 dark:border-neutral-700 
+             rounded-[9px] cursor-pointer shrink-0
+             hover:border-indigo-300 dark:hover:border-indigo-600
+             hover:bg-indigo-50/40 dark:hover:bg-indigo-950/30
+             hover:shadow-[0_0_0_3px_rgba(99,102,241,0.12)]
+             hover:-translate-y-px
+             active:translate-y-0 active:scale-[0.97]
+             transition-all duration-150"
+>
+  <Table
+    size={15}
+    className="text-neutral-400 group-hover:text-indigo-500 transition-colors duration-150"
+  />
+  <span className="hidden sm:inline text-[13px] font-medium text-neutral-500 dark:text-neutral-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-150">
+    Preview Dataset
+  </span>
+  
+</button>
             )}
           </div>
 
-          {/* 2. Search Bar */}
-          <div className="searchbar" style={{ flex: 1, position: 'relative' }}>
+          {/* 2. Search Bar (Mobile Only) */}
+          <div className="searchbar sm:!hidden" style={{ flex: 1, position: 'relative' }}>
             
             {isLoading ? <span className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} /> : <Search size={18} className="searchbar__icon" />}
             
@@ -345,31 +418,43 @@ const [pinnedCharts, setPinnedCharts] = useState(() => {
 
           {/* ── RESULT ── */}
           {!isLoading && currentData && (
-            <div className="space-y-5 animate-slide-up">
+            <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 animate-slide-up pb-8 pl-1 sm:pl-2 xl:pl-4">
 
-              {/* Premium Header & Summary Row */}
-              <div className="premium-summary-section">
-                <div className="premium-kpi-grid">
-                  <div className="premium-kpi-card chart-type-card">
-                    <div className="kpi-icon-wrapper">
-                      <Activity size={20} />
+              {/* ── LEFT COLUMN: Executive Sidebar (Summary, Chart Types, KPIs) ── */}
+              <div className="xl:col-span-1 flex flex-col gap-5 pr-1 sm:pr-2">
+                
+                {/* Executive Summary */}
+                <div className="premium-kpi-card flex flex-col gap-3" style={{ padding: '20px', margin: '0 3px' }}>
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-500 shadow-sm border border-indigo-500/20">
+                      <Sparkles size={16} />
                     </div>
-                    <div className="kpi-content">
-                      <span className="kpi-subtitle">VISUALIZATION</span>
-                      <strong className="kpi-title">{(currentData.chart_type || 'chart').toUpperCase()}</strong>
-                    </div>
+                    <span className="text-[11px] font-bold tracking-widest uppercase text-[var(--text-primary)]">AI Summary</span>
                   </div>
-                  
-                  <div className="premium-kpi-card summary-card">
-                    <span className="kpi-subtitle">EXECUTIVE SUMMARY</span>
-                    <p className="kpi-body">{currentData.explanation}</p>
+                  <p className="m-0 text-[13px] leading-relaxed font-medium text-[var(--text-secondary)]">
+                    {currentData.explanation}
+                  </p>
+                </div>
+
+                {/* format Card */}
+                <div className="premium-kpi-card flex flex-row items-center justify-between" style={{ padding: '20px ', margin: '0 3px'}}>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-tertiary)] mb-1">Format</span>
+                    <strong className="text-2xl font-black text-[var(--text-primary)] tracking-tight">{(currentData.chart_type || 'chart').toUpperCase()}</strong>
+                  </div>
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 flex items-center justify-center text-indigo-500 border border-indigo-500/20">
+                    <Activity size={22} />
                   </div>
                 </div>
+
+                {/* Data Grid KPIs */}
+                {renderKPIs(currentData.data, currentData.x_axis_column, currentData.y_axis_column)}
+
               </div>
 
-              {/* Chart panel */}
-              {/* ── PROFESSIONAL CHART PANEL ── */}
-              <div className="chart-panel-container animate-slide-up">
+              {/* ── RIGHT COLUMN: Main Chart Area ── */}
+              <div className="xl:col-span-3 flex flex-col min-w-0">
+                <div className="chart-panel-container flex-1 flex flex-col m-0 shadow-md">
                 
                 {/* Controls Header */}
                 <div className="chart-panel-header">
@@ -416,6 +501,21 @@ const [pinnedCharts, setPinnedCharts] = useState(() => {
 
                     <div className="divider-vert" />
 
+                    {/* Segmented Control: Data Slicer */}
+                    <div className="segmented-control hidden sm:flex">
+                      {['5', '10', 'All'].map(limit => (
+                        <button
+                          key={limit}
+                          className={`seg-btn ${dataSlicerLimit === limit ? 'active' : ''}`}
+                          onClick={() => setDataSlicerLimit(limit)}
+                        >
+                          <span>Top {limit}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="divider-vert hidden sm:block" />
+
                     {/* Secondary Actions */}
                     <button 
                       className={`action-btn ${showSQL ? 'active' : ''}`} 
@@ -461,13 +561,13 @@ const [pinnedCharts, setPinnedCharts] = useState(() => {
                       <table className="pro-table">
                         <thead>
                           <tr>
-                            {currentData.data?.[0] && Object.keys(currentData.data[0]).map(k => (
+                            {slicedConfig?.data?.[0] && Object.keys(slicedConfig.data[0]).map(k => (
                               <th key={k}>{k}</th>
                             ))}
                           </tr>
                         </thead>
                         <tbody>
-                          {currentData.data?.slice(0, 100).map((row, i) => (
+                          {slicedConfig?.data?.slice(0, 100).map((row, i) => (
                             <tr key={i}>
                               {Object.values(row).map((v, j) => (
                                 <td key={j}>{String(v ?? '')}</td>
@@ -479,10 +579,11 @@ const [pinnedCharts, setPinnedCharts] = useState(() => {
                     </div>
                   ) : (
                     <div className="pro-chart-wrapper">
-                      <MemoizedChart config={currentData} overrideChartType={chartTypeOverride} />
+                      <MemoizedChart config={slicedConfig} overrideChartType={chartTypeOverride} />
                     </div>
                   )}
                 </div>
+              </div>
               </div>
             </div>
           )}
@@ -559,15 +660,28 @@ const [pinnedCharts, setPinnedCharts] = useState(() => {
                   </div>
                 </div>
 
-                <button
-                  onClick={async () => { setIsExportingPDF(true); try { await generatePDFReport(pinnedCharts, activeDataset?.name || 'Report'); } finally { setIsExportingPDF(false); } }}
-                  disabled={isExportingPDF}
-                  className="exec-pdf-btn"
-                >
-                  {isExportingPDF
-                    ? <><span className="spinner" style={{ width: 13, height: 13, borderWidth: 2 }} /> Generating…</>
-                    : <><FileText size={14} /> Export PDF</>}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={async () => { setIsExportingPDF(true); try { await generatePDFReport(pinnedCharts, activeDataset?.name || 'Report'); } finally { setIsExportingPDF(false); } }}
+                    disabled={isExportingPDF}
+                    className="exec-pdf-btn"
+                  >
+                    {isExportingPDF
+                      ? <><span className="spinner" style={{ width: 13, height: 13, borderWidth: 2 }} /> Generating…</>
+                      : <><FileText size={14} /> Export PDF</>}
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (!activeDataset) return;
+                      const slugName = activeDataset.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+                      navigate(`/analytics/${slugName}/${activeDataset.id}/lumina_25`);
+                    }}
+                    className="exec-pdf-btn"
+                    style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.1))', borderColor: 'rgba(139,92,246,0.3)', color: '#8b5cf6' }}
+                  >
+                    <Sparkles size={14} /> Generate Professional Board
+                  </button>
+                </div>
               </div>
 
               {/* ── Cards grid ── */}
@@ -736,7 +850,7 @@ const [pinnedCharts, setPinnedCharts] = useState(() => {
               value={sidePrompt}
               onChange={e => setSidePrompt(e.target.value)}
               onKeyDown={handleSideKeyPress}
-              placeholder="Ask follow-up…"
+              placeholder={history.length === 0 ? "Ask anything about your data..." : "Ask follow-up..."}
               disabled={isLoading || isSideLoading || !activeDataset}
               className="flex-1 bg-transparent border-none outline-none text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
             />

@@ -5,6 +5,7 @@ const { uploadCSV, getDatasets, getDatasetPreview, deleteDataset } = require('..
 const { handleQuery } = require('../controllers/queryController');
 const { getChats, clearChats, deleteMessage } = require('../controllers/chatController');
 const { register, login, getMe } = require('../controllers/authController');
+const { saveDashboard, getDashboards, deleteDashboard } = require('../controllers/dashboardController');
 const { protect } = require('../middleware/auth');
 const fs = require('fs');
 
@@ -34,5 +35,10 @@ router.delete('/chats/:messageId', protect, deleteMessage);
 
 // Query Route
 router.post('/query', protect, handleQuery);
+
+// Dashboard Routes
+router.post('/dashboards', protect, saveDashboard);
+router.get('/dashboards', protect, getDashboards);
+router.delete('/dashboards/:id', protect, deleteDashboard);
 
 module.exports = router;

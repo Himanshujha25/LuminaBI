@@ -135,7 +135,7 @@ function DynamicChartComponent({ config, overrideChartType, compact = false }) {
     dataKey: safeXKey,
     axisLine: false,
     tickLine: false,
-    tick: { fill: 'var(--text-tertiary)', fontSize: xFontSize },
+    tick: { fill: 'var(--text-secondary)', fontSize: xFontSize, fontWeight: 600 },
     interval: xInterval,
     angle: xAngle,
     textAnchor: xTextAnchor,
@@ -144,11 +144,11 @@ function DynamicChartComponent({ config, overrideChartType, compact = false }) {
   };
 
   const yAxisProps = {
-    tick: { fill: 'var(--text-tertiary)', fontSize: xFontSize },
+    tick: { fill: 'var(--text-secondary)', fontSize: xFontSize, fontWeight: 600 },
     tickFormatter: formatNumber,
     axisLine: false,
     tickLine: false,
-    width: isSmall ? 40 : 52,
+    width: isSmall ? 40 : 60,
   };
 
   const legendStyle = { paddingTop: isSmall ? '4px' : '14px', fontSize: isSmall ? '11px' : '13px' };
