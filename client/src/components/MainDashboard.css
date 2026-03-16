@@ -604,28 +604,220 @@
 }
 .pro-table tr:hover td { background: var(--bg-color); }
 
-/* ─── 9. PINNED DASHBOARD CARDS ─── */
-.draggable-card {
+/* ─── 9. EXECUTIVE DASHBOARD ─── */
+
+/* Section wrapper */
+.exec-dashboard-section {
+  margin-top: 32px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border-color);
+}
+
+/* Header row */
+.exec-dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.exec-dashboard-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-left: 20px;
+}
+.exec-dashboard-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.2));
+  border: 1px solid rgba(99,102,241,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #818cf8;
+  flex-shrink: 0;
+}
+.exec-dashboard-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 2px;
+  letter-spacing: -0.3px;
+}
+.exec-dashboard-sub {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin: 0;
+  font-weight: 500;
+}
+.exec-chart-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(99,102,241,0.15);
+  color: #818cf8;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 20px;
+  border: 1px solid rgba(99,102,241,0.2);
+}
+
+/* PDF export button */
+.exec-pdf-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #818cf8;
+  background: rgba(99,102,241,0.1);
+  border: 1px solid rgba(99,102,241,0.25);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.exec-pdf-btn:hover:not(:disabled) {
+  background: rgba(99,102,241,0.18);
+  border-color: rgba(99,102,241,0.45);
+  box-shadow: 0 4px 14px rgba(99,102,241,0.2);
+}
+.exec-pdf-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Cards grid */
+.pinned-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+@media (min-width: 640px)  { .pinned-cards-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1280px) { .pinned-cards-grid { grid-template-columns: repeat(3, 1fr); } }
+
+/* Individual card */
+.pinned-card {
   background: var(--surface-color);
   border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 16px;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   cursor: grab;
   box-shadow: var(--shadow-sm);
-  transition: box-shadow 0.2s, border-color 0.2s;
+  transition: box-shadow 0.2s, border-color 0.2s, transform 0.15s;
+  position: relative;
+  /* Left accent line */
+  border-left: 3px solid var(--card-accent, #6366f1);
 }
-.draggable-card:hover { border-color: var(--border-focus); box-shadow: var(--shadow-md); }
-.draggable-card.dragging { opacity: 0.6; border-style: dashed; }
-.pinned-chart-tag {
-  font-size: 10px; font-weight: 700; text-transform: uppercase;
-  color: var(--text-secondary); background: var(--surface-hover);
-  padding: 4px 8px; border-radius: 4px; display: inline-block;
-  margin-bottom: 6px; border: 1px solid var(--border-color);
+.pinned-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--card-glow, rgba(99,102,241,0.08)) 0%, transparent 60%);
+  pointer-events: none;
+  border-radius: inherit;
 }
-.pinned-chart-explanation {
-  font-size: 13px; color: var(--text-primary); font-weight: 500;
-  display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+.pinned-card:hover {
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12), 0 0 0 1px var(--card-accent, #6366f1);
+  border-color: var(--card-accent, #6366f1);
+  transform: translateY(-2px);
 }
+.pinned-card.dragging {
+  opacity: 0.55;
+  transform: scale(0.97) rotate(1deg);
+  border-style: dashed;
+}
+
+/* Drag strip at top */
+.pinned-card__drag-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-color);
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-tertiary);
+  font-size: 11px;
+  user-select: none;
+}
+.pinned-card__type-badge {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  margin-left: auto;
+}
+
+/* Summary */
+.pinned-card__summary {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  padding: 10px 14px 8px;
+  line-height: 1.55;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0;
+  min-height: 52px; /* reserve at least two lines */
+}
+
+/* Chart area */
+.pinned-card__chart {
+  flex: 1;
+  padding: 4px 8px 8px;
+  min-height: 200px;
+  overflow: hidden;
+}
+@media (max-width: 640px) {
+  .pinned-card__chart { min-height: 160px; }
+}
+
+/* Actions row at card bottom */
+.pinned-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-color);
+}
+.pca-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 5px 8px;
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid var(--border-color);
+  background: var(--surface-color);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.pca-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+  border-color: var(--border-focus);
+}
+.pca-btn--danger:hover {
+  background: rgba(239,68,68,0.08);
+  color: #f87171;
+  border-color: rgba(239,68,68,0.3);
+}
+
 
 /* ─── 10. AI ASSISTANT SIDEBAR ─── */
 .assistant-sidebar {
@@ -785,4 +977,61 @@
     transform: translateY(110%); transition: transform 0.3s ease;
   }
   .assistant-sidebar.open { transform: translateY(0); }
+}
+
+/* ─── 13. MOBILE TOPBAR TIGHTENING ─── */
+@media (max-width: 640px) {
+  .topbar-shell {
+    padding: 10px 14px;
+    gap: 10px;
+  }
+  .chart-content-area { padding: 12px; }
+  .chart-panel-header { padding: 10px 14px; }
+  .sql-viewer-pro { padding: 12px 14px; }
+  .premium-kpi-grid {
+    flex-direction: column;
+  }
+  .chart-type-card { min-width: unset; }
+  .kpi-title { font-size: 18px; }
+  /* Reduce pinned card padding */
+  .draggable-card { padding: 12px; }
+}
+
+/* ─── 14. STRIP HOVER EFFECTS ON TOUCH DEVICES ─── */
+/* Prevents flash/highlight on tap in mobile */
+@media (hover: none) {
+  .draggable-card:hover {
+    border-color: var(--border-color);
+    box-shadow: var(--shadow-sm);
+    transform: none;
+  }
+  .action-btn:hover {
+    background: transparent;
+    color: var(--text-secondary);
+    border-color: transparent;
+  }
+  .seg-btn:hover { color: var(--text-tertiary); }
+  .primary-btn:hover {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+  }
+  .suggestion-card:hover {
+    transform: none;
+    box-shadow: var(--shadow-sm);
+  }
+  .history-drop__item:hover {
+    background: transparent;
+    padding-left: 16px;
+    color: var(--text-secondary);
+  }
+  .pro-table tr:hover td { background: transparent; }
+  .chat-chip-btn:hover {
+    background: var(--surface-color);
+    color: var(--text-secondary);
+    border-color: var(--border-color);
+  }
+  /* Simplify animations on mobile for performance */
+  .animate-slide-up {
+    animation: fadeIn 0.2s ease-out both;
+  }
 }

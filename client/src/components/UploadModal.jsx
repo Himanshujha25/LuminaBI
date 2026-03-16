@@ -123,8 +123,8 @@ const UploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
         // GUARANTEED Auto-close after 1.5 seconds of success visibility
         autoCloseTimer.current = setTimeout(() => {
            onClose();
-        }, 1500);
-      }, 2000); 
+        }, 100);
+      }, 3000); 
       
     } catch (err) {
       console.error("Technical Error:", err);

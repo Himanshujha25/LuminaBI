@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Search, Send, MessageSquare, ListFilter, Sparkles, Activity,
   Download, Image as ImageIcon, X, GripHorizontal, Trash2,
-  LayoutDashboard, PieChart, Zap, Eye, FileText, Clock, ChevronRight, Database
+  LayoutDashboard, PieChart, Zap, Eye, FileText, ChevronRight, Database
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import axios from 'axios';
@@ -27,20 +27,25 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
   const [pinState, setPinState]                     = useState('idle');
   const [isSidebarOpen, setIsSidebarOpen]           = useState(false);
   const [showPreview, setShowPreview]               = useState(false);
-  const [showHistoryDropdown, setShowHistoryDropdown]   = useState(false);
   const [showDatasetDropdown, setShowDatasetDropdown]   = useState(false);
   const [isExportingPDF, setIsExportingPDF]         = useState(false);
-  const [queryHistory, setQueryHistory]             = useState(() => {
-    try { return JSON.parse(localStorage.getItem('lumina_query_history') || '[]'); } catch { return []; }
-  });
-  const [pinnedCharts, setPinnedCharts] = useState(() => {
-    try {
-      const parsed = JSON.parse(localStorage.getItem('lumina_pinned_charts') || '[]');
-      const seen = new Set();
-      return parsed.filter(c => { const k = `${c.sql_used}_${c.chart_type}`; return seen.has(k) ? false : seen.add(k); });
-    } catch { return []; }
-  });
-
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+const userId = user?.id || "guest";
+const PIN_STORAGE_KEY = `lumina_pinned_charts_${userId}`;
+const [pinnedCharts, setPinnedCharts] = useState(() => {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(PIN_STORAGE_KEY) || "[]");
+    const seen = new Set();
+    return parsed.filter(c => {
+      const key = `${c.sql_used}_${c.chart_type}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  } catch {
+    return [];
+  }
+});
   const dragItem        = useRef(null);
   const dragOverItem    = useRef(null);
   const chatScrollRef   = useRef(null);
@@ -51,8 +56,9 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
   const history = activeDataset ? (chatHistories[activeDataset.id] || []) : [];
 
   // Persist pins
-  useEffect(() => { localStorage.setItem('lumina_pinned_charts', JSON.stringify(pinnedCharts)); }, [pinnedCharts]);
-
+ useEffect(() => {
+  localStorage.setItem(PIN_STORAGE_KEY, JSON.stringify(pinnedCharts));
+}, [pinnedCharts, PIN_STORAGE_KEY]);
   // Load chat history
   useEffect(() => {
     const ctrl = new AbortController();
@@ -80,10 +86,9 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
     return () => window.removeEventListener('keydown', fn);
   }, []);
 
-  // Click-outside history dropdown
+  // Click-outside dataset dropdown
   useEffect(() => {
     const fn = e => {
-      if (!e.target.closest('.history-dropdown-anchor')) setShowHistoryDropdown(false);
       if (datasetDropRef.current && !datasetDropRef.current.contains(e.target)) setShowDatasetDropdown(false);
     };
     document.addEventListener('mousedown', fn);
@@ -106,8 +111,6 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
   const handleSubmit = async (overridePrompt, isSideSearch = false) => {
     const q = (overridePrompt || prompt).trim();
     if (!q || !activeDataset) return;
-    setQueryHistory(prev => { const upd = [q, ...prev.filter(x => x !== q)].slice(0, 20); localStorage.setItem('lumina_query_history', JSON.stringify(upd)); return upd; });
-    setShowHistoryDropdown(false);
     isSideSearch ? setIsSideLoading(true) : setIsLoading(true);
     setError(null);
     setChatHistories(prev => ({ ...prev, [activeDataset.id]: [...(prev[activeDataset.id] || []), { role: 'user', text: q }] }));
@@ -278,29 +281,41 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
               <button
                 onClick={() => setShowPreview(true)}
                 title="Preview Raw Data"
-                className="w-[42px] h-[42px] shrink-0 rounded-lg border border-[var(--border-color)] bg-[var(--surface-color)] shadow-sm flex items-center justify-center text-[var(--text-secondary)] hover:text-indigo-500 hover:border-indigo-400 hover:bg-indigo-50/50 transition-all dark:hover:bg-indigo-500/10"
+                className="inline-flex flex-col sm:flex-row items-center gap-1.5 sm:gap-2 px-3 py-2.5 rounded-xl border border-[var(--border-color)] bg-[var(--surface-color)] shadow-sm text-[12px] sm:text-[13px] font-semibold text-[var(--text-secondary)] hover:text-indigo-400 hover:border-indigo-400/50 hover:bg-indigo-500/10 transition-all shrink-0 h-full"
               >
-                <Eye size={18} />
+                <Eye size={15} />
+                <span className="hidden sm:inline">Preview</span>
               </button>
             )}
           </div>
 
           {/* 2. Search Bar */}
-          <div className="searchbar history-dropdown-anchor" style={{ flex: 1, position: 'relative' }}>
+          <div className="searchbar" style={{ flex: 1, position: 'relative' }}>
             
             {isLoading ? <span className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} /> : <Search size={18} className="searchbar__icon" />}
             
-            <input
-              ref={searchInputRef}
-              type="text"
-              className="searchbar__input"
-              value={prompt}
-              onChange={e => setPrompt(e.target.value)}
-              onKeyDown={handleKeyPress}
-              onFocus={() => queryHistory.length > 0 && setShowHistoryDropdown(true)}
-              placeholder={activeDataset ? 'Ask anything about your data... (e.g., "Revenue by region")' : 'Select a dataset to begin...'}
-              disabled={isLoading || !activeDataset}
-            />
+            <div className="relative flex-1 flex flex-col justify-center min-w-0">
+              <input
+                ref={searchInputRef}
+                type="text"
+                className="searchbar__input w-full pr-8"
+                value={prompt}
+                onChange={e => setPrompt(e.target.value)}
+                onKeyDown={handleKeyPress}
+                placeholder={activeDataset ? 'Ask anything about your data...' : 'Select a dataset to begin...'}
+                disabled={isLoading || !activeDataset}
+              />
+              {prompt.trim() !== '' && (
+                <button
+                  type="button"
+                  onClick={() => { setPrompt(''); searchInputRef.current?.focus(); }}
+                  title="Clear search"
+                  className="absolute right-2 p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors rounded-full"
+                >
+                  <X size={15} />
+                </button>
+              )}
+            </div>
 
             {/* Keyboard hint (Visible on Desktop) */}
             <span style={{ display: 'none', padding: '4px 8px', fontSize: '11px', fontWeight: 600, color: 'var(--text-tertiary)', background: 'var(--surface-hover)', borderRadius: '6px', border: '1px solid var(--border-color)' }} className="sm:inline-block">
@@ -311,27 +326,6 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
               <Sparkles size={14} />
               <span style={{ display: 'none' }} className="sm:inline">Generate</span>
             </button>
-
-            {/* History Dropdown */}
-            {showHistoryDropdown && queryHistory.length > 0 && (
-              <div className="history-drop animate-fade-in">
-                <div className="history-drop__header">
-                  <Clock size={12} /> Recent Queries
-                </div>
-                <div className="custom-scrollbar" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                  {queryHistory.slice(0, 6).map((q, i) => (
-                    <button 
-                      key={i} 
-                      className="history-drop__item"
-                      onClick={() => { setPrompt(q); setShowHistoryDropdown(false); searchInputRef.current?.focus(); }}
-                    >
-                      <Search size={14} style={{ color: 'var(--text-tertiary)', flexShrink: 0 }} />
-                      <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{q}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </header>
         {/* ── SCROLLABLE BODY ── */}
@@ -495,143 +489,150 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset }) => {
 
           {/* ── WELCOME / EMPTY STATE ── */}
           {!isLoading && !currentData && (
-            <div className="flex flex-col items-center justify-center text-center py-6 sm:py-12 px-4 animate-fade-in" style={{ minHeight: '50vh' }}>
-
-              {/* Glow orb */}
-              <div className="relative mb-4 sm:mb-8">
-                <div className="absolute inset-0 rounded-3xl bg-indigo-500/20 blur-2xl scale-150" />
-                <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl glass-panel flex items-center justify-center border border-indigo-500/20">
-                  <Sparkles size={28} className="text-indigo-400 sm:w-[34px] sm:h-[34px]" />
-                </div>
+            <>
+              {/* ── MOBILE: compact hint only ── */}
+              <div className="flex sm:hidden flex-col items-center justify-center text-center px-6 animate-fade-in" style={{ minHeight: '45vh' }}>
+                <Search size={32} className="mb-4 opacity-20" style={{ color: 'var(--text-tertiary)' }} />
+                <p className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
+                  Type a question about your data above to get started.
+                </p>
               </div>
 
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black mb-3 leading-tight tracking-tight">
-                Lumina{' '}
-                <span className="gradient-text">Conversational BI</span>
-              </h1>
-              <p className="text-sm sm:text-base text-[var(--text-secondary)] max-w-md mb-10 leading-relaxed">
-                Ask anything about your data — trends, breakdowns, comparisons — and let AI render it instantly.
-              </p>
-
-              {/* Suggestion cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 w-full max-w-3xl">
-                {[
-                  { icon: <Activity size={17} />, color: 'blue',   title: 'Trend Analysis',       desc: 'Monthly order trend for last quarter.',      q: 'Give me a monthly trend of orders' },
-                  { icon: <PieChart size={17} />,  color: 'purple', title: 'Composition Breakdown', desc: 'Revenue breakdown by product category.',      q: 'What is the revenue breakdown by product category?' },
-                  { icon: <ListFilter size={17} />, color: 'green', title: 'Comparative BI',        desc: 'Top 3 regions by customer growth.',           q: 'Compare the performance of our top 3 regions', span: 'sm:col-span-2 lg:col-span-1' },
-                ].map((c, i) => (
-                  <button
-                    key={i}
-                    className={`suggestion-card glass-panel text-left group w-full ${c.span || ''}`}
-                    onClick={() => handleSubmit(c.q)}
-                  >
-                    <div className="flex sm:flex-col items-start gap-4 sm:gap-0">
-                      <div className={`suggestion-icon-box shrink-0 ${c.color} mb-0 sm:mb-4`}>{c.icon}</div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="suggestion-title truncate sm:whitespace-normal sm:mb-1">{c.title}</h3>
-                        <p className="suggestion-text line-clamp-2 sm:line-clamp-none">"{c.desc}"</p>
-                      </div>
-                    </div>
-                    <div className="hidden sm:flex mt-3 pt-3 border-t border-[var(--border-color)] items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] group-hover:text-indigo-400 transition-colors">
-                      <Sparkles size={9} /> Try this
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ── PINNED CHARTS ── */}
-          {pinnedCharts.length > 0 && !isLoading && (
-            <div className="pt-8 mt-4 border-t border-[var(--border-color)] animate-slide-up ">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div >
-                  <h2 className="text-lg sm:text-xl font-black text-[var(--text-primary)] tracking-tight">Executive Dashboard</h2>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-tertiary)] mt-0.5">
-                    {pinnedCharts.length} chart{pinnedCharts.length !== 1 ? 's' : ''} · drag to reorder
-                  </p>
-                </div>
-               <button
-  onClick={async () => {
-    setIsExportingPDF(true);
-    try {
-      await generatePDFReport(pinnedCharts, activeDataset?.name || "Report");
-    } finally {
-      setIsExportingPDF(false);
-    }
-  }}
-  disabled={isExportingPDF}
-  className="
-    inline-flex items-center gap-1.5
-    mr-2 sm:mr-0
-    px-3 py-1.5
-    bg-indigo-50 dark:bg-indigo-500/10
-    border border-indigo-200 dark:border-indigo-500/30
-    rounded-lg
-    text-xs sm:text-sm font-semibold
-    text-indigo-600 dark:text-indigo-400
-    hover:bg-indigo-100 dark:hover:bg-indigo-500/20
-    transition-all duration-200
-    disabled:opacity-50 disabled:cursor-not-allowed
-  "
->
-  {isExportingPDF ? (
-    <>
-      <span
-        className="animate-spin rounded-full border-2 border-current border-t-transparent"
-        style={{ width: 14, height: 14 }}
-      />
-      Generating...
-    </>
-  ) : (
-    <>
-      <FileText size={15} />
-      Export PDF
-    </>
-  )}
-</button>
-
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                {pinnedCharts.map((chart, index) => (
-                  <div
-                    key={chart.id}
-                    className="draggable-card"
-                    draggable
-                    onDragStart={e => { dragItem.current = index; e.currentTarget.classList.add('dragging'); }}
-                    onDragEnter={() => dragOverItem.current = index}
-                    onDragEnd={e => { e.currentTarget.classList.remove('dragging'); handleSort(); }}
-                    onDragOver={e => e.preventDefault()}
-                  >
-                    {/* Card header */}
-                    <div className="flex items-start justify-between gap-2 mb-4">
-                      <div className="flex items-start gap-2 min-w-0">
-                        <div className="drag-handle shrink-0 mt-0.5 cursor-grab">
-                          <GripHorizontal size={14} className="text-[var(--text-tertiary)]" />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="pinned-chart-tag">{chart.chart_type} Insight</div>
-                          <p className="pinned-chart-explanation">{chart.explanation}</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-1 shrink-0">
-                        <UiBtn title="Export CSV" onClick={() => exportAsCSV(chart.data, `pinned_${chart.id}`)}><Download size={11} /></UiBtn>
-                        <UiBtn title="Export PNG" onClick={() => exportAsPNG(`pinned-chart-${chart.id}`, `pinned_${chart.id}`)}><ImageIcon size={11} /></UiBtn>
-                        <UiBtn danger title="Remove" onClick={() => handleUnpinChart(chart.id)}>✕</UiBtn>
-                      </div>
-                    </div>
-
-                    <div id={`pinned-chart-${chart.id}`} className="rounded-xl overflow-hidden bg-[var(--bg-color)]">
-                      <MemoizedChart config={chart} compact={true} />
-                    </div>
+              {/* ── DESKTOP: full hero ── */}
+              <div className="hidden sm:flex flex-col items-center justify-center text-center py-12 px-4 animate-fade-in" style={{ minHeight: '50vh' }}>
+                {/* Glow orb */}
+                <div className="relative mb-8">
+                  <div className="absolute inset-0 rounded-3xl bg-indigo-500/20 blur-2xl scale-150" />
+                  <div className="relative w-20 h-20 rounded-2xl glass-panel flex items-center justify-center border border-indigo-500/20">
+                    <Sparkles size={34} className="text-indigo-400" />
                   </div>
-                ))}
+                </div>
+
+                <h1 className="text-3xl lg:text-4xl font-black mb-3 leading-tight tracking-tight">
+                  Lumina <span className="gradient-text">Conversational BI</span>
+                </h1>
+                <p className="text-base text-[var(--text-secondary)] max-w-md mb-10 leading-relaxed">
+                  Ask anything about your data — trends, breakdowns, comparisons — and let AI render it instantly.
+                </p>
+
+                {/* Suggestion cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-3xl">
+                  {[
+                    { icon: <Activity size={17} />, color: 'blue',   title: 'Trend Analysis',       desc: 'Monthly order trend for last quarter.',      q: 'Give me a monthly trend of orders' },
+                    { icon: <PieChart size={17} />,  color: 'purple', title: 'Composition Breakdown', desc: 'Revenue breakdown by product category.',      q: 'What is the revenue breakdown by product category?' },
+                    { icon: <ListFilter size={17} />, color: 'green', title: 'Comparative BI',        desc: 'Top 3 regions by customer growth.',           q: 'Compare the performance of our top 3 regions', span: 'sm:col-span-2 lg:col-span-1' },
+                  ].map((c, i) => (
+                    <button
+                      key={i}
+                      className={`suggestion-card glass-panel text-left group w-full ${c.span || ''}`}
+                      onClick={() => handleSubmit(c.q)}
+                    >
+                      <div className="flex flex-col">
+                        <div className={`suggestion-icon-box shrink-0 ${c.color} mb-4`}>{c.icon}</div>
+                        <h3 className="suggestion-title mb-1">{c.title}</h3>
+                        <p className="suggestion-text">"{c.desc}"</p>
+                      </div>
+                      <div className="mt-3 pt-3 border-t border-[var(--border-color)] flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] group-hover:text-indigo-400 transition-colors">
+                        <Sparkles size={9} /> Try this
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ── EXECUTIVE DASHBOARD (PINNED CHARTS) ── */}
+          {pinnedCharts.length > 0 && !isLoading && (
+            <div className="exec-dashboard-section animate-slide-up">
+
+              {/* ── Section header ── */}
+              <div className="exec-dashboard-header">
+                <div className="exec-dashboard-title-group">
+                 
+                  <div>
+                    <h2 className="exec-dashboard-title">Executive Dashboard</h2>
+                    <p className="exec-dashboard-sub">
+                      <span className="">{pinnedCharts.length}</span>
+                      {' '}insight{pinnedCharts.length !== 1 ? 's' : ''} · drag cards to reorder
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={async () => { setIsExportingPDF(true); try { await generatePDFReport(pinnedCharts, activeDataset?.name || 'Report'); } finally { setIsExportingPDF(false); } }}
+                  disabled={isExportingPDF}
+                  className="exec-pdf-btn"
+                >
+                  {isExportingPDF
+                    ? <><span className="spinner" style={{ width: 13, height: 13, borderWidth: 2 }} /> Generating…</>
+                    : <><FileText size={14} /> Export PDF</>}
+                </button>
+              </div>
+
+              {/* ── Cards grid ── */}
+              <div className="pinned-cards-grid">
+                {pinnedCharts.map((chart, index) => {
+                  const typeColors = {
+                    bar:   { accent: '#6366f1', glow: 'rgba(99,102,241,0.15)',  label: 'BAR' },
+                    line:  { accent: '#22d3ee', glow: 'rgba(34,211,238,0.15)',  label: 'LINE' },
+                    area:  { accent: '#a78bfa', glow: 'rgba(167,139,250,0.15)', label: 'AREA' },
+                    pie:   { accent: '#f472b6', glow: 'rgba(244,114,182,0.15)', label: 'PIE' },
+                  };
+                  const tc = typeColors[chart.chart_type] || typeColors.bar;
+
+                  return (
+                    <div
+                      key={chart.id}
+                      className="pinned-card"
+                      style={{ '--card-accent': tc.accent, '--card-glow': tc.glow }}
+                      draggable
+                      onDragStart={e => { dragItem.current = index; e.currentTarget.classList.add('dragging'); }}
+                      onDragEnter={() => dragOverItem.current = index}
+                      onDragEnd={e => { e.currentTarget.classList.remove('dragging'); handleSort(); }}
+                      onDragOver={e => e.preventDefault()}
+                    >
+                      {/* Drag strip */}
+                      <div className="pinned-card__drag-strip">
+                        <GripHorizontal size={13} />
+                        <span
+                          className="pinned-card__type-badge"
+                          style={{ color: tc.accent, background: tc.glow }}
+                        >
+                          {tc.label}
+                        </span>
+                      </div>
+
+                      {/* Summary text */}
+                      <p className="pinned-card__summary">{chart.explanation}</p>
+
+                      {/* Chart */}
+                      <div id={`pinned-chart-${chart.id}`} className="pinned-card__chart">
+                        <MemoizedChart config={chart} compact={true} />
+                      </div>
+
+                      {/* Actions row */}
+                      <div className="pinned-card__actions">
+                        <button className="pca-btn" title="Export CSV" onClick={() => exportAsCSV(chart.data, `pinned_${chart.id}`)}>
+                          <Download size={11} /> CSV
+                        </button>
+                        <button className="pca-btn" title="Export PNG" onClick={() => exportAsPNG(`pinned-chart-${chart.id}`, `pinned_${chart.id}`)}>
+                          <ImageIcon size={11} /> PNG
+                        </button>
+                        <button className="pca-btn pca-btn--danger" title="Remove" onClick={() => handleUnpinChart(chart.id)}>
+                          <Trash2 size={11} /> Remove
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
 
-          <div className="pb-40 sm:pb-8" />
+          {/* Bottom spacer — keeps content away from FAB / nav bar */}
+          <div style={{ height: '120px' }} className="sm:hidden" />
+          <div style={{ height: '64px' }} className="hidden sm:block" />
         </div>
       </main>
 

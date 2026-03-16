@@ -1,10 +1,14 @@
 .manage-premium-container {
   max-width: 650px;
   padding: 40px;
+  display: flex;
+  flex-direction: column;
+  max-height: min(90dvh, 700px);
 }
 
 .datasets-grid-container {
-  max-height: 480px;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   margin: 0 -10px;
   padding: 10px;
@@ -202,21 +206,29 @@
 /* Responsive */
 @media (max-width: 600px) {
   .manage-premium-container {
-    padding: 32px 24px;
+    padding: 20px 16px 16px;
+    max-height: min(92dvh, 640px);
   }
-  
+
   .premium-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .manage-footer-summary {
+    margin-top: 16px;
+    padding-top: 16px;
     flex-direction: column;
-    gap: 16px;
+    gap: 8px;
     align-items: flex-start;
   }
-  
+
   .footer-note {
     text-align: left;
     max-width: 100%;
+  }
+
+  .phase-header {
+    padding-bottom: 12px;
+    margin-bottom: 12px;
   }
 }

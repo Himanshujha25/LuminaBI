@@ -17,42 +17,31 @@ const handleQuery = async (req, res) => {
 
         if (datasetId) {
             // Check schema cache first
-            const cacheKey = `schema_${datasetId}`;
+            const cacheKey = `schema_${userId}_${datasetId}`;
             const cachedSchema = schemaCache.get(cacheKey);
             
             if (cachedSchema) {
                 tableName = cachedSchema.tableName;
                 columnsInfo = cachedSchema.columnsInfo;
             } else {
-                const datasetRes = await pool.query('SELECT table_name, columns FROM datasets WHERE id = $1', [datasetId]);
-                if (datasetRes.rowCount === 0) {
-                    return res.status(404).json({ error: 'Dataset not found.' });
-                }
+               const datasetRes = await pool.query(
+  'SELECT table_name, columns FROM datasets WHERE id = $1 AND user_id = $2',
+  [datasetId, userId]
+);
+
+if (datasetRes.rowCount === 0) {
+  return res.status(403).json({ error: "Dataset not found or unauthorized" });
+}
                 tableName = datasetRes.rows[0].table_name;
                 columnsInfo = datasetRes.rows[0].columns;
                 // Store in cache
                 schemaCache.set(cacheKey, { tableName, columnsInfo });
             }
-        } else {
-             columnsInfo = [
-                { original: 'timestamp', name: 'timestamp', type: 'TIMESTAMP' },
-                { original: 'video_id', name: 'video_id', type: 'TEXT' },
-                { original: 'category', name: 'category', type: 'TEXT' },
-                { original: 'language', name: 'language', type: 'TEXT' },
-                { original: 'region', name: 'region', type: 'TEXT' },
-                { original: 'duration_sec', name: 'duration_sec', type: 'BIGINT' },
-                { original: 'views', name: 'views', type: 'BIGINT' },
-                { original: 'likes', name: 'likes', type: 'BIGINT' },
-                { original: 'comments', name: 'comments', type: 'BIGINT' },
-                { original: 'shares', name: 'shares', type: 'BIGINT' },
-                { original: 'sentiment_score', name: 'sentiment_score', type: 'DOUBLE PRECISION' },
-                { original: 'ads_enabled', name: 'ads_enabled', type: 'BOOLEAN' },
-             ];
         }
 
         // 1. Check Insight Cache for repeat questions
         const historyHash = history ? crypto.createHash('md5').update(JSON.stringify(history.slice(-3))).digest('hex') : 'no_hist';
-        const insightKey = `insight_${datasetId || 'default'}_${prompt}_${historyHash}`;
+        const insightKey = `insight_${userId}_${datasetId || 'default'}_${prompt}_${historyHash}`;
         let aiResponse = insightCache.get(insightKey);
 
         if (!aiResponse) {
