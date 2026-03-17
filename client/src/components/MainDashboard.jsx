@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Search, Send, MessageSquare, ListFilter, Sparkles, Activity,
   Download, Image as ImageIcon, X, GripHorizontal, Trash2,
-  LayoutDashboard, PieChart, Zap, Eye, FileText, ChevronRight, Database, Table
+  LayoutDashboard, PieChart, Zap, Eye, FileText, ChevronRight, Database, Table, Plus
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import axios from 'axios';
@@ -17,7 +17,7 @@ import './MainDashboard.css';
 
 const MemoizedChart = React.memo(DynamicChartComponent);
 
-const MainDashboard = ({ activeDataset, datasets, setActiveDataset, toggleTheme, isDark }) => {
+const MainDashboard = ({ activeDataset, datasets, setActiveDataset, toggleTheme, isDark, onAnalyticsClick, onUploadClick }) => {
   const navigate = useNavigate();
   const [prompt, setPrompt]                          = useState('');
   const [isLoading, setIsLoading]                   = useState(false);
@@ -29,7 +29,7 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset, toggleTheme,
   const [viewMode, setViewMode]                     = useState('chart');
   const [sidePrompt, setSidePrompt]                 = useState('');
   const [pinState, setPinState]                     = useState('idle');
-  const [isSidebarOpen, setIsSidebarOpen]           = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen]           = useState(true);
   const [showPreview, setShowPreview]               = useState(false);
   const [showDatasetDropdown, setShowDatasetDropdown]   = useState(false);
   const [isExportingPDF, setIsExportingPDF]         = useState(false);
@@ -115,7 +115,11 @@ const [pinnedCharts, setPinnedCharts] = useState(() => {
     if (chatScrollRef.current) chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
   }, [history, isSideLoading]);
 
-  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [history, isSidebarOpen]);
+  useEffect(() => { 
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Trigger window resize to help Recharts adjust to the sidebar width change
+    setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 450);
+  }, [history, isSidebarOpen]);
 
   // ── Handlers ──
   const handleSubmit = async (overridePrompt, isSideSearch = false) => {
@@ -264,6 +268,66 @@ const [pinnedCharts, setPinnedCharts] = useState(() => {
     return <KpiCards data={data} isNumeric={isNumeric} numericKey={numericKey} total={total} max={max} />;
   };
 
+  const renderKPIsHorizontal = (data, xAxis, yAxis) => {
+    if (!data || data.length === 0) return null;
+    let total = 0;
+    let max = -Infinity;
+    let numericKey = yAxis;
+    const keys = Object.keys(data[0]);
+    
+    if (!numericKey || isNaN(parseFloat(data[0][numericKey]))) {
+      numericKey = keys.find(k => k !== xAxis && !isNaN(parseFloat(data[0][k])));
+    }
+
+    if (numericKey) {
+      data.forEach(row => {
+        const val = parseFloat(row[numericKey]);
+        if (!isNaN(val)) {
+          total += val;
+          if (val > max) max = val;
+        }
+      });
+    }
+
+    if (!numericKey) return null;
+
+    return (
+      <div className="flex flex-wrap items-center justify-between w-full gap-4">
+        {/* Total Metric Card */}
+        <div className="premium-metric-card group">
+          <div className="metric-icon-box bg-indigo-500/10 text-indigo-500 border border-indigo-500/10">
+            <Activity size={18} />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-tertiary)] mb-1">Total {numericKey}</span>
+            <div className="flex items-baseline gap-2">
+              <strong className="text-xl font-black text-[var(--text-primary)] tracking-tight">{total.toLocaleString()}</strong>
+              <span className="flex items-center text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded-full">
+                <ChevronRight size={10} className="-rotate-90" /> 12.5%
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Avg Metric Card */}
+        <div className="premium-metric-card group">
+          <div className="metric-icon-box bg-purple-500/10 text-purple-500 border border-purple-500/10">
+            <Zap size={18} />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-tertiary)] mb-1">Average Value</span>
+            <div className="flex items-baseline gap-2">
+              <strong className="text-xl font-black text-[var(--text-primary)] tracking-tight">
+                {(total / data.length).toLocaleString(undefined, { maximumFractionDigits: 1 })}
+              </strong>
+              <span className="text-[10px] font-medium text-[var(--text-tertiary)]">per record</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // ── CHART TYPE BUTTONS ──
   const chartTypes = ['bar', 'line', 'area', 'pie'];
 
@@ -282,85 +346,37 @@ const [pinnedCharts, setPinnedCharts] = useState(() => {
        {/* ── CLEAN ENTERPRISE HEADER ── */}
         <header className="topbar-shell">
 
-          {/* 1. Dataset Selector */}
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
-            <div ref={datasetDropRef} style={{ position: 'relative', width: '100%', minWidth: '220px', maxWidth: '340px' }}>
-              <button className="dataset-pill" onClick={() => setShowDatasetDropdown(v => !v)}>
-                
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden' }}>
-                  <div style={{ padding: '6px', background: 'var(--surface-hover)', borderRadius: '6px', color: 'var(--accent-blue)' }}>
-                    <Database size={16} />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', overflow: 'hidden' }}>
-                    <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-tertiary)' }}>
-                      Active Workspace
-                    </span>
-                    <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '220px' }}>
-                      {activeDataset?.name || 'Select a dataset...'}
-                    </span>
-                  </div>
-                </div>
-
-                <ChevronRight 
-                  size={16} 
-                  style={{ color: 'var(--text-tertiary)', flexShrink: 0, transform: showDatasetDropdown ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }} 
-                />
-              </button>
-
-              {/* Dataset Dropdown */}
-              {showDatasetDropdown && datasets.length > 0 && (
-                <div className="history-drop animate-fade-in">
-                  <div className="history-drop__header">
-                    <Database size={12} /> Your Datasets
-                  </div>
-                  <div className="custom-scrollbar" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                    {datasets.map(d => (
-                      <button
-                        key={d.id}
-                        onClick={() => { setActiveDataset(d); setShowDatasetDropdown(false); }}
-                        className="history-drop__item"
-                        style={activeDataset?.id === d.id ? { borderLeftColor: 'var(--accent-blue)', background: 'var(--surface-hover)' } : {}}
-                      >
-                        <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: activeDataset?.id === d.id ? 600 : 500, color: activeDataset?.id === d.id ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
-                          {d.name}
-                        </span>
-                        {activeDataset?.id === d.id && (
-                          <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--accent-blue)', background: 'var(--accent-light)', padding: '2px 6px', borderRadius: '4px' }}>ACTIVE</span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+          {/* 1. Page Title */}
+          <div className="flex items-center gap-4">
+            <h1 className="text-xl font-bold tracking-tight text-[var(--text-primary)]">
+              {activeDataset?.name || 'Getting Started'}
+            </h1>
+            <div className="hidden sm:block h-6 w-[1px] bg-[var(--border-color)] mx-2" />
             
             {/* View Dataset Button */}
             {activeDataset && (
-          <button
-  onClick={() => setShowPreview(true)}
-  title="Preview Raw Data"
-  className="group inline-flex items-center justify-center gap-2 h-9 px-4 
-             bg-white dark:bg-neutral-900 
-             border border-neutral-200 dark:border-neutral-700 
-             rounded-[9px] cursor-pointer shrink-0
-             hover:border-indigo-300 dark:hover:border-indigo-600
-             hover:bg-indigo-50/40 dark:hover:bg-indigo-950/30
-             hover:shadow-[0_0_0_3px_rgba(99,102,241,0.12)]
-             hover:-translate-y-px
-             active:translate-y-0 active:scale-[0.97]
-             transition-all duration-150"
->
-  <Table
-    size={15}
-    className="text-neutral-400 group-hover:text-indigo-500 transition-colors duration-150"
-  />
-  <span className="hidden sm:inline text-[13px] font-medium text-neutral-500 dark:text-neutral-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-150">
-    Preview Dataset
-  </span>
-  
-</button>
+              <button
+                onClick={() => setShowPreview(true)}
+                title="Preview Raw Data"
+                className="group inline-flex items-center justify-center gap-2 h-9 px-4 
+                           bg-white dark:bg-neutral-900 
+                           border border-neutral-200 dark:border-neutral-700 
+                           rounded-[9px] cursor-pointer shrink-0
+                           hover:border-indigo-300 dark:hover:border-indigo-600
+                           hover:bg-indigo-50/40 dark:hover:bg-indigo-950/30
+                           hover:shadow-[0_0_0_3px_rgba(99,102,241,0.12)]
+                           hover:-translate-y-px
+                           active:translate-y-0 active:scale-[0.97]
+                           transition-all duration-150"
+              >
+                <Table size={15} className="text-neutral-400 group-hover:text-indigo-500 transition-colors duration-150" />
+                <span className="hidden sm:inline text-[13px] font-medium text-neutral-500 dark:text-neutral-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-150">
+                  Preview Dataset
+                </span>
+              </button>
             )}
           </div>
+
 
           {/* 2. Search Bar (Mobile Only) */}
           <div className="searchbar sm:!hidden" style={{ flex: 1, position: 'relative' }}>
@@ -418,175 +434,159 @@ const [pinnedCharts, setPinnedCharts] = useState(() => {
 
           {/* ── RESULT ── */}
           {!isLoading && currentData && (
-            <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 animate-slide-up pb-8 pl-1 sm:pl-2 xl:pl-4">
-
-              {/* ── LEFT COLUMN: Executive Sidebar (Summary, Chart Types, KPIs) ── */}
-              <div className="xl:col-span-1 flex flex-col gap-5 pr-1 sm:pr-2">
+            <div className="animate-slide-up pb-8 pl-1 sm:pl-2 xl:pl-4">
+              {/* ── Main Chart Area (Full Width now, moving metadata to top) ── */}
+              <div className="flex flex-col min-w-0">
                 
-                {/* Executive Summary */}
-                <div className="premium-kpi-card flex flex-col gap-3" style={{ padding: '20px', margin: '0 3px' }}>
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-500 shadow-sm border border-indigo-500/20">
-                      <Sparkles size={16} />
-                    </div>
-                    <span className="text-[11px] font-bold tracking-widest uppercase text-[var(--text-primary)]">AI Summary</span>
-                  </div>
-                  <p className="m-0 text-[13px] leading-relaxed font-medium text-[var(--text-secondary)]">
-                    {currentData.explanation}
-                  </p>
+                {/* ── Metadata Top Bar (New Clean Version) ── */}
+                <div className="flex flex-col mb-6">
+                   <div className="w-full">
+                      {renderKPIsHorizontal(currentData.data, currentData.x_axis_column, currentData.y_axis_column)}
+                   </div>
                 </div>
 
-                {/* format Card */}
-                <div className="premium-kpi-card flex flex-row items-center justify-between" style={{ padding: '20px ', margin: '0 3px'}}>
-                  <div className="flex flex-col gap-1">
-                    <span className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-tertiary)] mb-1">Format</span>
-                    <strong className="text-2xl font-black text-[var(--text-primary)] tracking-tight">{(currentData.chart_type || 'chart').toUpperCase()}</strong>
-                  </div>
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 flex items-center justify-center text-indigo-500 border border-indigo-500/20">
-                    <Activity size={22} />
-                  </div>
-                </div>
-
-                {/* Data Grid KPIs */}
-                {renderKPIs(currentData.data, currentData.x_axis_column, currentData.y_axis_column)}
-
-              </div>
-
-              {/* ── RIGHT COLUMN: Main Chart Area ── */}
-              <div className="xl:col-span-3 flex flex-col min-w-0">
                 <div className="chart-panel-container flex-1 flex flex-col m-0 shadow-md">
-                
-                {/* Controls Header */}
-                <div className="chart-panel-header">
-                  
-                  {/* Left Side: Title */}
-                  <div className="chart-panel-title">
-                    <Activity size={18} className="title-icon" />
-                    <h2>Data Visualization</h2>
-                  </div>
-
-                  {/* Right Side: Toolbars & Actions */}
-                  <div className="chart-panel-actions">
+                   
+                  {/* Controls Header */}
+                  <div className="chart-panel-header">
                     
-                    {/* Segmented Control: View Mode */}
-                    <div className="segmented-control">
-                      <button 
-                        className={`seg-btn ${viewMode === 'table' ? 'active' : ''}`} 
-                        onClick={() => setViewMode('table')}
-                      >
-                        <ListFilter size={14} /> <span>Table</span>
-                      </button>
-                      <button 
-                        className={`seg-btn ${viewMode === 'chart' ? 'active' : ''}`} 
-                        onClick={() => setViewMode('chart')}
-                      >
-                        <PieChart size={14} /> <span>Chart</span>
-                      </button>
+                    {/* Left Side: Title */}
+                    <div className="chart-panel-title">
+                      <Activity size={18} className="title-icon" />
+                      <h2>Data Visualization</h2>
                     </div>
 
-                    {/* Segmented Control: Chart Types (Only show if Chart mode) */}
-                    {viewMode === 'chart' && (
+                    {/* Right Side: Toolbars & Actions */}
+                    <div className="chart-panel-actions">
+                      
+                      {/* Segmented Control: View Mode */}
                       <div className="segmented-control">
-                        {chartTypes.map(ct => (
+                        <button 
+                          className={`seg-btn ${viewMode === 'table' ? 'active' : ''}`} 
+                          onClick={() => setViewMode('table')}
+                        >
+                          <ListFilter size={14} /> <span>Table</span>
+                        </button>
+                        <button 
+                          className={`seg-btn ${viewMode === 'chart' ? 'active' : ''}`} 
+                          onClick={() => setViewMode('chart')}
+                        >
+                          <PieChart size={14} /> <span>Chart</span>
+                        </button>
+                      </div>
+
+                      {/* Segmented Control: Chart Types (Only show if Chart mode) */}
+                      {viewMode === 'chart' && (
+                        <div className="segmented-control">
+                          {chartTypes.map(ct => (
+                            <button
+                              key={ct}
+                              className={`seg-btn ${(chartTypeOverride || currentData.chart_type) === ct ? 'active' : ''}`}
+                              onClick={() => setChartTypeOverride(ct)}
+                            >
+                              <span style={{ textTransform: 'capitalize' }}>{ct}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="divider-vert" />
+
+                      {/* Segmented Control: Data Slicer */}
+                      <div className="segmented-control hidden sm:flex">
+                        {['5', '10', 'All'].map(limit => (
                           <button
-                            key={ct}
-                            className={`seg-btn ${(chartTypeOverride || currentData.chart_type) === ct ? 'active' : ''}`}
-                            onClick={() => setChartTypeOverride(ct)}
+                            key={limit}
+                            className={`seg-btn ${dataSlicerLimit === limit ? 'active' : ''}`}
+                            onClick={() => setDataSlicerLimit(limit)}
                           >
-                            <span style={{ textTransform: 'capitalize' }}>{ct}</span>
+                            <span>Top {limit}</span>
                           </button>
                         ))}
                       </div>
-                    )}
 
-                    <div className="divider-vert" />
+                      <div className="divider-vert hidden sm:block" />
 
-                    {/* Segmented Control: Data Slicer */}
-                    <div className="segmented-control hidden sm:flex">
-                      {['5', '10', 'All'].map(limit => (
-                        <button
-                          key={limit}
-                          className={`seg-btn ${dataSlicerLimit === limit ? 'active' : ''}`}
-                          onClick={() => setDataSlicerLimit(limit)}
-                        >
-                          <span>Top {limit}</span>
-                        </button>
-                      ))}
+                      {/* Secondary Actions */}
+                      <button 
+                        className={`action-btn ${showSQL ? 'active' : ''}`} 
+                        onClick={() => setShowSQL(!showSQL)} 
+                        title="View SQL"
+                      >
+                        <Zap size={15} /> <span className="action-btn-text">SQL</span>
+                      </button>
+
+                      <button className="action-btn icon-only" onClick={() => exportAsCSV(currentData.data, 'lumina_export')} title="Export CSV">
+                        <Download size={15} />
+                      </button>
+                      <button className="action-btn icon-only" onClick={() => exportAsPNG('main-chart-export', 'lumina_insight')} title="Export PNG">
+                        <ImageIcon size={15} />
+                      </button>
+
+                      {/* Primary Action Button */}
+                      <button
+                        onClick={handlePinChart}
+                        className={`primary-btn ${pinState !== 'idle' ? pinState : ''}`}
+                      >
+                        <LayoutDashboard size={14} />
+                        <span className="action-btn-text">
+                          {pinState === 'success' ? 'Pinned!' : pinState === 'duplicate' ? 'Saved' : 'Pin to Board'}
+                        </span>
+                      </button>
+
+                      <button
+                        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                        className={`action-btn ${isSidebarOpen ? 'active' : ''}`}
+                        style={isSidebarOpen ? { background: 'var(--accent-blue)', color: 'white' } : { background: 'var(--accent-light)', borderColor: 'var(--accent-blue)', color: 'var(--accent-blue)' }}
+                      >
+                        <MessageSquare size={14} />
+                        <span className="action-btn-text">{isSidebarOpen ? 'Close Chat' : 'Open Chat'}</span>
+                      </button>
                     </div>
-
-                    <div className="divider-vert hidden sm:block" />
-
-                    {/* Secondary Actions */}
-                    <button 
-                      className={`action-btn ${showSQL ? 'active' : ''}`} 
-                      onClick={() => setShowSQL(!showSQL)} 
-                      title="View SQL"
-                    >
-                      <Zap size={15} /> <span className="action-btn-text">SQL</span>
-                    </button>
-
-                    <button className="action-btn icon-only" onClick={() => exportAsCSV(currentData.data, 'lumina_export')} title="Export CSV">
-                      <Download size={15} />
-                    </button>
-                    <button className="action-btn icon-only" onClick={() => exportAsPNG('main-chart-export', 'lumina_insight')} title="Export PNG">
-                      <ImageIcon size={15} />
-                    </button>
-
-                    {/* Primary Action Button */}
-                    <button
-                      onClick={handlePinChart}
-                      className={`primary-btn ${pinState !== 'idle' ? pinState : ''}`}
-                    >
-                      <LayoutDashboard size={14} />
-                      <span className="action-btn-text">
-                        {pinState === 'success' ? 'Pinned!' : pinState === 'duplicate' ? 'Saved' : 'Pin to Board'}
-                      </span>
-                    </button>
-
                   </div>
-                </div>
 
-                {/* SQL viewer */}
-                {showSQL && (
-                  <div className="sql-viewer-pro">
-                    <div className="sql-label-pro"><Database size={12}/> Executed PostgreSQL Query</div>
-                    <code>{currentData.sql_used}</code>
-                  </div>
-                )}
-
-                {/* Main Content Area */}
-                <div id="main-chart-export" className="chart-content-area">
-                  {viewMode === 'table' ? (
-                    <div className="pro-table-wrapper">
-                      <table className="pro-table">
-                        <thead>
-                          <tr>
-                            {slicedConfig?.data?.[0] && Object.keys(slicedConfig.data[0]).map(k => (
-                              <th key={k}>{k}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {slicedConfig?.data?.slice(0, 100).map((row, i) => (
-                            <tr key={i}>
-                              {Object.values(row).map((v, j) => (
-                                <td key={j}>{String(v ?? '')}</td>
-                              ))}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <div className="pro-chart-wrapper">
-                      <MemoizedChart config={slicedConfig} overrideChartType={chartTypeOverride} />
+                  {/* SQL viewer */}
+                  {showSQL && (
+                    <div className="sql-viewer-pro">
+                      <div className="sql-label-pro"><Database size={12}/> Executed PostgreSQL Query</div>
+                      <code>{currentData.sql_used}</code>
                     </div>
                   )}
+
+                  {/* Main Content Area */}
+                  <div id="main-chart-export" className="chart-content-area">
+                    {viewMode === 'table' ? (
+                      <div className="pro-table-wrapper">
+                        <table className="pro-table">
+                          <thead>
+                            <tr>
+                              {slicedConfig?.data?.[0] && Object.keys(slicedConfig.data[0]).map(k => (
+                                <th key={k}>{k}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {slicedConfig?.data?.slice(0, 100).map((row, i) => (
+                              <tr key={i}>
+                                {Object.values(row).map((v, j) => (
+                                  <td key={j}>{String(v ?? '')}</td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div className="pro-chart-wrapper">
+                        <MemoizedChart config={slicedConfig} overrideChartType={chartTypeOverride} />
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
               </div>
             </div>
           )}
+
 
           {/* ── WELCOME / EMPTY STATE ── */}
           {!isLoading && !currentData && (
@@ -600,46 +600,86 @@ const [pinnedCharts, setPinnedCharts] = useState(() => {
               </div>
 
               {/* ── DESKTOP: full hero ── */}
-              <div className="hidden sm:flex flex-col items-center justify-center text-center py-12 px-4 animate-fade-in" style={{ minHeight: '50vh' }}>
-                {/* Glow orb */}
-                <div className="relative mb-8">
-                  <div className="absolute inset-0 rounded-3xl bg-indigo-500/20 blur-2xl scale-150" />
-                  <div className="relative w-20 h-20 rounded-2xl glass-panel flex items-center justify-center border border-indigo-500/20">
-                    <Sparkles size={34} className="text-indigo-400" />
+              <div className="flex flex-col animate-fade-in py-4 pl-1" style={{ minHeight: '50vh' }}>
+                
+                {/* Workspaces Section (New) */}
+                <div className="mb-10">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-500 border border-indigo-500/20 shadow-sm">
+                        <Database size={20} />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-black tracking-tight text-[var(--text-primary)]">Your Workspaces</h2>
+                        <p className="text-xs text-[var(--text-tertiary)] font-medium">Select a dataset to start chatting</p>
+                      </div>
+                    </div>
+                    <button className="exec-pdf-btn px-4 h-9 flex items-center gap-2" style={{ width: 'auto' }} onClick={onUploadClick}>
+                      <Plus size={16} /> <span className="text-xs font-bold uppercase tracking-wider">New Workspace</span>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {datasets.map(d => (
+                      <button 
+                        key={d.id} 
+                        onClick={() => setActiveDataset(d)}
+                        className={`workspace-card glass-panel group ${activeDataset?.id === d.id ? 'active' : ''}`}
+                      >
+                         <div className="flex items-center gap-4 mb-3">
+                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 group-hover:from-indigo-500/20 group-hover:to-purple-500/20 flex items-center justify-center text-indigo-400 border border-indigo-500/10 transition-all">
+                               <Table size={24} />
+                            </div>
+                            <div className="text-left overflow-hidden">
+                               <h3 className="text-sm font-bold text-[var(--text-primary)] truncate">{d.name}</h3>
+                               <p className="text-[10px] text-[var(--text-tertiary)] font-bold uppercase tracking-widest">CSV Dataset</p>
+                            </div>
+                         </div>
+                         <div className="flex items-center justify-between mt-auto pt-3 border-t border-[var(--border-color)]">
+                            <span className="text-[10px] font-bold text-[var(--text-tertiary)]">ID: {String(d.id).slice(0, 8)}</span>
+                            <div className="w-5 h-5 rounded-full border border-[var(--border-color)] flex items-center justify-center group-hover:border-indigo-400 group-hover:bg-indigo-400/10 transition-all">
+                               <ChevronRight size={10} className="group-hover:text-indigo-400" />
+                            </div>
+                         </div>
+                      </button>
+                    ))}
                   </div>
                 </div>
 
-                <h1 className="text-3xl lg:text-4xl font-black mb-3 leading-tight tracking-tight">
-                  Lumina <span className="gradient-text">Conversational BI</span>
-                </h1>
-                <p className="text-base text-[var(--text-secondary)] max-w-md mb-10 leading-relaxed">
-                  Ask anything about your data — trends, breakdowns, comparisons — and let AI render it instantly.
-                </p>
+                <div className="hidden sm:flex flex-col items-center justify-center text-center py-8">
+                  <h1 className="text-3xl lg:text-4xl font-black mb-3 leading-tight tracking-tight">
+                    Lumina <span className="gradient-text">Conversational BI</span>
+                  </h1>
+                  <p className="text-base text-[var(--text-secondary)] max-w-md mb-10 leading-relaxed">
+                    Ask anything about your data — trends, breakdowns, comparisons — and let AI render it instantly.
+                  </p>
 
-                {/* Suggestion cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-3xl">
-                  {[
-                    { icon: <Activity size={17} />, color: 'blue',   title: 'Trend Analysis',       desc: 'Monthly order trend for last quarter.',      q: 'Give me a monthly trend of orders' },
-                    { icon: <PieChart size={17} />,  color: 'purple', title: 'Composition Breakdown', desc: 'Revenue breakdown by product category.',      q: 'What is the revenue breakdown by product category?' },
-                    { icon: <ListFilter size={17} />, color: 'green', title: 'Comparative BI',        desc: 'Top 3 regions by customer growth.',           q: 'Compare the performance of our top 3 regions', span: 'sm:col-span-2 lg:col-span-1' },
-                  ].map((c, i) => (
-                    <button
-                      key={i}
-                      className={`suggestion-card glass-panel text-left group w-full ${c.span || ''}`}
-                      onClick={() => handleSubmit(c.q)}
-                    >
-                      <div className="flex flex-col">
-                        <div className={`suggestion-icon-box shrink-0 ${c.color} mb-4`}>{c.icon}</div>
-                        <h3 className="suggestion-title mb-1">{c.title}</h3>
-                        <p className="suggestion-text">"{c.desc}"</p>
-                      </div>
-                      <div className="mt-3 pt-3 border-t border-[var(--border-color)] flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] group-hover:text-indigo-400 transition-colors">
-                        <Sparkles size={9} /> Try this
-                      </div>
-                    </button>
-                  ))}
+                  {/* Suggestion cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-3xl">
+                    {[
+                      { icon: <Activity size={17} />, color: 'blue',   title: 'Trend Analysis',       desc: 'Monthly order trend for last quarter.',      q: 'Give me a monthly trend of orders' },
+                      { icon: <PieChart size={17} />,  color: 'purple', title: 'Composition Breakdown', desc: 'Revenue breakdown by product category.',      q: 'What is the revenue breakdown by product category?' },
+                      { icon: <ListFilter size={17} />, color: 'green', title: 'Comparative BI',        desc: 'Top 3 regions by customer growth.',           q: 'Compare the performance of our top 3 regions', span: 'sm:col-span-2 lg:col-span-1' },
+                    ].map((c, i) => (
+                      <button
+                        key={i}
+                        className={`suggestion-card glass-panel text-left group w-full ${c.span || ''}`}
+                        onClick={() => handleSubmit(c.q)}
+                      >
+                        <div className="flex flex-col">
+                          <div className={`suggestion-icon-box shrink-0 ${c.color} mb-4`}>{c.icon}</div>
+                          <h3 className="suggestion-title mb-1">{c.title}</h3>
+                          <p className="suggestion-text">"{c.desc}"</p>
+                        </div>
+                        <div className="mt-3 pt-3 border-t border-[var(--border-color)] flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] group-hover:text-indigo-400 transition-colors">
+                          <Sparkles size={9} /> Try this
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
+
             </>
           )}
 
@@ -670,17 +710,14 @@ const [pinnedCharts, setPinnedCharts] = useState(() => {
                       ? <><span className="spinner" style={{ width: 13, height: 13, borderWidth: 2 }} /> Generating…</>
                       : <><FileText size={14} /> Export PDF</>}
                   </button>
-                  <button
-                    onClick={() => {
-                      if (!activeDataset) return;
-                      const slugName = activeDataset.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
-                      navigate(`/analytics/${slugName}/${activeDataset.id}/lumina_25`);
-                    }}
+                  <button 
+                    onClick={onAnalyticsClick}
                     className="exec-pdf-btn"
                     style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.1))', borderColor: 'rgba(139,92,246,0.3)', color: '#8b5cf6' }}
                   >
                     <Sparkles size={14} /> Generate Professional Board
                   </button>
+
                 </div>
               </div>
 
@@ -743,12 +780,12 @@ const [pinnedCharts, setPinnedCharts] = useState(() => {
               </div>
             </div>
           )}
-
           {/* Bottom spacer — keeps content away from FAB / nav bar */}
           <div style={{ height: '120px' }} className="sm:hidden" />
           <div style={{ height: '64px' }} className="hidden sm:block" />
         </div>
       </main>
+
 
       {/* ── Backdrop ── */}
       {isSidebarOpen && (
@@ -783,9 +820,11 @@ const [pinnedCharts, setPinnedCharts] = useState(() => {
             )}
             <button
               onClick={() => setIsSidebarOpen(false)}
-              className="mobile-close-sidebar w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)] transition-all"
+              title="Close Assistant"
+              className="close-sidebar-btn px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-[var(--text-tertiary)] hover:text-red-400 hover:bg-red-400/10 transition-all font-bold text-[11px] uppercase tracking-wider"
             >
               <X size={14} />
+              <span>Close</span>
             </button>
           </div>
         </div>
@@ -805,17 +844,17 @@ const [pinnedCharts, setPinnedCharts] = useState(() => {
                 ? (msg.data.suggested_follow_ups?.length > 0 ? msg.data.suggested_follow_ups : ['Tell me more', 'Key takeaways?'])
                 : [];
               return (
-                <div key={i} className={`chat-bubble ${msg.role === 'user' ? 'user-bubble' : 'ai-bubble'} relative pr-6`}>
+                <div key={i} className={`chat-bubble ${msg.role === 'user' ? 'user-bubble' : 'ai-bubble'} relative group`}>
                   <button
                     onClick={() => handleRemoveMessage(i)}
-                    className="absolute top-2 right-2 w-4 h-4 flex items-center justify-center rounded opacity-0 hover:opacity-100
-                               bg-transparent border-none cursor-pointer text-[var(--text-tertiary)] hover:text-[var(--text-primary)]
-                               transition-all group-hover:opacity-60"
+                    className="absolute top-2 right-2 w-4 h-4 flex items-center justify-center rounded-lg opacity-0 hover:opacity-100
+                               bg-transparent border-none cursor-pointer text-[var(--text-tertiary)] hover:text-red-400 hover:bg-red-400/10
+                               transition-all"
                     title="Remove"
                   >
                     <X size={10} />
                   </button>
-                  <div className="bubble-content">{msg.text}</div>
+                  <div className="bubble-content text-xs leading-relaxed">{msg.text}</div>
                   {chips.length > 0 && (
                     <div className="flex flex-col gap-1.5 mt-3 pt-3 border-t border-dashed border-[var(--border-color)]">
                       <span className="text-[9px] font-black uppercase tracking-wider text-[var(--text-tertiary)]">Follow-ups</span>
@@ -832,11 +871,9 @@ const [pinnedCharts, setPinnedCharts] = useState(() => {
             })
           )}
           {isSideLoading && (
-            <div className="chat-bubble ai-bubble">
-              <div className="bubble-content flex items-center gap-2">
-                <span className="spinner" style={{ width: 11, height: 11, borderWidth: 2, display: 'inline-block' }} />
+            <div className="chat-bubble ai-bubble flex items-center gap-2">
+                <span className="spinner" style={{ width: 11, height: 11, borderWidth: 2 }} />
                 <span className="text-xs text-[var(--text-secondary)]">Analyzing…</span>
-              </div>
             </div>
           )}
           <div ref={chatEndRef} />
@@ -859,7 +896,7 @@ const [pinnedCharts, setPinnedCharts] = useState(() => {
               disabled={isLoading || isSideLoading || !sidePrompt.trim() || !activeDataset}
               className="side-send-btn"
             >
-              <Send size={13} />
+              <Send size={15} />
             </button>
           </div>
         </div>

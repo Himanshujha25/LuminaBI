@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { AUTH_URL } from '../config';
+import { AUTH_URL, BASE_URL } from '../config';
 import { BarChart2, User, Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react';
 import './Auth.css';
 
@@ -12,6 +12,11 @@ const Signup = ({ setToken }) => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+ 
+  // Pre-warm the backend (wake up Render)
+  React.useEffect(() => {
+    axios.get(`${BASE_URL}/health`).catch(() => {});
+  }, []);
 
   const handleSignup = async (e) => {
     e.preventDefault();

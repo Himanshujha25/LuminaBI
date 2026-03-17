@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Header from './components/Header';
 import UploadModal from './components/UploadModal';
 import ManageModal from './components/ManageModal';
@@ -8,9 +8,91 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import DynamicBoardPage from './pages/DynamicBoardPage';
+import SharedReport from './pages/SharedReport.jsx';
+import Sidebar from './components/Sidebar';
 import { CheckCircle, AlertCircle, X } from 'lucide-react';
 import axios from 'axios';
 import { API_URL } from './config';
+
+const DashboardWrapper = ({ 
+  token, isDark, toggleTheme, handleLogout, activeDataset, setActiveDataset, 
+  datasets, isUploadOpen, setIsUploadOpen, isManageOpen, setIsManageOpen, globalUploadState, 
+  handleUploadSuccess, setGlobalUploadState, handleDeleteDataset, toast, setToast 
+}) => {
+  const navigate = useNavigate();
+  const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+
+  const handleAnalyticsClick = () => {
+    if (!activeDataset) return;
+    const slugName = activeDataset.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    navigate(`/analytics/${slugName}/${activeDataset.id}/lumina_25`);
+  };
+
+  if (!token) return <Navigate to="/login" />;
+
+  return (
+    <div className="layout-container" style={{ flexDirection: 'row', height: '100vh', overflow: 'hidden' }}>
+      <Sidebar 
+        activeDataset={activeDataset}
+        datasets={datasets}
+        setActiveDataset={setActiveDataset}
+        onUploadClick={() => setIsUploadOpen(true)}
+        onManageClick={() => setIsManageOpen(true)}
+        onAnalyticsClick={handleAnalyticsClick}
+        isVisible={isSidebarVisible}
+      />
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <Header 
+          onUploadClick={() => setIsUploadOpen(true)} 
+          onManageClick={() => setIsManageOpen(true)}
+          toggleTheme={toggleTheme} 
+          isDark={isDark}
+          onLogout={handleLogout}
+          uploadState={globalUploadState}
+          isSidebarVisible={isSidebarVisible}
+          setIsSidebarVisible={setIsSidebarVisible}
+        />
+        <main className="main-content">
+          <MainDashboard 
+            activeDataset={activeDataset} 
+            datasets={datasets}
+            setActiveDataset={setActiveDataset}
+            toggleTheme={toggleTheme}
+            isDark={isDark}
+            onAnalyticsClick={handleAnalyticsClick}
+            onUploadClick={() => setIsUploadOpen(true)}
+          />
+        </main>
+      </div>
+
+      <UploadModal 
+        isOpen={isUploadOpen} 
+        onClose={() => setIsUploadOpen(false)} 
+        onUploadSuccess={handleUploadSuccess}
+        onGlobalSync={setGlobalUploadState}
+      />
+      <ManageModal 
+        isOpen={isManageOpen} 
+        onClose={() => setIsManageOpen(false)} 
+        datasets={datasets}
+        onDelete={handleDeleteDataset}
+      />
+
+      {toast && (
+        <div className="toast-notification glass-panel animate-slide-up">
+          <div className="toast-icon">
+            {toast.type === 'success' ? <CheckCircle color="#10b981" size={20} /> : <AlertCircle color="#ef4444" size={20} />}
+          </div>
+          <div className="toast-content">
+              <div className="toast-title">{toast.title}</div>
+              <div className="toast-message">{toast.message}</div>
+          </div>
+          <button className="toast-close" onClick={() => setToast(null)}><X size={16} /></button>
+        </div>
+      )}
+    </div>
+  );
+};
 
 function App() {
   const [isDark, setIsDark] = useState(false);
@@ -21,14 +103,6 @@ function App() {
   const [globalUploadState, setGlobalUploadState] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [toast, setToast] = useState(null);
-
-  // Auto-hide toast
-  useEffect(() => {
-    if (toast) {
-      const timer = setTimeout(() => setToast(null), 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [toast]);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
@@ -59,24 +133,9 @@ function App() {
     localStorage.removeItem('token');
   };
 
-  const handleDeleteDataset = async (id) => {
-    try {
-      await axios.delete(`${API_URL}/datasets/${id}`);
-      const updated = datasets.filter(d => d.id !== id);
-      setDatasets(updated);
-      if (activeDataset && activeDataset.id === id) {
-        setActiveDataset(updated.length > 0 ? updated[0] : null);
-      }
-    } catch (err) {
-      console.error("Failed to delete dataset", err);
-    }
-  };
-
   const fetchDatasets = async () => {
     try {
-      const res = await axios.get(`${API_URL}/datasets`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await axios.get(`${API_URL}/datasets`);
       setDatasets(res.data);
       if (res.data.length > 0 && !activeDataset) {
         setActiveDataset(res.data[0]);
@@ -96,9 +155,18 @@ function App() {
     });
   };
 
-  /* Removed inner component that breaks reconciliation */
-
-  /* Unmounted from inner func */
+  const handleDeleteDataset = async (id) => {
+    try {
+      await axios.delete(`${API_URL}/datasets/${id}`);
+      const updated = datasets.filter(d => d.id !== id);
+      setDatasets(updated);
+      if (activeDataset && activeDataset.id === id) {
+        setActiveDataset(updated.length > 0 ? updated[0] : null);
+      }
+    } catch (err) {
+      console.error("Failed to delete dataset", err);
+    }
+  };
 
   return (
     <Router>
@@ -109,61 +177,23 @@ function App() {
           <Route 
              path="/dashboard" 
              element={
-               token ? (
-                  <div className="layout-container">
-                    <Header 
-                      onUploadClick={() => setIsUploadOpen(true)} 
-                      onManageClick={() => setIsManageOpen(true)}
-                      toggleTheme={toggleTheme} 
-                      isDark={isDark}
-                      onLogout={handleLogout}
-                      uploadState={globalUploadState}
-                    />
-                    <main className="main-content">
-                      <MainDashboard 
-                        activeDataset={activeDataset} 
-                        datasets={datasets}
-                        setActiveDataset={setActiveDataset}
-                        toggleTheme={toggleTheme}
-                        isDark={isDark}
-                      />
-                    </main>
-                    <UploadModal 
-                      isOpen={isUploadOpen} 
-                      onClose={() => setIsUploadOpen(false)} 
-                      onUploadSuccess={handleUploadSuccess}
-                      onGlobalSync={setGlobalUploadState}
-                    />
-                    <ManageModal 
-                      isOpen={isManageOpen} 
-                      onClose={() => setIsManageOpen(false)} 
-                      datasets={datasets}
-                      onDelete={handleDeleteDataset}
-                    />
-
-                    {/* Modern Toast Notification */}
-                    {toast && (
-                      <div className="toast-notification glass-panel animate-slide-up">
-                        <div className="toast-icon">
-                          {toast.type === 'success' ? <CheckCircle color="#10b981" size={20} /> : <AlertCircle color="#ef4444" size={20} />}
-                        </div>
-                        <div className="toast-content">
-                            <div className="toast-title">{toast.title}</div>
-                            <div className="toast-message">{toast.message}</div>
-                        </div>
-                        <button className="toast-close" onClick={() => setToast(null)}><X size={16} /></button>
-                      </div>
-                    )}
-                  </div>
-               ) : (
-                  <Navigate to="/login" />
-               )
+                <DashboardWrapper 
+                  token={token} isDark={isDark} toggleTheme={toggleTheme} handleLogout={handleLogout}
+                  activeDataset={activeDataset} setActiveDataset={setActiveDataset}
+                  datasets={datasets} 
+                  isUploadOpen={isUploadOpen} setIsUploadOpen={setIsUploadOpen} 
+                  isManageOpen={isManageOpen} setIsManageOpen={setIsManageOpen}
+                  globalUploadState={globalUploadState} handleUploadSuccess={handleUploadSuccess}
+                  setGlobalUploadState={setGlobalUploadState} handleDeleteDataset={handleDeleteDataset}
+                  toast={toast} setToast={setToast}
+                />
              } 
           />
           <Route 
             path="/analytics/:datasetName/:datasetId/:slug" 
             element={<DynamicBoardPage isDark={isDark} toggleTheme={toggleTheme} />} 
           />
+          <Route path="/view-report/:id" element={<SharedReport />} />
           <Route path="*" element={<Navigate to="/" />} />
        </Routes>
     </Router>

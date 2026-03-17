@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { UploadCloud, BarChart2, Moon, Sun, LogOut, Database } from 'lucide-react';
+import { UploadCloud, BarChart2, Moon, Sun, LogOut, Database, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import axios from 'axios';
 import { API_URL } from '../config';
 import './Header.css';
@@ -16,7 +16,9 @@ const Header = ({
   onManageClick,
   toggleTheme,
   isDark,
-  onLogout
+  onLogout,
+  isSidebarVisible,
+  setIsSidebarVisible
 }) => {
 
   const [userName, setUserName] = useState('');
@@ -47,24 +49,26 @@ const Header = ({
   return (
     <>
       <header className="app-header glass-panel">
-        <div className="header-logo">
-          <div className="logo-icon">
-            <BarChart2 size={24} color="#fff" />
+        <div className="flex items-center gap-2 pl-4">
+          <button 
+            className="icon-btn dashboard-sidebar-toggle" 
+            onClick={() => setIsSidebarVisible(!isSidebarVisible)}
+            title={isSidebarVisible ? "Hide Sidebar" : "Show Sidebar"}
+          >
+            {isSidebarVisible ? <PanelLeftClose size={20} /> : <PanelLeftOpen size={20} />}
+          </button>
+          <div className="header-breadcrumbs">
+            <span className="text-xs font-bold text-[var(--text-tertiary)] uppercase tracking-widest">Workspace / Analytics</span>
           </div>
-          <h1 className="logo-text">
-            Lumina <span className="gradient-text">BI</span>
-          </h1>
         </div>
+
 
         <div className="header-actions">
           <button className="icon-btn desktop-only" onClick={toggleTheme} title="Toggle Theme">
             {isDark ? <Sun size={20} /> : <Moon size={20} />}
           </button>
 
-          <button className="btn-secondary desktop-only" onClick={onManageClick}>
-            <Database size={16} />
-            <span>Manage Data</span>
-          </button>
+
 
           <button className="btn-primary desktop-only" onClick={onUploadClick}>
             <UploadCloud size={18} />
@@ -86,10 +90,7 @@ const Header = ({
       </header>
 
       <nav className="mobile-bottom-bar glass-panel">
-        <button className="mobile-nav-item" onClick={onManageClick}>
-          <Database size={20} />
-          <span>Manage</span>
-        </button>
+
 
         <button className="mobile-nav-item" onClick={onUploadClick}>
           <div className="upload-nav-icon">

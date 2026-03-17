@@ -82,13 +82,13 @@ define(['./workbox-c5fd805d'], (function (workbox) { 'use strict';
     "revision": "3ca0b8505b4bec776b69afdba2768812"
   }, {
     "url": "index.html",
-    "revision": "0.h5kq5hh0sso"
+    "revision": "0.dhlcisrb9a"
   }], {});
   workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("index.html"), {
     allowlist: [/^\/$/]
   }));
-  workbox.registerRoute(/^https:\/\/luminabi\.onrender\.com\/api\/.*/i, new workbox.NetworkFirst({
+  workbox.registerRoute(/^(https:\/\/luminabi\.onrender\.com|http:\/\/localhost:5000)\/api\/.*/i, new workbox.NetworkFirst({
     "cacheName": "lumina-api-cache",
     "networkTimeoutSeconds": 10,
     plugins: [new workbox.ExpirationPlugin({

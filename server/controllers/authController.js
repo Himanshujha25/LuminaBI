@@ -12,13 +12,15 @@ const register = async (req, res) => {
         }
         
         // check if user exists
-        const existing = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+
         if (existing.rows.length > 0) {
             return res.status(400).json({ error: "Email is already registered" });
         }
         
-        // hash password
-        const salt = await bcrypt.genSalt(10);
+        // hash password (8 rounds for better speed while maintaining security)
+        const salt = await bcrypt.genSalt(8);
+
         const hashed = await bcrypt.hash(password, salt);
         
         // save user
