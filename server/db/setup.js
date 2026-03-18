@@ -50,6 +50,25 @@ async function setup() {
         `);
         console.log("Dashboards table 'dashboards' is ready.");
 
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS exports (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                dashboard_id INTEGER REFERENCES dashboards(id) ON DELETE SET NULL,
+                type VARCHAR(50) NOT NULL,
+                file_path TEXT NOT NULL,
+                name VARCHAR(255),
+                metadata JSONB DEFAULT '{}',
+                is_public BOOLEAN DEFAULT TRUE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        console.log("Exports table 'exports' is ready.");
+
+        // Handle existing tables by adding columns safely
+        try { await pool.query(`ALTER TABLE exports ADD COLUMN metadata JSONB DEFAULT '{}'`); } catch(e) {}
+        try { await pool.query(`ALTER TABLE exports ADD COLUMN is_public BOOLEAN DEFAULT TRUE`); } catch(e) {}
+
         // Speed up lookups
         await pool.query('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)');
         await pool.query('CREATE INDEX IF NOT EXISTS idx_datasets_user ON datasets(user_id)');

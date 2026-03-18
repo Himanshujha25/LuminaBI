@@ -66,7 +66,8 @@ export default function DynamicBoardPage({ isDark, toggleTheme }) {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 const allCharts = chatRes.data
-                    .filter(msg => msg.role === 'model' && msg.data && msg.data.chart_type)
+                    .filter(msg => msg.role === 'ai' && msg.data && msg.data.chart_type)
+
                     .map(msg => ({
                         ...msg.data,
                         id: msg.id,
@@ -93,13 +94,13 @@ export default function DynamicBoardPage({ isDark, toggleTheme }) {
         );
     }
 
+    // Restore this return statement!
     return (
         <DynamicDashboard 
             charts={charts} 
-            activeDataset={activeDataset}
-            isDark={isDark}
-            toggleTheme={toggleTheme}
-            onClose={() => navigate('/dashboard')}
+            dataset={activeDataset} 
+            isDark={isDark} 
+            toggleTheme={toggleTheme} 
         />
     );
 }
