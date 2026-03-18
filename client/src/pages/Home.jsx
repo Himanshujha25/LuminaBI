@@ -39,7 +39,7 @@ const Home = () => {
         </div>
         <div className="home-nav-links">
           <Link to="/login" className="btn-secondary">Log in</Link>
-          <Link to="/signup" className="btn-primary">Sign up</Link>
+          <Link to="/signup" className="btn-secondary">Sign up</Link>
         </div>
       </nav>
 
