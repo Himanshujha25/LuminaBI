@@ -1,6 +1,6 @@
 # LuminaBI
 
-A conversational Business Intelligence (BI) dashboard that allows non-technical users to generate fully functional, interactive data dashboards using natural languages.
+A conversational Business Intelligence (BI) dashboard that allows non-technical users to generate fully functional, interactive data dashboards using natural languages..
 
 ## Features
 - **Upload Datasets**: Automatically parses CSV datasets and indexes them via PostgreSQL schema generation.
