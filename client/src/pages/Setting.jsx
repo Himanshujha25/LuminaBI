@@ -1,851 +1,1148 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef} from 'react';
 import {
-  User, Mail, Lock, Bell, Palette, Database, Shield,
-  CreditCard, Trash2, CheckCircle2, AlertCircle, Eye,
-  EyeOff, Sun, Moon, Monitor, ChevronRight, LogOut,
-  Download, Upload, Key, Globe, Zap, Save, Camera,
-  ToggleLeft, ToggleRight, Info
+  User, Lock, Bell, Palette, Shield, CreditCard,
+  Trash2, CheckCircle2, AlertCircle, Eye, EyeOff,
+  Sun, Moon, Monitor, LogOut, Key, Zap, Save,
+  Info, X, Copy, Check, RefreshCw, Sparkles,
+  BrainCircuit, Globe, ShieldCheck, ExternalLink,
+  ChevronDown, Search, ArrowUpRight
 } from 'lucide-react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import useStore from '../store/useStore';
 import { API_URL } from '../config';
 
-/* ─── Token styles ─────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────
+   DESIGN TOKENS
+───────────────────────────────────────────── */
 const STYLES = `
-  :root, [data-theme="dark"] {
-    --st-page:      #09090b;
-    --st-card:      #111113;
-    --st-border:    rgba(255,255,255,.08);
-    --st-border-2:  rgba(255,255,255,.14);
-    --st-text-1:    #f1f5f9;
-    --st-text-2:    rgba(255,255,255,.5);
-    --st-text-3:    rgba(255,255,255,.28);
-    --st-field-bg:  rgba(255,255,255,.04);
-    --st-field-bdr: rgba(255,255,255,.1);
-    --st-hover:     rgba(255,255,255,.05);
-    --st-nav-active-bg:  rgba(99,102,241,.12);
-    --st-nav-active-clr: #818cf8;
-    --st-nav-clr:        rgba(255,255,255,.45);
-    --st-danger-bg:  rgba(239,68,68,.08);
-    --st-danger-bdr: rgba(239,68,68,.22);
-    --st-danger-txt: #f87171;
-    --st-success-bg: rgba(16,185,129,.08);
-    --st-success-bdr:rgba(16,185,129,.22);
-    --st-success-txt:#34d399;
-    --st-badge-bg:   rgba(99,102,241,.12);
-    --st-badge-bdr:  rgba(99,102,241,.25);
-    --st-badge-txt:  #818cf8;
-    --st-toggle-off: rgba(255,255,255,.15);
-    --st-toggle-on:  #6366f1;
-    --st-avatar-bg:  rgba(99,102,241,.15);
-    --st-avatar-txt: #818cf8;
-  }
-  [data-theme="light"] {
-    --st-page:      #f4f4f6;
-    --st-card:      #ffffff;
-    --st-border:    rgba(0,0,0,.08);
-    --st-border-2:  rgba(0,0,0,.14);
-    --st-text-1:    #0f0f12;
-    --st-text-2:    rgba(0,0,0,.5);
-    --st-text-3:    rgba(0,0,0,.35);
-    --st-field-bg:  rgba(0,0,0,.03);
-    --st-field-bdr: rgba(0,0,0,.1);
-    --st-hover:     rgba(0,0,0,.04);
-    --st-nav-active-bg:  rgba(99,102,241,.08);
-    --st-nav-active-clr: #4f46e5;
-    --st-nav-clr:        rgba(0,0,0,.45);
-    --st-danger-bg:  rgba(239,68,68,.06);
-    --st-danger-bdr: rgba(239,68,68,.2);
-    --st-danger-txt: #dc2626;
-    --st-success-bg: rgba(16,185,129,.06);
-    --st-success-bdr:rgba(16,185,129,.2);
-    --st-success-txt:#059669;
-    --st-badge-bg:   rgba(99,102,241,.07);
-    --st-badge-bdr:  rgba(99,102,241,.2);
-    --st-badge-txt:  #4f46e5;
-    --st-toggle-off: rgba(0,0,0,.15);
-    --st-toggle-on:  #6366f1;
-    --st-avatar-bg:  rgba(99,102,241,.1);
-    --st-avatar-txt: #4f46e5;
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --page:        #f3f4f8;
+    --surface:     #ffffff;
+    --surface-2:   #f8f8fb;
+    --border:      rgba(0,0,0,.08);
+    --border-md:   rgba(0,0,0,.13);
+    --border-str:  rgba(0,0,0,.20);
+    --text-1:      #0d0e14;
+    --text-2:      rgba(13,14,20,.52);
+    --text-3:      rgba(13,14,20,.34);
+    --text-4:      rgba(13,14,20,.22);
+    --field:       rgba(0,0,0,.025);
+    --field-bdr:   rgba(0,0,0,.10);
+    --hover:       rgba(0,0,0,.035);
+    --accent:      #3b3fce;
+    --accent-dim:  rgba(59,63,206,.10);
+    --accent-bdr:  rgba(59,63,206,.22);
+    --accent-txt:  #3b3fce;
+    --danger:      #d42b2b;
+    --danger-dim:  rgba(212,43,43,.07);
+    --danger-bdr:  rgba(212,43,43,.20);
+    --success:     #0d7a4e;
+    --success-dim: rgba(13,122,78,.07);
+    --success-bdr: rgba(13,122,78,.20);
+    --warn-dim:    rgba(180,120,0,.08);
+    --warn-bdr:    rgba(180,120,0,.22);
+    --warn-txt:    #8a5c00;
+    --nav-active:  rgba(59,63,206,.08);
+    --nav-clr:     rgba(13,14,20,.44);
+    --toggle-off:  rgba(0,0,0,.16);
+    --toggle-on:   #3b3fce;
+    --av-bg:       rgba(59,63,206,.10);
+    --av-txt:      #3b3fce;
+    --shadow-sm:   0 1px 2px rgba(0,0,0,.05), 0 0 0 1px rgba(0,0,0,.04);
+    --shadow-md:   0 4px 12px rgba(0,0,0,.08), 0 0 0 1px rgba(0,0,0,.04);
+    --shadow-lg:   0 12px 32px rgba(0,0,0,.12), 0 0 0 1px rgba(0,0,0,.05);
+    --r-sm:        6px;
+    --r-md:        9px;
+    --r-lg:        13px;
+    --r-xl:        16px;
   }
 
-  .st-field {
-    width:100%;padding:9px 12px;font-size:13px;font-family:inherit;
-    border-radius:8px;background:var(--st-field-bg);
-    border:.5px solid var(--st-field-bdr);color:var(--st-text-1);
-    outline:none;transition:border-color .12s;box-sizing:border-box;
-  }
-  .st-field:focus { border-color:rgba(99,102,241,.55); }
-  .st-field::placeholder { color:var(--st-text-3); }
-  .st-field:disabled { opacity:.45; cursor:not-allowed; }
-
-  select.st-field { appearance:none; cursor:pointer; }
-
-  .st-btn {
-    display:inline-flex;align-items:center;gap:7px;
-    padding:8px 16px;border-radius:8px;border:.5px solid var(--st-border-2);
-    background:var(--st-field-bg);color:var(--st-text-1);
-    font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;
-    transition:background .12s,border-color .12s,opacity .12s;
-    white-space:nowrap;
-  }
-  .st-btn:hover { background:var(--st-hover); }
-  .st-btn.primary {
-    background:linear-gradient(135deg,#6366f1,#8b5cf6);
-    border-color:transparent;color:#fff;
-  }
-  .st-btn.primary:hover { opacity:.88; }
-  .st-btn.danger { background:var(--st-danger-bg);border-color:var(--st-danger-bdr);color:var(--st-danger-txt); }
-  .st-btn.danger:hover { opacity:.8; }
-  .st-btn:disabled { opacity:.4;cursor:not-allowed; }
-
-  .st-nav-item {
-    display:flex;align-items:center;gap:10px;
-    padding:8px 12px;border-radius:8px;border:none;
-    background:transparent;color:var(--st-nav-clr);
-    font-size:13px;font-weight:500;font-family:inherit;
-    cursor:pointer;transition:background .12s,color .12s;
-    width:100%;text-align:left;
-  }
-  .st-nav-item:hover { background:var(--st-hover);color:var(--st-text-1); }
-  .st-nav-item.active { background:var(--st-nav-active-bg);color:var(--st-nav-active-clr);font-weight:600; }
-
-  .st-toggle {
-    position:relative;display:inline-flex;align-items:center;
-    width:36px;height:20px;border-radius:10px;cursor:pointer;
-    background:var(--st-toggle-off);transition:background .2s;border:none;
-    flex-shrink:0;
-  }
-  .st-toggle.on { background:var(--st-toggle-on); }
-  .st-toggle::after {
-    content:'';position:absolute;left:3px;width:14px;height:14px;
-    border-radius:50%;background:#fff;transition:transform .2s;
-    box-shadow:0 1px 3px rgba(0,0,0,.3);
-  }
-  .st-toggle.on::after { transform:translateX(16px); }
-
-  .st-row {
-    display:flex;align-items:center;justify-content:space-between;
-    padding:14px 0;border-bottom:.5px solid var(--st-border);
-  }
-  .st-row:last-child { border-bottom:none; }
-
-  .st-section-title {
-    font-size:11px;font-weight:700;letter-spacing:.06em;
-    text-transform:uppercase;color:var(--st-text-3);
-    margin:0 0 12px;
+  [data-theme="dark"] {
+    --page:        #0a0b12;
+    --surface:     #111320;
+    --surface-2:   #161829;
+    --border:      rgba(255,255,255,.07);
+    --border-md:   rgba(255,255,255,.12);
+    --border-str:  rgba(255,255,255,.18);
+    --text-1:      #e8eaf5;
+    --text-2:      rgba(232,234,245,.50);
+    --text-3:      rgba(232,234,245,.30);
+    --text-4:      rgba(232,234,245,.17);
+    --field:       rgba(255,255,255,.04);
+    --field-bdr:   rgba(255,255,255,.09);
+    --hover:       rgba(255,255,255,.05);
+    --accent:      #5a5fff;
+    --accent-dim:  rgba(90,95,255,.12);
+    --accent-bdr:  rgba(90,95,255,.28);
+    --accent-txt:  #8a8fff;
+    --danger:      #f06060;
+    --danger-dim:  rgba(240,96,96,.09);
+    --danger-bdr:  rgba(240,96,96,.24);
+    --success:     #3dd68c;
+    --success-dim: rgba(61,214,140,.09);
+    --success-bdr: rgba(61,214,140,.24);
+    --warn-dim:    rgba(255,190,50,.08);
+    --warn-bdr:    rgba(255,190,50,.22);
+    --warn-txt:    #e8a020;
+    --nav-active:  rgba(90,95,255,.12);
+    --nav-clr:     rgba(232,234,245,.40);
+    --toggle-off:  rgba(255,255,255,.16);
+    --toggle-on:   #5a5fff;
+    --av-bg:       rgba(90,95,255,.14);
+    --av-txt:      #9a9fff;
+    --shadow-sm:   0 1px 3px rgba(0,0,0,.30);
+    --shadow-md:   0 4px 16px rgba(0,0,0,.35);
+    --shadow-lg:   0 16px 40px rgba(0,0,0,.45);
   }
 
-  .st-label {
-    display:block;font-size:11px;font-weight:600;
-    letter-spacing:.04em;text-transform:uppercase;
-    color:var(--st-text-2);margin-bottom:5px;
+  .sw { font-family:'DM Sans',sans-serif; background:var(--page); color:var(--text-1); min-height:100vh; }
+  .sw-mono { font-family:'DM Mono',monospace; }
+
+  .sw-field {
+    width:100%; padding:9px 12px; font-size:13.5px; font-family:'DM Sans',sans-serif;
+    border-radius:var(--r-md); background:var(--field);
+    border:1px solid var(--field-bdr); color:var(--text-1);
+    outline:none; transition:border-color .15s, box-shadow .15s;
+  }
+  .sw-field:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-dim); }
+  .sw-field::placeholder { color:var(--text-4); }
+  .sw-field:disabled { opacity:.38; cursor:not-allowed; }
+  textarea.sw-field { resize:vertical; line-height:1.65; }
+
+  .sw-btn {
+    display:inline-flex; align-items:center; gap:7px;
+    padding:8px 16px; border-radius:var(--r-md);
+    border:1px solid var(--border-md); background:var(--surface);
+    color:var(--text-1); font-size:13px; font-weight:500;
+    font-family:'DM Sans',sans-serif; cursor:pointer;
+    transition:all .14s; white-space:nowrap; flex-shrink:0;
+    box-shadow:var(--shadow-sm);
+  }
+  .sw-btn:hover { background:var(--hover); border-color:var(--border-str); }
+  .sw-btn:active { transform:scale(.98); }
+  .sw-btn.primary { background:var(--accent); border-color:transparent; color:#fff; box-shadow:0 2px 8px rgba(59,63,206,.30); }
+  .sw-btn.primary:hover { opacity:.90; }
+  .sw-btn.danger { background:var(--danger-dim); border-color:var(--danger-bdr); color:var(--danger); box-shadow:none; }
+  .sw-btn.danger:hover { opacity:.82; }
+  .sw-btn:disabled { opacity:.38; cursor:not-allowed; pointer-events:none; }
+  .sw-btn.ghost { background:transparent; border-color:transparent; box-shadow:none; color:var(--text-2); }
+  .sw-btn.ghost:hover { background:var(--hover); color:var(--text-1); }
+  .sw-btn.link { background:transparent; border:none; box-shadow:none; color:var(--accent-txt); padding:0; font-size:12px; font-weight:500; display:inline-flex; align-items:center; gap:3px; }
+  .sw-btn.link:hover { opacity:.72; }
+
+  .sw-nav-btn {
+    display:flex; align-items:center; gap:9px; padding:8px 10px;
+    border-radius:var(--r-md); border:none; background:transparent;
+    color:var(--nav-clr); font-size:12.5px; font-weight:500;
+    font-family:'DM Sans',sans-serif; cursor:pointer;
+    transition:all .12s; width:100%; text-align:left;
+  }
+  .sw-nav-btn:hover { background:var(--hover); color:var(--text-1); }
+  .sw-nav-btn.active { background:var(--nav-active); color:var(--accent-txt); font-weight:600; }
+  .sw-nav-btn.dnav { color:var(--danger); }
+  .sw-nav-btn.dnav:hover { background:var(--danger-dim); }
+
+  .sw-toggle {
+    position:relative; display:inline-flex; align-items:center;
+    width:36px; height:20px; border-radius:999px; cursor:pointer;
+    background:var(--toggle-off); transition:background .2s; border:none; flex-shrink:0;
+  }
+  .sw-toggle.on { background:var(--toggle-on); }
+  .sw-toggle::after {
+    content:''; position:absolute; left:3px; width:14px; height:14px;
+    border-radius:50%; background:#fff; transition:transform .2s;
+    box-shadow:0 1px 4px rgba(0,0,0,.30);
+  }
+  .sw-toggle.on::after { transform:translateX(16px); }
+
+  .sw-row {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:13px 0; border-bottom:1px solid var(--border);
+  }
+  .sw-row:last-child { border-bottom:none; padding-bottom:0; }
+  .sw-row:first-child { padding-top:0; }
+
+  .sw-card {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--r-xl); padding:20px 22px; margin-bottom:12px;
+    box-shadow:var(--shadow-sm);
   }
 
-  .st-card {
-    background:var(--st-card);border:.5px solid var(--st-border);
-    border-radius:12px;padding:20px 22px;margin-bottom:16px;
+  .sw-lbl {
+    display:block; font-size:11px; font-weight:600;
+    letter-spacing:.05em; text-transform:uppercase;
+    color:var(--text-3); margin-bottom:6px;
+  }
+  .sw-sec-title {
+    font-size:10.5px; font-weight:700; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--text-3); margin-bottom:16px;
   }
 
-  .st-alert {
-    display:flex;align-items:flex-start;gap:10px;
-    padding:12px 14px;border-radius:8px;font-size:13px;line-height:1.5;
-    margin-bottom:16px;
+  .sw-alert {
+    display:flex; align-items:flex-start; gap:9px; padding:11px 14px;
+    border-radius:var(--r-md); font-size:13px; line-height:1.55; margin-bottom:14px;
   }
-  .st-alert.info { background:var(--st-badge-bg);border:.5px solid var(--st-badge-bdr);color:var(--st-badge-txt); }
-  .st-alert.danger { background:var(--st-danger-bg);border:.5px solid var(--st-danger-bdr);color:var(--st-danger-txt); }
-  .st-alert.success { background:var(--st-success-bg);border:.5px solid var(--st-success-bdr);color:var(--st-success-txt); }
+  .sw-alert.info   { background:var(--accent-dim);  border:1px solid var(--accent-bdr);  color:var(--accent-txt); }
+  .sw-alert.danger { background:var(--danger-dim);  border:1px solid var(--danger-bdr);  color:var(--danger); }
+  .sw-alert.success{ background:var(--success-dim); border:1px solid var(--success-bdr); color:var(--success); }
 
-  .st-theme-btn {
-    flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;
-    padding:12px 8px;border-radius:9px;border:.5px solid var(--st-border);
-    background:var(--st-field-bg);cursor:pointer;font-family:inherit;
-    font-size:11px;font-weight:600;color:var(--st-text-2);
-    transition:all .12s;
+  .sw-badge {
+    display:inline-flex; align-items:center; gap:4px;
+    padding:2px 9px; border-radius:999px; font-size:11px; font-weight:600;
   }
-  .st-theme-btn:hover { border-color:rgba(99,102,241,.4);color:var(--st-text-1); }
-  .st-theme-btn.active {
-    border-color:rgba(99,102,241,.55);background:rgba(99,102,241,.1);
-    color:var(--st-nav-active-clr);
-  }
+  .sw-badge.accent  { background:var(--accent-dim);  border:1px solid var(--accent-bdr);  color:var(--accent-txt); }
+  .sw-badge.success { background:var(--success-dim); border:1px solid var(--success-bdr); color:var(--success); }
+  .sw-badge.warn    { background:var(--warn-dim);    border:1px solid var(--warn-bdr);    color:var(--warn-txt); }
 
-  .st-plan-badge {
-    display:inline-flex;align-items:center;gap:4px;
-    padding:3px 9px;border-radius:999px;
-    background:var(--st-badge-bg);border:.5px solid var(--st-badge-bdr);
-    color:var(--st-badge-txt);font-size:11px;font-weight:600;
-  }
-  .st-plan-badge.pro {
-    background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.25);
-    color:#d97706;
+  .sw-avatar {
+    display:flex; align-items:center; justify-content:center;
+    border-radius:50%; background:var(--av-bg); color:var(--av-txt);
+    font-weight:700; letter-spacing:.02em; flex-shrink:0;
+    border:1.5px solid var(--accent-bdr);
   }
 
-  @keyframes st-spin { to { transform:rotate(360deg); } }
-  .st-spinner {
-    width:14px;height:14px;border-radius:50%;
-    border:2px solid rgba(255,255,255,.2);
-    border-top-color:#fff;
-    animation:st-spin .65s linear infinite;
-    display:inline-block;flex-shrink:0;
+  @keyframes shimmer { 0%{background-position:-400px 0} 100%{background-position:400px 0} }
+  .sw-skel {
+    border-radius:var(--r-sm);
+    background:linear-gradient(90deg, var(--field) 25%, var(--hover) 50%, var(--field) 75%);
+    background-size:800px 100%; animation:shimmer 1.5s infinite;
   }
+
+  @keyframes sw-spin { to { transform:rotate(360deg) } }
+  .sw-spin {
+    width:13px; height:13px; border-radius:50%;
+    border:2px solid rgba(255,255,255,.25); border-top-color:#fff;
+    animation:sw-spin .6s linear infinite; display:inline-block; flex-shrink:0;
+  }
+
+  .sw-theme-btn {
+    flex:1; display:flex; flex-direction:column; align-items:center; gap:6px;
+    padding:12px 8px; border-radius:var(--r-md);
+    border:1px solid var(--border-md); background:var(--field);
+    cursor:pointer; font-family:'DM Sans',sans-serif;
+    font-size:11.5px; font-weight:500; color:var(--text-2); transition:all .13s;
+  }
+  .sw-theme-btn:hover { border-color:var(--accent-bdr); color:var(--text-1); }
+  .sw-theme-btn.active { border-color:var(--accent); background:var(--accent-dim); color:var(--accent-txt); }
+
+  .sw-prog-track { height:5px; border-radius:999px; background:var(--field); overflow:hidden; }
+  .sw-prog-fill  { height:100%; border-radius:999px; transition:width .4s; }
+
+  .sw-fwrap { position:relative; }
+  .sw-fwrap .sw-ficon {
+    position:absolute; right:10px; top:50%; transform:translateY(-50%);
+    background:none; border:none; cursor:pointer; color:var(--text-3);
+    display:flex; align-items:center; padding:2px; border-radius:4px; transition:color .12s;
+  }
+  .sw-fwrap .sw-ficon:hover { color:var(--text-1); }
+
+  .sw-dropdown {
+    position:absolute; top:calc(100% + 6px); left:0; right:0; z-index:200;
+    background:var(--surface); border:1px solid var(--border-md);
+    border-radius:var(--r-lg); box-shadow:var(--shadow-lg); overflow:hidden;
+  }
+  .sw-drop-search { padding:10px 10px 8px; border-bottom:1px solid var(--border); }
+  .sw-drop-list   { max-height:236px; overflow-y:auto; padding:6px; }
+  .sw-drop-item {
+    display:flex; align-items:center; gap:11px; padding:9px 10px;
+    border-radius:var(--r-md); cursor:pointer; transition:background .1s;
+  }
+  .sw-drop-item:hover { background:var(--hover); }
+  .sw-drop-item.sel { background:var(--accent-dim); }
+
+  .sw-picon {
+    width:32px; height:32px; border-radius:8px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    border:1px solid rgba(0,0,0,.07);
+    font-size:11.5px; font-weight:700; font-family:'DM Sans',sans-serif;
+  }
+  [data-theme="dark"] .sw-picon { border-color:rgba(255,255,255,.08); }
+
+  .sw-key-box {
+    padding:16px 18px; border-radius:var(--r-lg);
+    background:var(--surface-2); border:1px solid var(--border);
+  }
+
+  .sw-hr { border:none; border-top:1px solid var(--border); margin:16px 0; }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+  .sw-fadein { animation:fadeIn .16s ease; }
+  .sw-fadeup { animation:fadeUp .18s ease; }
 `;
 
-/* ─── Nav items ────────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────
+   NAV
+───────────────────────────────────────────── */
 const NAV = [
-  { id: 'profile',       label: 'Profile',           Icon: User      },
-  { id: 'account',       label: 'Account & security', Icon: Lock      },
-  { id: 'appearance',    label: 'Appearance',         Icon: Palette   },
-  { id: 'notifications', label: 'Notifications',      Icon: Bell      },
-  { id: 'data',          label: 'Data & exports',     Icon: Database  },
-  { id: 'api',           label: 'API keys',           Icon: Key       },
-  { id: 'billing',       label: 'Billing & plan',     Icon: CreditCard},
-  { id: 'danger',        label: 'Danger zone',        Icon: Shield    },
+  { id: 'profile',       label: 'Profile',        Icon: User       },
+  { id: 'security',      label: 'Security',        Icon: Lock       },
+  { id: 'appearance',    label: 'Appearance',      Icon: Palette    },
+  { id: 'notifications', label: 'Notifications',   Icon: Bell       },
+  { id: 'ai',            label: 'AI Engine',       Icon: Sparkles   },
+  { id: 'billing',       label: 'Billing',         Icon: CreditCard },
+  { id: 'danger',        label: 'Danger Zone',     Icon: Shield     },
 ];
 
-/* ─── Toggle row ───────────────────────────────────────────────────────────── */
-const ToggleRow = ({ label, desc, checked, onChange }) => (
-  <div className="st-row">
-    <div>
-      <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: 'var(--st-text-1)' }}>{label}</p>
-      {desc && <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--st-text-3)' }}>{desc}</p>}
-    </div>
-    <button type="button" className={`st-toggle${checked ? ' on' : ''}`} onClick={() => onChange(!checked)} />
-  </div>
-);
+/* ─────────────────────────────────────────────
+   PROVIDER REGISTRY  (real "Get key" links)
+───────────────────────────────────────────── */
+const PROVIDERS = [
+  {
+    id: 'gemini',      name: 'Google Gemini',    model: 'Gemini 2.5 Flash',
+    tag: 'Free tier',              bg: '#e8f0fe', fg: '#1a73e8', initials: 'GG',
+    isDefault: true,
+    keyUrl: 'https://aistudio.google.com/app/apikey',
+    keyDomain: 'aistudio.google.com',
+  },
+  {
+    id: 'openai',      name: 'OpenAI',           model: 'GPT-4o / o1',
+    tag: 'High reasoning',         bg: '#d1fae5', fg: '#065f46', initials: 'OA',
+    keyUrl: 'https://platform.openai.com/api-keys',
+    keyDomain: 'platform.openai.com',
+  },
+  {
+    id: 'claude',      name: 'Anthropic',        model: 'Claude 3.7 Sonnet',
+    tag: 'Coding & analysis',      bg: '#fde8e0', fg: '#7c2d12', initials: 'AN',
+    keyUrl: 'https://console.anthropic.com/settings/keys',
+    keyDomain: 'console.anthropic.com',
+  },
+  {
+    id: 'grok',        name: 'xAI',              model: 'Grok 3',
+    tag: 'Real-time knowledge',    bg: '#e5e7eb', fg: '#111827', initials: 'XA',
+    keyUrl: 'https://console.x.ai/',
+    keyDomain: 'console.x.ai',
+  },
+  {
+    id: 'deepseek',    name: 'DeepSeek',         model: 'DeepSeek R2',
+    tag: 'Mathematical reasoning', bg: '#e0e7ff', fg: '#1e1b4b', initials: 'DS',
+    keyUrl: 'https://platform.deepseek.com/api_keys',
+    keyDomain: 'platform.deepseek.com',
+  },
+  {
+    id: 'mistral',     name: 'Mistral AI',       model: 'Mistral Large',
+    tag: 'Open weights',           bg: '#fef3c7', fg: '#78350f', initials: 'MI',
+    keyUrl: 'https://console.mistral.ai/api-keys/',
+    keyDomain: 'console.mistral.ai',
+  },
+  {
+    id: 'perplexity',  name: 'Perplexity',       model: 'Sonar Pro',
+    tag: 'Online search AI',       bg: '#d1fae5', fg: '#064e3b', initials: 'PP',
+    keyUrl: 'https://www.perplexity.ai/settings/api',
+    keyDomain: 'perplexity.ai',
+  },
+];
 
-/* ─── Field group ──────────────────────────────────────────────────────────── */
-const Field = ({ label, children, hint }) => (
-  <div style={{ marginBottom: 16 }}>
-    <label className="st-label">{label}</label>
+/* ─────────────────────────────────────────────
+   SHARED HELPERS
+───────────────────────────────────────────── */
+const Field = ({ label, hint, children }) => (
+  <div style={{ marginBottom: 14 }}>
+    {label && <label className="sw-lbl">{label}</label>}
     {children}
-    {hint && <p style={{ margin: '5px 0 0', fontSize: 11, color: 'var(--st-text-3)' }}>{hint}</p>}
+    {hint && <p style={{ marginTop: 5, fontSize: 11.5, color: 'var(--text-3)', lineHeight: 1.5 }}>{hint}</p>}
   </div>
 );
 
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/*  SECTION COMPONENTS                                                         */
-/* ═══════════════════════════════════════════════════════════════════════════ */
+const ToggleRow = ({ label, desc, checked, onChange }) => (
+  <div className="sw-row">
+    <div style={{ paddingRight: 16 }}>
+      <p style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--text-1)' }}>{label}</p>
+      {desc && <p style={{ marginTop: 2, fontSize: 12, color: 'var(--text-3)', lineHeight: 1.5 }}>{desc}</p>}
+    </div>
+    <button type="button" className={`sw-toggle${checked ? ' on' : ''}`} onClick={() => onChange(!checked)} />
+  </div>
+);
 
-/* ── Profile ── */
-const ProfileSection = ({ user, onSave }) => {
-  const [name, setName]   = useState(user?.name || '');
-  const [email, setEmail] = useState(user?.email || '');
-  const [bio, setBio]     = useState(user?.bio || '');
+const Skel = ({ w = '100%', h = 14, mb = 0 }) => (
+  <div className="sw-skel" style={{ width: w, height: h, marginBottom: mb }} />
+);
+
+const useToast = () => {
+  const [toast, setToast] = useState(null);
+  const show = useCallback((type, text, ms = 3200) => {
+    setToast({ type, text });
+    setTimeout(() => setToast(null), ms);
+  }, []);
+  return { toast, show };
+};
+
+const Toast = ({ toast }) => {
+  if (!toast) return null;
+  const map = {
+    success: { bg: 'var(--success-dim)', bdr: 'var(--success-bdr)', clr: 'var(--success)', Icon: CheckCircle2 },
+    danger:  { bg: 'var(--danger-dim)',  bdr: 'var(--danger-bdr)',  clr: 'var(--danger)',  Icon: AlertCircle  },
+    info:    { bg: 'var(--accent-dim)',  bdr: 'var(--accent-bdr)',  clr: 'var(--accent-txt)', Icon: Info     },
+  };
+  const s = map[toast.type] || map.info;
+  return (
+    <div className="sw-fadeup" style={{
+      position: 'fixed', bottom: 24, right: 24, zIndex: 9999,
+      display: 'flex', alignItems: 'center', gap: 9,
+      padding: '11px 18px', borderRadius: 12,
+      background: s.bg, border: `1px solid ${s.bdr}`, color: s.clr,
+      fontSize: 13, fontWeight: 500, boxShadow: 'var(--shadow-lg)', maxWidth: 340,
+    }}>
+      <s.Icon size={14} style={{ flexShrink: 0 }} />
+      {toast.text}
+    </div>
+  );
+};
+
+/* ─── Provider icon chip ─── */
+const PIcon = ({ p, size = 32 }) => (
+  <div className="sw-picon" style={{
+    width: size, height: size, background: p.bg, color: p.fg,
+    borderRadius: size <= 32 ? 8 : 10, fontSize: size <= 32 ? 11 : 13,
+  }}>
+    {p.initials}
+  </div>
+);
+
+/* ─────────────────────────────────────────────
+   PROFILE
+───────────────────────────────────────────── */
+const ProfileSection = ({ user, loading, onSave }) => {
+  const [name, setName] = useState('');
+  const [bio, setBio]   = useState('');
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved]   = useState(false);
+  const { toast, show } = useToast();
+
+  useEffect(() => {
+    if (user) { setName(user.name || ''); setBio(user.bio || ''); }
+  }, [user]);
 
   const initials = name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?';
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.patch(`${API_URL}/auth/profile`, { name, bio }, { headers: { Authorization: `Bearer ${token}` } });
+      onSave?.({ name, bio });
+      show('success', 'Profile saved successfully');
+    } catch (e) {
+      show('danger', e.response?.data?.error || 'Failed to save profile');
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <>
+      <Toast toast={toast} />
+      <div className="sw-card" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <div className="sw-avatar" style={{ width: 54, height: 54, fontSize: 17 }}>
+          {loading ? '?' : initials}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {loading
+            ? <><Skel w={150} h={15} mb={7} /><Skel w={210} h={11} /></>
+            : <>
+                <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-1)' }}>{name || 'Your name'}</p>
+                <p style={{ marginTop: 2, fontSize: 12, color: 'var(--text-3)' }}>{user?.email}</p>
+              </>
+          }
+        </div>
+        <span className="sw-badge accent">Free plan</span>
+      </div>
+
+      <div className="sw-card">
+        <p className="sw-sec-title">Personal info</p>
+        <Field label="Full name">
+          {loading ? <Skel h={38} /> : <input className="sw-field" value={name} onChange={e => setName(e.target.value)} placeholder="Your full name" />}
+        </Field>
+        <Field label="Email address" hint="Contact support to change your email address.">
+          {loading ? <Skel h={38} /> : <input className="sw-field" value={user?.email || ''} disabled />}
+        </Field>
+        <Field label="Bio" hint="A brief description shown to your teammates.">
+          {loading ? <Skel h={78} /> : <textarea className="sw-field" rows={3} value={bio} onChange={e => setBio(e.target.value)} placeholder="Tell your team about yourself…" />}
+        </Field>
+        <button className="sw-btn primary" onClick={save} disabled={saving || loading}>
+          {saving ? <><span className="sw-spin" /> Saving…</> : <><Save size={13} /> Save changes</>}
+        </button>
+      </div>
+    </>
+  );
+};
+
+/* ─────────────────────────────────────────────
+   SECURITY
+───────────────────────────────────────────── */
+const SecuritySection = () => {
+  const [cur, setCur] = useState('');
+  const [nw, setNw]   = useState('');
+  const [cnf, setCnf] = useState('');
+  const [vis, setVis] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [twoFA, setTwoFA]   = useState(false);
+  const { toast, show } = useToast();
+
+  const changePw = async () => {
+    if (nw !== cnf)     return show('danger', 'Passwords do not match.');
+    if (nw.length < 8)  return show('danger', 'Minimum 8 characters required.');
+    setSaving(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.patch(`${API_URL}/auth/password`, { currentPassword: cur, newPassword: nw }, { headers: { Authorization: `Bearer ${token}` } });
+      show('success', 'Password updated successfully');
+      setCur(''); setNw(''); setCnf('');
+    } catch (e) { show('danger', e.response?.data?.error || 'Failed to update password.'); }
+    finally { setSaving(false); }
+  };
+
+  const t = vis ? 'text' : 'password';
+  const EyeBtn = () => (
+    <button type="button" className="sw-ficon" onClick={() => setVis(p => !p)}>
+      {vis ? <EyeOff size={14} /> : <Eye size={14} />}
+    </button>
+  );
+
+  return (
+    <>
+      <Toast toast={toast} />
+      <div className="sw-card">
+        <p className="sw-sec-title">Change password</p>
+        <Field label="Current password">
+          <div className="sw-fwrap">
+            <input className="sw-field" type={t} value={cur} onChange={e => setCur(e.target.value)} placeholder="Current password" style={{ paddingRight: 38 }} />
+            <EyeBtn />
+          </div>
+        </Field>
+        <Field label="New password" hint="At least 8 characters.">
+          <input className="sw-field" type={t} value={nw} onChange={e => setNw(e.target.value)} placeholder="New password" />
+        </Field>
+        <Field label="Confirm new password">
+          <input className="sw-field" type={t} value={cnf} onChange={e => setCnf(e.target.value)} placeholder="Confirm new password" />
+        </Field>
+        <button className="sw-btn primary" onClick={changePw} disabled={saving || !cur || !nw || !cnf}>
+          {saving ? <><span className="sw-spin" /> Updating…</> : <><Lock size={13} /> Update password</>}
+        </button>
+      </div>
+
+      <div className="sw-card">
+        <p className="sw-sec-title">Two-factor authentication</p>
+        <ToggleRow label="Enable 2FA" desc="Require a verification code on every sign-in." checked={twoFA} onChange={setTwoFA} />
+        {twoFA && (
+          <div className="sw-alert info" style={{ marginTop: 12, marginBottom: 0 }}>
+            <Info size={13} style={{ flexShrink: 0, marginTop: 1 }} />
+            QR code setup will be available in the next release.
+          </div>
+        )}
+      </div>
+    </>
+  );
+};
+
+/* ─────────────────────────────────────────────
+   APPEARANCE
+───────────────────────────────────────────── */
+const AppearanceSection = ({ isDark, toggleTheme }) => {
+  const [mode, setMode] = useState(isDark ? 'dark' : 'light');
+  const apply = m => {
+    setMode(m);
+    if (m === 'dark'  && !isDark) toggleTheme?.();
+    if (m === 'light' && isDark)  toggleTheme?.();
+  };
+  return (
+    <div className="sw-card">
+      <p className="sw-sec-title">Interface theme</p>
+      <div style={{ display: 'flex', gap: 10 }}>
+        {[{ id:'light',label:'Light',Icon:Sun },{ id:'dark',label:'Dark',Icon:Moon },{ id:'system',label:'System',Icon:Monitor }].map(({ id, label, Icon: Ic }) => (
+          <button key={id} type="button" className={`sw-theme-btn${mode === id ? ' active' : ''}`} onClick={() => apply(id)}>
+            <Ic size={17} />{label}
+            {mode === id && <CheckCircle2 size={11} style={{ marginTop: 1 }} />}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+/* ─────────────────────────────────────────────
+   NOTIFICATIONS
+───────────────────────────────────────────── */
+const NotificationsSection = () => {
+  const [p, setP] = useState({ eu:true, eb:true, eu2:false, au:true, aa:true, ae:true });
+  const s = k => v => setP(x => ({ ...x, [k]: v }));
+  const { toast, show } = useToast();
+  const save = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.patch(`${API_URL}/auth/notifications`, p, { headers: { Authorization: `Bearer ${token}` } });
+      show('success', 'Preferences saved');
+    } catch { show('danger', 'Failed to save preferences'); }
+  };
+  return (
+    <>
+      <Toast toast={toast} />
+      <div className="sw-card">
+        <p className="sw-sec-title">Email</p>
+        <ToggleRow label="Dataset uploads"    desc="Email when a CSV finishes processing."      checked={p.eu}  onChange={s('eu')} />
+        <ToggleRow label="Billing & invoices" desc="Payment receipts and subscription changes." checked={p.eb}  onChange={s('eb')} />
+        <ToggleRow label="Product updates"    desc="New features and announcements."            checked={p.eu2} onChange={s('eu2')} />
+      </div>
+      <div className="sw-card">
+        <p className="sw-sec-title">In-app</p>
+        <ToggleRow label="Upload alerts"  desc="Toast notification when a dataset loads."     checked={p.au} onChange={s('au')} />
+        <ToggleRow label="AI query done"  desc="Notify when a long-running query completes."  checked={p.aa} onChange={s('aa')} />
+        <ToggleRow label="Error alerts"   desc="Show errors from failed queries or exports."  checked={p.ae} onChange={s('ae')} />
+      </div>
+      <button className="sw-btn primary" onClick={save}><Save size={13} /> Save preferences</button>
+    </>
+  );
+};
+
+/* ─────────────────────────────────────────────
+   AI ENGINE  — fully redesigned + real links
+───────────────────────────────────────────── */
+const AiSection = ({ user, onSave }) => {
+  const [keys, setKeys]         = useState(user?.ai_keys || {});
+  const [provider, setProvider] = useState(user?.preferred_provider || 'gemini');
+  const [search, setSearch]     = useState('');
+  const [open, setOpen]         = useState(false);
+  const [showKey, setShowKey]   = useState(false);
+  const [saving, setSaving]     = useState(false);
+  const [saved, setSaved]       = useState(false);
+  const dropRef = useRef(null);
+  const { toast, show } = useToast();
+
+  const active   = PROVIDERS.find(p => p.id === provider) || PROVIDERS[0];
+  const filtered = PROVIDERS.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
+  const configured = Object.entries(keys).filter(([, v]) => v);
+
+  useEffect(() => {
+    const fn = e => {
+      if (open && dropRef.current && !dropRef.current.contains(e.target)) {
+        setOpen(false); setSearch('');
+      }
+    };
+    document.addEventListener('mousedown', fn);
+    return () => document.removeEventListener('mousedown', fn);
+  }, [open]);
+
+  const pick = id => { setProvider(id); setOpen(false); setSearch(''); setShowKey(false); setSaved(false); };
 
   const handleSave = async () => {
     setSaving(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.patch(`${API_URL}/auth/profile`, { name, bio }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      onSave?.({ name, email, bio });
+      const res = await axios.patch(`${API_URL}/auth/keys`,
+        { ai_keys: keys, preferred_provider: provider },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      onSave?.(res.data.user);
       setSaved(true);
+      show('success', 'AI engine configuration saved');
       setTimeout(() => setSaved(false), 3000);
     } catch (e) {
-      console.error(e);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div>
-      <div className="st-card" style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-        <div style={{
-          width: 64, height: 64, borderRadius: '50%',
-          background: 'var(--st-avatar-bg)', border: '.5px solid rgba(99,102,241,.25)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 22, fontWeight: 700, color: 'var(--st-avatar-txt)',
-          flexShrink: 0, letterSpacing: '.04em',
-        }}>
-          {initials}
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--st-text-1)' }}>{name || 'Your name'}</p>
-          <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--st-text-3)' }}>{email}</p>
-        </div>
-        <span className="st-plan-badge">Free plan</span>
-      </div>
-
-      <div className="st-card">
-        <p className="st-section-title">Personal info</p>
-        <Field label="Full name">
-          <input className="st-field" value={name} onChange={e => setName(e.target.value)} placeholder="Your full name" />
-        </Field>
-        <Field label="Email address" hint="Contact support to change your email.">
-          <input className="st-field" value={email} disabled />
-        </Field>
-        <Field label="Bio" hint="A short description shown to your team.">
-          <textarea className="st-field" rows={3} value={bio} onChange={e => setBio(e.target.value)}
-            placeholder="Tell your team a bit about yourself…"
-            style={{ resize: 'vertical', lineHeight: 1.6 }} />
-        </Field>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <button className="st-btn primary" onClick={handleSave} disabled={saving}>
-            {saving ? <span className="st-spinner" /> : <Save size={13} />}
-            {saving ? 'Saving…' : 'Save changes'}
-          </button>
-          {saved && (
-            <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'var(--st-success-txt)' }}>
-              <CheckCircle2 size={13} /> Saved
-            </span>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-/* ── Account & Security ── */
-const AccountSection = () => {
-  const [currentPw, setCurrentPw] = useState('');
-  const [newPw, setNewPw]         = useState('');
-  const [confirmPw, setConfirmPw] = useState('');
-  const [showPw, setShowPw]       = useState(false);
-  const [saving, setSaving]       = useState(false);
-  const [msg, setMsg]             = useState(null);
-  const [twoFA, setTwoFA]         = useState(false);
-  const [sessions, setSessions]   = useState([
-    { id: 1, device: 'Chrome · macOS',  location: 'Mumbai, IN',   active: true,  time: 'Now'        },
-    { id: 2, device: 'Safari · iPhone', location: 'Delhi, IN',    active: false, time: '2 days ago' },
-  ]);
-
-  const handleChangePw = async () => {
-    if (newPw !== confirmPw) return setMsg({ type: 'danger', text: 'Passwords do not match.' });
-    if (newPw.length < 8)     return setMsg({ type: 'danger', text: 'Password must be at least 8 characters.' });
-    setSaving(true);
-    try {
-      const token = localStorage.getItem('token');
-      await axios.patch(`${API_URL}/auth/password`, { currentPassword: currentPw, newPassword: newPw }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setMsg({ type: 'success', text: 'Password updated successfully.' });
-      setCurrentPw(''); setNewPw(''); setConfirmPw('');
-    } catch (e) {
-      setMsg({ type: 'danger', text: e.response?.data?.error || 'Failed to update password.' });
+      show('danger', e.response?.data?.error || 'Failed to save configuration');
     } finally { setSaving(false); }
   };
 
   return (
+    <>
+      <Toast toast={toast} />
+
+      {/* Status banner */}
+      <div className="sw-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
+          <div style={{
+            width: 42, height: 42, borderRadius: 11,
+            background: 'var(--accent-dim)', border: '1px solid var(--accent-bdr)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-txt)',
+          }}>
+            <Sparkles size={18} />
+          </div>
+          <div>
+            <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-1)', marginBottom: 2 }}>AI Engine Registry</p>
+            <p style={{ fontSize: 12, color: 'var(--text-3)' }}>Choose which AI model powers your workspace analyses.</p>
+          </div>
+        </div>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 7,
+          padding: '5px 13px', borderRadius: 999,
+          background: 'var(--success-dim)', border: '1px solid var(--success-bdr)',
+        }}>
+          <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--success)' }} />
+          <span style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--success)' }}>{active.name} · active</span>
+        </div>
+      </div>
+
+      {/* Selector + key */}
+      <div className="sw-card">
+        <p className="sw-sec-title">Active provider</p>
+
+        {/* Dropdown trigger */}
+        <div ref={dropRef} style={{ position: 'relative', marginBottom: 14 }}>
+          <button
+            type="button"
+            onClick={() => { setOpen(o => !o); setSearch(''); }}
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', gap: 12,
+              padding: '10px 12px', borderRadius: 'var(--r-md)',
+              background: 'var(--field)', border: `1px solid ${open ? 'var(--accent)' : 'var(--field-bdr)'}`,
+              cursor: 'pointer', transition: 'border-color .15s, box-shadow .15s',
+              boxShadow: open ? '0 0 0 3px var(--accent-dim)' : 'none',
+            }}
+          >
+            <PIcon p={active} size={32} />
+            <div style={{ flex: 1, textAlign: 'left' }}>
+              <p style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text-1)', margin: 0 }}>{active.name}</p>
+              <p style={{ fontSize: 11.5, color: 'var(--text-3)', margin: 0 }}>{active.model}</p>
+            </div>
+            <span className="sw-badge accent" style={{ fontSize: 10.5 }}>{active.tag}</span>
+            <ChevronDown size={15} color="var(--text-3)" style={{ transition: 'transform .2s', transform: open ? 'rotate(180deg)' : 'none', flexShrink: 0 }} />
+          </button>
+
+          {open && (
+            <div className="sw-dropdown sw-fadein">
+              <div className="sw-drop-search">
+                <div className="sw-fwrap">
+                  <Search size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-3)', pointerEvents: 'none' }} />
+                  <input autoFocus className="sw-field" placeholder="Search providers…" value={search} onChange={e => setSearch(e.target.value)} style={{ paddingLeft: 32, fontSize: 13 }} />
+                </div>
+              </div>
+              <div className="sw-drop-list">
+                {filtered.length === 0 && (
+                  <p style={{ padding: '10px 12px', fontSize: 13, color: 'var(--text-3)', textAlign: 'center' }}>No providers found</p>
+                )}
+                {filtered.map(p => (
+                  <div key={p.id} className={`sw-drop-item${p.id === provider ? ' sel' : ''}`} onClick={() => pick(p.id)}>
+                    <PIcon p={p} size={32} />
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-1)', margin: 0 }}>{p.name}</p>
+                      <p style={{ fontSize: 11.5, color: 'var(--text-3)', margin: 0 }}>{p.model} · {p.tag}</p>
+                    </div>
+                    {p.id === provider
+                      ? <CheckCircle2 size={14} color="var(--accent-txt)" />
+                      : p.isDefault
+                      ? <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--success)', background: 'var(--success-dim)', padding: '1px 7px', borderRadius: 999, border: '1px solid var(--success-bdr)' }}>Free</span>
+                      : null
+                    }
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Key area */}
+        {active.isDefault ? (
+          <div className="sw-key-box" style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+            <PIcon p={active} size={36} />
+            <div>
+              <p style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text-1)', marginBottom: 3 }}>Using Lumina system key</p>
+              <p style={{ fontSize: 12.5, color: 'var(--text-2)', lineHeight: 1.6, marginBottom: 10 }}>
+                {active.model} is active on our shared key. Add your own for higher rate limits and priority access.
+              </p>
+              <a href={active.keyUrl} target="_blank" rel="noopener noreferrer" className="sw-btn link">
+                Get a personal key at {active.keyDomain} <ArrowUpRight size={12} />
+              </a>
+            </div>
+          </div>
+        ) : (
+          <div className="sw-key-box">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <label className="sw-lbl" style={{ margin: 0 }}>{active.name} API key</label>
+              <a href={active.keyUrl} target="_blank" rel="noopener noreferrer" className="sw-btn link">
+                Get key at {active.keyDomain} <ArrowUpRight size={11} />
+              </a>
+            </div>
+            <div className="sw-fwrap">
+              <input
+                className="sw-field sw-mono"
+                type={showKey ? 'text' : 'password'}
+                value={keys[provider] || ''}
+                onChange={e => setKeys(k => ({ ...k, [provider]: e.target.value }))}
+                placeholder={`Paste your ${active.name} secret key…`}
+                style={{ paddingRight: 38, fontSize: 13 }}
+              />
+              <button type="button" className="sw-ficon" onClick={() => setShowKey(p => !p)}>
+                {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
+              </button>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
+              <ShieldCheck size={12} color="var(--success)" />
+              <span style={{ fontSize: 11.5, color: 'var(--text-3)' }}>Encrypted at rest — never stored in plain text.</span>
+            </div>
+          </div>
+        )}
+
+        <hr className="sw-hr" />
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+          <p style={{ fontSize: 12, color: 'var(--text-3)' }}>Changes apply to all future AI queries in this workspace.</p>
+          <button className="sw-btn primary" onClick={handleSave} disabled={saving}>
+            {saving
+              ? <><span className="sw-spin" /> Saving…</>
+              : saved
+              ? <><CheckCircle2 size={13} /> Saved</>
+              : <><Save size={13} /> Save configuration</>
+            }
+          </button>
+        </div>
+      </div>
+
+      {/* Configured keys list */}
+      {configured.length > 0 && (
+        <div className="sw-card">
+          <p className="sw-sec-title">Configured keys</p>
+          {configured.map(([id, val]) => {
+            const p = PROVIDERS.find(x => x.id === id);
+            if (!p) return null;
+            return (
+              <div key={id} className="sw-row">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+                  <PIcon p={p} size={28} />
+                  <div>
+                    <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-1)' }}>{p.name}</p>
+                    <code className="sw-mono" style={{ fontSize: 11, color: 'var(--text-3)' }}>
+                      {val.slice(0, 8)}{'•'.repeat(10)}
+                    </code>
+                  </div>
+                </div>
+                <button className="sw-btn danger" style={{ padding: '5px 10px', fontSize: 11.5 }}
+                  onClick={() => setKeys(k => { const n = { ...k }; delete n[id]; return n; })}>
+                  <Trash2 size={11} /> Remove
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </>
+  );
+};
+
+/* ─────────────────────────────────────────────
+   BILLING
+───────────────────────────────────────────── */
+const BillingSection = ({ user }) => {
+  const isPro = user?.plan === 'pro';
+  const usage = [
+    { label: 'Datasets uploaded', used: 8,   limit: isPro ? 100 : 20,   unit: '' },
+    { label: 'Storage',           used: 234, limit: isPro ? 5000 : 500,  unit: ' MB' },
+    { label: 'AI queries',        used: 142, limit: isPro ? 2000 : 500,  unit: '' },
+  ];
+  return (
     <div>
-      <div className="st-card">
-        <p className="st-section-title">Change password</p>
-        {msg && (
-          <div className={`st-alert ${msg.type}`}>
-            {msg.type === 'danger' ? <AlertCircle size={14} style={{ flexShrink: 0, marginTop: 1 }} /> : <CheckCircle2 size={14} style={{ flexShrink: 0, marginTop: 1 }} />}
-            {msg.text}
+      <div className="sw-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 7 }}>
+            <span className={`sw-badge ${isPro ? 'warn' : 'accent'}`}>{isPro ? <><Zap size={9} /> Pro</> : 'Free'}</span>
+            <span className="sw-badge success">Active</span>
           </div>
-        )}
-        <Field label="Current password">
-          <div style={{ position: 'relative' }}>
-            <input className="st-field" type={showPw ? 'text' : 'password'}
-              value={currentPw} onChange={e => setCurrentPw(e.target.value)}
-              placeholder="Enter current password" style={{ paddingRight: 38 }} />
-            <button type="button" onClick={() => setShowPw(p => !p)} style={{
-              position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
-              background: 'none', border: 'none', cursor: 'pointer', color: 'var(--st-text-3)',
-            }}>
-              {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
-            </button>
-          </div>
-        </Field>
-        <Field label="New password" hint="Minimum 8 characters.">
-          <input className="st-field" type={showPw ? 'text' : 'password'}
-            value={newPw} onChange={e => setNewPw(e.target.value)}
-            placeholder="New password" />
-        </Field>
-        <Field label="Confirm new password">
-          <input className="st-field" type={showPw ? 'text' : 'password'}
-            value={confirmPw} onChange={e => setConfirmPw(e.target.value)}
-            placeholder="Re-enter new password" />
-        </Field>
-        <button className="st-btn primary" onClick={handleChangePw} disabled={saving || !currentPw || !newPw || !confirmPw}>
-          {saving ? <><span className="st-spinner" /> Updating…</> : <><Lock size={13} /> Update password</>}
-        </button>
+          <p style={{ fontSize: 13, color: 'var(--text-2)' }}>
+            {isPro ? '$19 / month · renews April 18, 2025' : 'Limited to 20 datasets · 500 MB storage'}
+          </p>
+        </div>
+        {isPro
+          ? <div style={{ display: 'flex', gap: 8 }}><button className="sw-btn">Manage billing</button><button className="sw-btn danger">Cancel plan</button></div>
+          : <button className="sw-btn primary"><Zap size={13} /> Upgrade to Pro</button>
+        }
       </div>
 
-      <div className="st-card">
-        <p className="st-section-title">Two-factor authentication</p>
-        <ToggleRow
-          label="Enable 2FA"
-          desc="Require a verification code on every login."
-          checked={twoFA}
-          onChange={setTwoFA}
-        />
-        {twoFA && (
-          <div className="st-alert info" style={{ marginTop: 12, marginBottom: 0 }}>
-            <Info size={14} style={{ flexShrink: 0, marginTop: 1 }} />
-            2FA setup requires scanning a QR code. This feature will be available in the next release.
-          </div>
-        )}
+      <div className="sw-card">
+        <p className="sw-sec-title">Usage this month</p>
+        {usage.map(item => {
+          const pct = Math.min(100, (item.used / item.limit) * 100);
+          return (
+            <div key={item.label} style={{ marginBottom: 15 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                <span style={{ fontSize: 12.5, color: 'var(--text-2)' }}>{item.label}</span>
+                <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text-1)' }}>
+                  {item.used}{item.unit}<span style={{ color: 'var(--text-3)', fontWeight: 400 }}> / {item.limit}{item.unit}</span>
+                </span>
+              </div>
+              <div className="sw-prog-track">
+                <div className="sw-prog-fill" style={{ width: `${pct}%`, background: pct > 80 ? '#d97706' : 'var(--accent)' }} />
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      <div className="st-card">
-        <p className="st-section-title">Active sessions</p>
-        {sessions.map(s => (
-          <div key={s.id} className="st-row">
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-              <div style={{
-                width: 36, height: 36, borderRadius: 8,
-                background: s.active ? 'rgba(16,185,129,.1)' : 'var(--st-field-bg)',
-                border: `.5px solid ${s.active ? 'rgba(16,185,129,.25)' : 'var(--st-border)'}`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <Monitor size={15} color={s.active ? '#34d399' : 'var(--st-text-3)'} />
+      {isPro && (
+        <div className="sw-card">
+          <p className="sw-sec-title">Payment method</p>
+          <div className="sw-row">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 40, height: 27, borderRadius: 5, background: 'var(--field)', border: '1px solid var(--border-md)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <CreditCard size={14} color="var(--text-2)" />
               </div>
               <div>
-                <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: 'var(--st-text-1)' }}>
-                  {s.device}
-                  {s.active && <span style={{ marginLeft: 7, fontSize: 10, fontWeight: 700, color: '#34d399', background: 'rgba(16,185,129,.1)', padding: '1px 7px', borderRadius: 999 }}>Current</span>}
-                </p>
-                <p style={{ margin: 0, fontSize: 11, color: 'var(--st-text-3)' }}>{s.location} · {s.time}</p>
+                <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-1)' }}>Visa ending in 4242</p>
+                <p style={{ fontSize: 11.5, color: 'var(--text-3)' }}>Expires 09 / 2027</p>
               </div>
             </div>
-            {!s.active && (
-              <button className="st-btn danger" style={{ padding: '5px 10px', fontSize: 11 }}
-                onClick={() => setSessions(p => p.filter(x => x.id !== s.id))}>
-                Revoke
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-/* ── Appearance ── */
-const AppearanceSection = ({ isDark, toggleTheme }) => {
-  const [density, setDensity]   = useState('comfortable');
-  const [fontSize, setFontSize] = useState('medium');
-  const [colorMode, setColorMode] = useState(isDark ? 'dark' : 'light');
-
-  const applyTheme = mode => {
-    setColorMode(mode);
-    if (mode === 'dark'  && !isDark)  toggleTheme?.();
-    if (mode === 'light' && isDark)   toggleTheme?.();
-  };
-
-  return (
-    <div>
-      <div className="st-card">
-        <p className="st-section-title">Theme</p>
-        <div style={{ display: 'flex', gap: 10 }}>
-          {[
-            { id: 'light', label: 'Light', Icon: Sun   },
-            { id: 'dark',  label: 'Dark',  Icon: Moon  },
-            { id: 'system',label: 'System',Icon: Monitor},
-          ].map(({ id, label, Icon: I }) => (
-            <button key={id} type="button" className={`st-theme-btn${colorMode === id ? ' active' : ''}`}
-              onClick={() => applyTheme(id)}>
-              <I size={18} />
-              {label}
-              {colorMode === id && <CheckCircle2 size={11} />}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="st-card">
-        <p className="st-section-title">Layout density</p>
-        {[
-          { id: 'compact',      label: 'Compact',      desc: 'More data per screen, tighter spacing.' },
-          { id: 'comfortable',  label: 'Comfortable',  desc: 'Balanced spacing. Recommended.' },
-          { id: 'spacious',     label: 'Spacious',     desc: 'Extra breathing room between elements.' },
-        ].map(opt => (
-          <div key={opt.id} className="st-row" onClick={() => setDensity(opt.id)} style={{ cursor: 'pointer' }}>
-            <div>
-              <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: 'var(--st-text-1)' }}>{opt.label}</p>
-              <p style={{ margin: 0, fontSize: 12, color: 'var(--st-text-3)' }}>{opt.desc}</p>
-            </div>
-            <div style={{
-              width: 18, height: 18, borderRadius: '50%',
-              border: `.5px solid ${density === opt.id ? 'rgba(99,102,241,.6)' : 'var(--st-border-2)'}`,
-              background: density === opt.id ? 'rgba(99,102,241,.15)' : 'transparent',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}>
-              {density === opt.id && <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#6366f1' }} />}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="st-card">
-        <p className="st-section-title">Chart default font size</p>
-        <Field label="Size">
-          <select className="st-field" value={fontSize} onChange={e => setFontSize(e.target.value)}>
-            <option value="small">Small (11px)</option>
-            <option value="medium">Medium (13px) — Recommended</option>
-            <option value="large">Large (15px)</option>
-          </select>
-        </Field>
-      </div>
-    </div>
-  );
-};
-
-/* ── Notifications ── */
-const NotificationsSection = () => {
-  const [prefs, setPrefs] = useState({
-    email_uploads:    true,
-    email_exports:    false,
-    email_billing:    true,
-    email_updates:    false,
-    browser_uploads:  true,
-    browser_ai:       true,
-    browser_errors:   true,
-  });
-
-  const set = key => val => setPrefs(p => ({ ...p, [key]: val }));
-
-  return (
-    <div>
-      <div className="st-card">
-        <p className="st-section-title">Email notifications</p>
-        <ToggleRow label="Dataset uploads complete"  desc="Get an email when a CSV finishes processing."     checked={prefs.email_uploads}  onChange={set('email_uploads')} />
-        <ToggleRow label="Export ready"              desc="Email when a PDF or PPT export is ready."         checked={prefs.email_exports}  onChange={set('email_exports')} />
-        <ToggleRow label="Billing & invoices"        desc="Payment receipts and subscription changes."       checked={prefs.email_billing}  onChange={set('email_billing')} />
-        <ToggleRow label="Product updates"           desc="New features, changelogs, and announcements."     checked={prefs.email_updates}  onChange={set('email_updates')} />
-      </div>
-
-      <div className="st-card">
-        <p className="st-section-title">In-app notifications</p>
-        <ToggleRow label="Upload & processing alerts" desc="Toast when a dataset finishes loading."           checked={prefs.browser_uploads} onChange={set('browser_uploads')} />
-        <ToggleRow label="AI query complete"          desc="Notify when a long-running query finishes."       checked={prefs.browser_ai}      onChange={set('browser_ai')} />
-        <ToggleRow label="Error alerts"               desc="Show errors from failed queries or exports."      checked={prefs.browser_errors}  onChange={set('browser_errors')} />
-      </div>
-    </div>
-  );
-};
-
-/* ── Data & Exports ── */
-const DataSection = () => {
-  const [autoDelete, setAutoDelete] = useState('never');
-  const [exporting, setExporting]   = useState(false);
-
-  const handleExportAll = async () => {
-    setExporting(true);
-    await new Promise(r => setTimeout(r, 1500));
-    setExporting(false);
-    alert('Data export queued. You will receive an email with the download link within 5 minutes.');
-  };
-
-  return (
-    <div>
-      <div className="st-card">
-        <p className="st-section-title">Export your data</p>
-        <div className="st-alert info">
-          <Info size={14} style={{ flexShrink: 0, marginTop: 1 }} />
-          Exports include all your datasets, charts, and chat history in JSON + CSV format.
-        </div>
-        <button className="st-btn" onClick={handleExportAll} disabled={exporting}>
-          {exporting ? <><span className="st-spinner" style={{ borderColor: 'rgba(0,0,0,.15)', borderTopColor: 'var(--st-text-1)' }} /> Preparing…</> : <><Download size={13} /> Export all data</>}
-        </button>
-      </div>
-
-      <div className="st-card">
-        <p className="st-section-title">Auto-delete old datasets</p>
-        <Field label="Delete datasets older than" hint="Helps keep your workspace clean and within storage limits.">
-          <select className="st-field" value={autoDelete} onChange={e => setAutoDelete(e.target.value)}>
-            <option value="never">Never (keep everything)</option>
-            <option value="30">30 days</option>
-            <option value="60">60 days</option>
-            <option value="90">90 days</option>
-          </select>
-        </Field>
-        <button className="st-btn primary"><Save size={13} /> Save preference</button>
-      </div>
-
-      <div className="st-card">
-        <p className="st-section-title">Default export format</p>
-        {[
-          { id: 'pdf',  label: 'PDF Report',        desc: 'Best for sharing with stakeholders.' },
-          { id: 'pptx', label: 'PowerPoint (PPTX)', desc: 'Best for presentations.' },
-          { id: 'csv',  label: 'CSV',               desc: 'Raw data for further analysis.' },
-        ].map(opt => (
-          <div key={opt.id} className="st-row">
-            <div>
-              <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: 'var(--st-text-1)' }}>{opt.label}</p>
-              <p style={{ margin: 0, fontSize: 12, color: 'var(--st-text-3)' }}>{opt.desc}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-/* ── API Keys ── */
-const ApiSection = () => {
-  const [keys, setKeys] = useState([
-    { id: 1, name: 'Production',  key: 'lum_prod_••••••••••••••••••4f2a', created: 'Mar 1, 2025',  last_used: 'Today' },
-    { id: 2, name: 'Development', key: 'lum_dev_••••••••••••••••••9c11',  created: 'Jan 14, 2025', last_used: '5 days ago' },
-  ]);
-  const [newKeyName, setNewKeyName] = useState('');
-  const [creating, setCreating]     = useState(false);
-  const [newKeyVal, setNewKeyVal]   = useState(null);
-
-  const createKey = async () => {
-    if (!newKeyName.trim()) return;
-    setCreating(true);
-    await new Promise(r => setTimeout(r, 900));
-    const fake = `lum_${newKeyName.toLowerCase().replace(/\s+/, '_')}_${Math.random().toString(36).slice(2, 18)}`;
-    setNewKeyVal(fake);
-    setKeys(p => [...p, { id: Date.now(), name: newKeyName, key: fake.slice(0, 12) + '••••••••••••', created: 'Just now', last_used: 'Never' }]);
-    setNewKeyName('');
-    setCreating(false);
-  };
-
-  return (
-    <div>
-      {newKeyVal && (
-        <div className="st-alert success">
-          <CheckCircle2 size={14} style={{ flexShrink: 0, marginTop: 1 }} />
-          <div>
-            <p style={{ margin: 0, fontWeight: 600 }}>Key created — copy it now. It won't be shown again.</p>
-            <code style={{ fontSize: 12, fontFamily: 'monospace', display: 'block', marginTop: 4, wordBreak: 'break-all' }}>{newKeyVal}</code>
-            <button onClick={() => { navigator.clipboard.writeText(newKeyVal); }} style={{ marginTop: 6, fontSize: 11, fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--st-success-txt)', padding: 0 }}>
-              Copy to clipboard
-            </button>
+            <button className="sw-btn" style={{ fontSize: 12, padding: '6px 12px' }}>Update</button>
           </div>
         </div>
       )}
-
-      <div className="st-card">
-        <p className="st-section-title">Your API keys</p>
-        {keys.map(k => (
-          <div key={k.id} className="st-row">
-            <div>
-              <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--st-text-1)' }}>{k.name}</p>
-              <code style={{ fontSize: 11, color: 'var(--st-text-3)', fontFamily: 'monospace' }}>{k.key}</code>
-              <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--st-text-3)' }}>Created {k.created} · Last used {k.last_used}</p>
-            </div>
-            <button className="st-btn danger" style={{ padding: '5px 10px', fontSize: 11 }}
-              onClick={() => setKeys(p => p.filter(x => x.id !== k.id))}>
-              <Trash2 size={11} /> Revoke
-            </button>
-          </div>
-        ))}
-      </div>
-
-      <div className="st-card">
-        <p className="st-section-title">Create new key</p>
-        <Field label="Key name" hint="e.g. 'Production', 'Analytics bot'">
-          <input className="st-field" value={newKeyName} onChange={e => setNewKeyName(e.target.value)}
-            placeholder="Key name" onKeyDown={e => e.key === 'Enter' && createKey()} />
-        </Field>
-        <button className="st-btn primary" onClick={createKey} disabled={creating || !newKeyName.trim()}>
-          {creating ? <><span className="st-spinner" /> Creating…</> : <><Key size={13} /> Create key</>}
-        </button>
-      </div>
     </div>
   );
 };
 
-/* ── Billing ── */
-const BillingSection = () => (
-  <div>
-    <div className="st-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-          <span className="st-plan-badge pro"><Zap size={10} /> Pro plan</span>
-          <span style={{ fontSize: 11, color: 'var(--st-success-txt)', background: 'var(--st-success-bg)', border: '.5px solid var(--st-success-bdr)', padding: '2px 8px', borderRadius: 999 }}>Active</span>
-        </div>
-        <p style={{ margin: 0, fontSize: 13, color: 'var(--st-text-2)' }}>$19 / month · renews April 18, 2025</p>
-      </div>
-      <div style={{ display: 'flex', gap: 8 }}>
-        <button className="st-btn">Manage billing</button>
-        <button className="st-btn danger">Cancel plan</button>
-      </div>
-    </div>
-
-    <div className="st-card">
-      <p className="st-section-title">Usage this month</p>
-      {[
-        { label: 'Datasets uploaded', used: 8,   limit: 20,  unit: ''     },
-        { label: 'Storage used',      used: 234, limit: 500, unit: ' MB'  },
-        { label: 'AI queries',        used: 142, limit: 500, unit: ''     },
-        { label: 'PDF exports',       used: 6,   limit: 20,  unit: ''     },
-      ].map(item => (
-        <div key={item.label} style={{ marginBottom: 14 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-            <span style={{ fontSize: 12, color: 'var(--st-text-2)' }}>{item.label}</span>
-            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--st-text-1)' }}>
-              {item.used}{item.unit} <span style={{ color: 'var(--st-text-3)', fontWeight: 400 }}>/ {item.limit}{item.unit}</span>
-            </span>
-          </div>
-          <div style={{ height: 5, borderRadius: 999, background: 'var(--st-field-bg)', overflow: 'hidden' }}>
-            <div style={{
-              height: '100%', borderRadius: 999,
-              width: `${Math.min(100, (item.used / item.limit) * 100)}%`,
-              background: item.used / item.limit > 0.8 ? '#f59e0b' : '#6366f1',
-              transition: 'width .3s',
-            }} />
-          </div>
-        </div>
-      ))}
-    </div>
-
-    <div className="st-card">
-      <p className="st-section-title">Payment method</p>
-      <div className="st-row">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 40, height: 28, borderRadius: 5, background: 'var(--st-field-bg)', border: '.5px solid var(--st-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <CreditCard size={14} color="var(--st-text-2)" />
-          </div>
-          <div>
-            <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: 'var(--st-text-1)' }}>Visa ending in 4242</p>
-            <p style={{ margin: 0, fontSize: 11, color: 'var(--st-text-3)' }}>Expires 09 / 2027</p>
-          </div>
-        </div>
-        <button className="st-btn" style={{ fontSize: 11, padding: '5px 10px' }}>Update</button>
-      </div>
-    </div>
-  </div>
-);
-
-/* ── Danger Zone ── */
-const DangerSection = ({ onLogout }) => {
+/* ─────────────────────────────────────────────
+   DANGER ZONE
+───────────────────────────────────────────── */
+const DangerSection = () => {
   const [confirm, setConfirm] = useState('');
   const [deleting, setDeleting] = useState(false);
 
-  const handleDelete = async () => {
+  const navigate = useNavigate();
+  const { setToken, setUser, token } = useStore();
+
+  const handleDeleteAccount = async () => {
     if (confirm !== 'DELETE') return;
     setDeleting(true);
     try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`${API_URL}/auth/account`, {
+      await axios.delete(`${API_URL}/auth/delete-account`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       localStorage.clear();
-      onLogout?.();
-    } catch (e) {
-      alert('Failed to delete account. Please contact support@lumina.bi');
+      setToken(null);
+      setUser(null);
+      navigate('/login');
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.error || 'Account deletion failed.');
       setDeleting(false);
     }
   };
 
+  const handleSignOutEverywhere = () => {
+    localStorage.clear();
+    setToken(null);
+    setUser(null);
+    navigate('/login');
+  };
+
+  const isReady = confirm === 'DELETE';
+
   return (
-    <div>
-      <div className="st-card">
-        <p className="st-section-title">Sign out all devices</p>
-        <p style={{ fontSize: 13, color: 'var(--st-text-2)', margin: '0 0 14px', lineHeight: 1.6 }}>
-          This will immediately invalidate all active sessions. You'll need to sign in again.
-        </p>
-        <button className="st-btn danger" onClick={onLogout}>
-          <LogOut size={13} /> Sign out everywhere
-        </button>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+      {/* Sign out */}
+      <div className="sw-card">
+        <p className="sw-sec-title">Session management</p>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--text-1)', marginBottom: 3 }}>
+              Sign out everywhere
+            </p>
+            <p style={{ fontSize: 12.5, color: 'var(--text-3)', lineHeight: 1.6 }}>
+              Immediately invalidates all active sessions across every device. You'll be redirected to the login page.
+            </p>
+          </div>
+          <button
+            className="sw-btn"
+            onClick={handleSignOutEverywhere}
+            style={{ flexShrink: 0, marginTop: 2 }}
+          >
+            <LogOut size={13} />
+            Sign out everywhere
+          </button>
+        </div>
       </div>
 
-      <div className="st-card" style={{ borderColor: 'rgba(239,68,68,.2)' }}>
-        <p className="st-section-title" style={{ color: 'var(--st-danger-txt)' }}>Delete account</p>
-        <div className="st-alert danger">
-          <AlertCircle size={14} style={{ flexShrink: 0, marginTop: 1 }} />
-          This is permanent. All datasets, charts, exports, and history will be erased. There is no undo.
+      {/* Delete account */}
+      <div
+        className="sw-card"
+        style={{ borderColor: 'var(--danger-bdr)' }}
+      >
+        {/* Section label */}
+        <p className="sw-sec-title" style={{ color: 'var(--danger)', opacity: 0.75 }}>
+          Danger zone
+        </p>
+
+        {/* Warning block */}
+        <div style={{
+          display: 'flex', alignItems: 'flex-start', gap: 12,
+          padding: '13px 15px', borderRadius: 'var(--r-md)',
+          background: 'var(--danger-dim)', border: '1px solid var(--danger-bdr)',
+          marginBottom: 18,
+        }}>
+          <AlertCircle size={15} color="var(--danger)" style={{ flexShrink: 0, marginTop: 1 }} />
+          <div>
+            <p style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--danger)', marginBottom: 3 }}>
+              Permanently delete this account
+            </p>
+            <p style={{ fontSize: 12.5, color: 'var(--danger)', opacity: 0.75, lineHeight: 1.55 }}>
+              All SQL tables, saved queries, charts, and account history will be permanently erased.
+              This action cannot be undone and cannot be recovered.
+            </p>
+          </div>
         </div>
-        <Field label="Type DELETE to confirm">
-          <input className="st-field" value={confirm} onChange={e => setConfirm(e.target.value)}
-            placeholder='Type "DELETE"' style={{ borderColor: confirm === 'DELETE' ? 'var(--st-danger-bdr)' : undefined }} />
-        </Field>
-        <button className="st-btn danger" onClick={handleDelete}
-          disabled={confirm !== 'DELETE' || deleting}>
-          {deleting ? <><span className="st-spinner" style={{ borderColor: 'rgba(239,68,68,.2)', borderTopColor: '#f87171' }} /> Deleting…</> : <><Trash2 size={13} /> Delete my account</>}
+
+        {/* Confirm input */}
+        <div style={{ marginBottom: 14 }}>
+          <label className="sw-lbl">
+            Type <span style={{
+              fontFamily: "'DM Mono', monospace",
+              fontWeight: 500, color: 'var(--text-1)',
+              background: 'var(--field)', padding: '0px 6px',
+              borderRadius: 4, border: '1px solid var(--border-md)',
+              fontSize: 11,
+            }}>DELETE</span> to confirm
+          </label>
+          <input
+            className="sw-field"
+            value={confirm}
+            onChange={e => setConfirm(e.target.value.toUpperCase())}
+            placeholder="Type here…"
+            style={{
+              borderColor: isReady ? 'var(--danger-bdr)' : undefined,
+              boxShadow: isReady ? '0 0 0 3px var(--danger-dim)' : undefined,
+              fontFamily: "'DM Mono', monospace",
+              letterSpacing: confirm ? '.06em' : 0,
+              transition: 'border-color .15s, box-shadow .15s',
+            }}
+          />
+          {confirm && !isReady && (
+            <p style={{ marginTop: 5, fontSize: 11.5, color: 'var(--text-3)' }}>
+              Keep typing — type the full word DELETE
+            </p>
+          )}
+        </div>
+
+        {/* Delete button */}
+        <button
+          onClick={handleDeleteAccount}
+          disabled={!isReady || deleting}
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            padding: '9px 16px', borderRadius: 'var(--r-md)',
+            border: `1px solid ${isReady ? 'var(--danger)' : 'var(--danger-bdr)'}`,
+            background: isReady ? 'var(--danger)' : 'var(--danger-dim)',
+            color: isReady ? '#fff' : 'var(--danger)',
+            fontSize: 13, fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
+            cursor: isReady && !deleting ? 'pointer' : 'not-allowed',
+            opacity: !isReady || deleting ? 0.55 : 1,
+            transition: 'all .15s',
+          }}
+        >
+          {deleting ? (
+            <>
+              <span style={{
+                width: 13, height: 13, borderRadius: '50%', display: 'inline-block', flexShrink: 0,
+                border: '2px solid rgba(255,255,255,.3)', borderTopColor: '#fff',
+                animation: 'sw-spin .6s linear infinite',
+              }} />
+              Wiping data…
+            </>
+          ) : (
+            <>
+              <Trash2 size={13} />
+              Permanently delete my account
+            </>
+          )}
         </button>
+
+        {/* Fine print */}
+        {isReady && !deleting && (
+          <p style={{
+            marginTop: 10, fontSize: 11.5, color: 'var(--danger)', opacity: 0.6,
+            textAlign: 'center', lineHeight: 1.5,
+          }}>
+            Clicking the button above will immediately begin deletion. There is no confirmation step.
+          </p>
+        )}
       </div>
+
     </div>
   );
 };
 
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/*  MAIN SETTINGS PAGE                                                         */
-/* ═══════════════════════════════════════════════════════════════════════════ */
+/* ─────────────────────────────────────────────
+   MAIN SETTINGS
+───────────────────────────────────────────── */
 const Settings = ({ isDark, toggleTheme, onLogout }) => {
-  const [active, setActive] = useState('profile');
-  const [user, setUser]     = useState(null);
+  const [active, setActive]     = useState('profile');
+  const [user, setUser]         = useState(null);
+  const [loading, setLoading]   = useState(true);
+  const [fetchErr, setFetchErr] = useState(false);
 
-  useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (stored) {
-      try { setUser(JSON.parse(stored)); } catch {}
-    }
-    const fetchUser = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const res = await axios.get(`${API_URL}/auth/me`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (res.data?.user) {
-          setUser(res.data.user);
-          localStorage.setItem('user', JSON.stringify(res.data.user));
-        }
-      } catch {}
-    };
-    fetchUser();
+  const fetchUser = useCallback(async () => {
+    setLoading(true); setFetchErr(false);
+    try {
+      const token = localStorage.getItem('token');
+      const stored = localStorage.getItem('user');
+      if (stored) { try { setUser(JSON.parse(stored)); setLoading(false); } catch {} }
+      const res = await axios.get(`${API_URL}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+      if (res.data?.user) { setUser(res.data.user); localStorage.setItem('user', JSON.stringify(res.data.user)); }
+    } catch { setFetchErr(true); }
+    finally { setLoading(false); }
   }, []);
 
-  const SECTIONS = {
-    profile:       <ProfileSection user={user} onSave={u => setUser(prev => ({ ...prev, ...u }))} />,
-    account:       <AccountSection />,
+  useEffect(() => { fetchUser(); }, [fetchUser]);
+
+  const sections = {
+    profile:       <ProfileSection user={user} loading={loading} onSave={u => setUser(p => ({ ...p, ...u }))} />,
+    security:      <SecuritySection />,
     appearance:    <AppearanceSection isDark={isDark} toggleTheme={toggleTheme} />,
     notifications: <NotificationsSection />,
-    data:          <DataSection />,
-    api:           <ApiSection />,
-    billing:       <BillingSection />,
+    ai:            <AiSection user={user} onSave={u => setUser(p => ({ ...p, ...u }))} />,
+    billing:       <BillingSection user={user} />,
     danger:        <DangerSection onLogout={onLogout} />,
   };
 
-  const activeNav = NAV.find(n => n.id === active);
+  const nav = NAV.find(n => n.id === active);
 
   return (
-    <div style={{
-      flex: 1, overflowY: 'auto',
-      background: 'var(--st-page)',
-      padding: '28px 24px 48px',
-      minHeight: '100vh',
-    }}>
+    <div className="sw">
       <style>{STYLES}</style>
-      <div style={{ maxWidth: 900, margin: '0 auto' }}>
+      <div style={{ padding: '28px 24px 64px' }}>
+        <div style={{ maxWidth: 880, margin: '0 auto' }}>
 
-        {/* Page title */}
-        <div style={{ marginBottom: 24 }}>
-          <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--st-text-1)', margin: 0, letterSpacing: '-.3px' }}>Settings</h1>
-          <p style={{ fontSize: 13, color: 'var(--st-text-3)', margin: '4px 0 0' }}>Manage your account, preferences, and workspace.</p>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: 20, alignItems: 'start' }}>
-
-          {/* Sidebar nav */}
-          <nav style={{
-            background: 'var(--st-card)',
-            border: '.5px solid var(--st-border)',
-            borderRadius: 12, padding: 8,
-            position: 'sticky', top: 16,
-          }}>
-            {NAV.map(({ id, label, Icon }) => (
-              <button
-                key={id}
-                type="button"
-                className={`st-nav-item${active === id ? ' active' : ''}`}
-                onClick={() => setActive(id)}
-              >
-                <Icon size={15} />
-                {label}
-              </button>
-            ))}
-          </nav>
-
-          {/* Content */}
-          <div>
-            <div style={{ marginBottom: 18 }}>
-              <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--st-text-1)', margin: 0 }}>
-                {activeNav?.label}
-              </h2>
+          {/* Header */}
+          <div style={{ marginBottom: 24, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+            <div>
+              <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-1)', letterSpacing: '-.4px' }}>Settings</h1>
+              <p style={{ fontSize: 12.5, color: 'var(--text-3)', marginTop: 3 }}>
+                {loading ? 'Loading…' : user ? `Signed in as ${user.email}` : 'Manage your account and preferences.'}
+              </p>
             </div>
-            {SECTIONS[active]}
+            {fetchErr && (
+              <button className="sw-btn" onClick={fetchUser} style={{ fontSize: 12 }}>
+                <RefreshCw size={12} /> Retry
+              </button>
+            )}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '192px 1fr', gap: 20, alignItems: 'start' }}>
+
+            {/* Sidebar nav */}
+            <nav style={{
+              background: 'var(--surface)', border: '1px solid var(--border)',
+              borderRadius: 'var(--r-xl)', padding: 8,
+              position: 'sticky', top: 16, boxShadow: 'var(--shadow-sm)',
+            }}>
+              {NAV.map(({ id, label, Icon }) => (
+                <button key={id} type="button" className={`sw-nav-btn${active === id ? ' active' : ''}`} onClick={() => setActive(id)}>
+                  <Icon size={14} style={{ flexShrink: 0 }} />{label}
+                </button>
+              ))}
+              <hr className="sw-hr" style={{ margin: '6px 0' }} />
+              <button type="button" className="sw-nav-btn dnav" onClick={onLogout}>
+                <LogOut size={14} />Sign out
+              </button>
+            </nav>
+
+            {/* Main content */}
+            <div>
+              <h2 style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--text-1)', marginBottom: 16, letterSpacing: '-.2px' }}>
+                {nav?.label}
+              </h2>
+              <div key={active} className="sw-fadein">
+                {sections[active]}
+              </div>
+            </div>
+
           </div>
         </div>
       </div>

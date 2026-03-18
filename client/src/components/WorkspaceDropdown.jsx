@@ -21,70 +21,7 @@ import { Database, ChevronDown, Search, Plus, Table } from 'lucide-react';
 
 /* ─── Theme tokens ─────────────────────────────────────────────────────────── */
 const STYLES = `
-  :root, [data-theme="dark"] {
-    --ws-trig-bg:          rgba(255,255,255,.04);
-    --ws-trig-bdr:         rgba(255,255,255,.09);
-    --ws-trig-bg-open:     rgba(99,102,241,.1);
-    --ws-trig-bdr-open:    rgba(99,102,241,.35);
-    --ws-trig-label:       rgba(255,255,255,.28);
-    --ws-trig-name:        #f1f5f9;
-    --ws-trig-chev:        rgba(255,255,255,.25);
-
-    --ws-dd-bg:            #111116;
-    --ws-dd-bdr:           rgba(255,255,255,.09);
-    --ws-dd-shadow:        0 24px 64px rgba(0,0,0,.6), 0 0 0 .5px rgba(255,255,255,.05);
-
-    --ws-hdr-bg:           rgba(255,255,255,.025);
-    --ws-hdr-bdr:          rgba(255,255,255,.06);
-    --ws-hdr-lbl:          rgba(255,255,255,.28);
-
-    --ws-new-bg:           rgba(99,102,241,.15);
-    --ws-new-bdr:          rgba(99,102,241,.3);
-    --ws-new-txt:          #a5b4fc;
-
-    --ws-srch-bg:          rgba(255,255,255,.05);
-    --ws-srch-bdr:         rgba(255,255,255,.08);
-    --ws-srch-icon:        rgba(255,255,255,.25);
-    --ws-srch-ph:          rgba(255,255,255,.22);
-    --ws-srch-txt:         #f1f5f9;
-
-    --ws-item-hover-bg:    rgba(255,255,255,.05);
-    --ws-item-hover-bdr:   rgba(255,255,255,.07);
-    --ws-item-active-bg:   rgba(99,102,241,.1);
-    --ws-item-active-bdr:  rgba(99,102,241,.22);
-
-    --ws-av-bg:            rgba(255,255,255,.07);
-    --ws-av-bdr:           rgba(255,255,255,.09);
-    --ws-av-txt:           rgba(255,255,255,.5);
-    --ws-av-bg-a:          rgba(99,102,241,.2);
-    --ws-av-bdr-a:         rgba(99,102,241,.3);
-    --ws-av-txt-a:         #a5b4fc;
-
-    --ws-name:             #f1f5f9;
-    --ws-name-a:           #c7d2fe;
-    --ws-meta:             rgba(255,255,255,.22);
-    --ws-dot:              #22d3ee;
-    --ws-check:            #6366f1;
-
-    --ws-ftr-bg:           rgba(255,255,255,.015);
-    --ws-ftr-bdr:          rgba(255,255,255,.06);
-    --ws-ftr-txt:          rgba(255,255,255,.2);
-    --ws-ftr-cnt:          rgba(255,255,255,.5);
-    --ws-kbd-bg:           rgba(255,255,255,.06);
-    --ws-kbd-bdr:          rgba(255,255,255,.1);
-    --ws-kbd-txt:          rgba(255,255,255,.3);
-
-    --ws-prev-bg:          rgba(255,255,255,.04);
-    --ws-prev-bdr:         rgba(255,255,255,.09);
-    --ws-prev-txt:         rgba(255,255,255,.45);
-    --ws-prev-icon:        rgba(255,255,255,.3);
-    --ws-prev-hover-bg:    rgba(99,102,241,.1);
-    --ws-prev-hover-bdr:   rgba(99,102,241,.3);
-    --ws-prev-hover-txt:   #a5b4fc;
-    --ws-prev-hover-icon:  #818cf8;
-  }
-
-  [data-theme="light"] {
+  :root {
     --ws-trig-bg:          #ffffff;
     --ws-trig-bdr:         rgba(0,0,0,.1);
     --ws-trig-bg-open:     rgba(99,102,241,.07);
@@ -145,6 +82,69 @@ const STYLES = `
     --ws-prev-hover-bdr:   rgba(99,102,241,.25);
     --ws-prev-hover-txt:   #4f46e5;
     --ws-prev-hover-icon:  #4f46e5;
+  }
+
+  [data-theme="dark"] {
+    --ws-trig-bg:          rgba(255,255,255,.03);
+    --ws-trig-bdr:         rgba(255,255,255,.07);
+    --ws-trig-bg-open:     rgba(99,102,241,.1);
+    --ws-trig-bdr-open:    rgba(99,102,241,.35);
+    --ws-trig-label:       rgba(255,255,255,.28);
+    --ws-trig-name:        #f1f5f9;
+    --ws-trig-chev:        rgba(255,255,255,.25);
+
+    --ws-dd-bg:            #0b0f19;
+    --ws-dd-bdr:           rgba(255,255,255,.07);
+    --ws-dd-shadow:        0 24px 64px rgba(0,0,0,.6), 0 0 0 .5px rgba(255,255,255,.05);
+
+    --ws-hdr-bg:           rgba(255,255,255,.025);
+    --ws-hdr-bdr:          rgba(255,255,255,.06);
+    --ws-hdr-lbl:          rgba(255,255,255,.28);
+
+    --ws-new-bg:           rgba(99,102,241,.15);
+    --ws-new-bdr:          rgba(99,102,241,.3);
+    --ws-new-txt:          #a5b4fc;
+
+    --ws-srch-bg:          rgba(255,255,255,.05);
+    --ws-srch-bdr:         rgba(255,255,255,.08);
+    --ws-srch-icon:        rgba(255,255,255,.25);
+    --ws-srch-ph:          rgba(255,255,255,.22);
+    --ws-srch-txt:         #f1f5f9;
+
+    --ws-item-hover-bg:    rgba(255,255,255,.05);
+    --ws-item-hover-bdr:   rgba(255,255,255,.07);
+    --ws-item-active-bg:   rgba(99,102,241,.1);
+    --ws-item-active-bdr:  rgba(99,102,241,.22);
+
+    --ws-av-bg:            rgba(255,255,255,.07);
+    --ws-av-bdr:           rgba(255,255,255,.09);
+    --ws-av-txt:           rgba(255,255,255,.5);
+    --ws-av-bg-a:          rgba(99,102,241,.2);
+    --ws-av-bdr-a:         rgba(99,102,241,.3);
+    --ws-av-txt-a:         #a5b4fc;
+
+    --ws-name:             #f1f5f9;
+    --ws-name-a:           #c7d2fe;
+    --ws-meta:             rgba(255,255,255,.22);
+    --ws-dot:              #22d3ee;
+    --ws-check:            #6366f1;
+
+    --ws-ftr-bg:           rgba(255,255,255,.015);
+    --ws-ftr-bdr:          rgba(255,255,255,.06);
+    --ws-ftr-txt:          rgba(255,255,255,.2);
+    --ws-ftr-cnt:          rgba(255,255,255,.5);
+    --ws-kbd-bg:           rgba(255,255,255,.06);
+    --ws-kbd-bdr:          rgba(255,255,255,.1);
+    --ws-kbd-txt:          rgba(255,255,255,.3);
+
+    --ws-prev-bg:          rgba(255,255,255,.04);
+    --ws-prev-bdr:         rgba(255,255,255,.09);
+    --ws-prev-txt:         rgba(255,255,255,.45);
+    --ws-prev-icon:        rgba(255,255,255,.3);
+    --ws-prev-hover-bg:    rgba(99,102,241,.1);
+    --ws-prev-hover-bdr:   rgba(99,102,241,.35);
+    --ws-prev-hover-txt:   #a5b4fc;
+    --ws-prev-hover-icon:  #818cf8;
   }
 
   /* Trigger */

@@ -39,6 +39,8 @@ import Sidebar from './components/Sidebar';
 import SupportPage from './pages/Support';
 import { CheckCircle, AlertCircle, X } from 'lucide-react';
 import SettingsPage from './pages/Setting';
+import SavedDashboards from './pages/SavedDashboards';
+import DashboardViewer from './components/DashboardViewer'; 
 
 const DashboardWrapper = () => {
   const { 
@@ -58,9 +60,11 @@ const DashboardWrapper = () => {
             <SupportPage />
           ) : currentView === 'settings' ? (
             <SettingsPage />
+          ) : currentView === 'dashboards' ? (
+            <SavedDashboards />
           ) : (
             <MainDashboard />
-          )}
+          )}  
         </main>
       </div>
 
@@ -89,10 +93,8 @@ function App() {
 
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark') {
-      document.documentElement.setAttribute('data-theme', 'dark');
-    }
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
   }, []);
 
   useEffect(() => {
@@ -112,6 +114,7 @@ function App() {
         <Route path="/dashboard" element={<DashboardWrapper />} />
         <Route path="/analytics/:datasetName/:datasetId/:slug" element={<DynamicBoardPage />} />
         <Route path="/view-report/:id" element={<SharedReport />} />
+        <Route path="/dashboard/view/:id" element={<DashboardViewer />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>

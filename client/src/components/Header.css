@@ -1,5 +1,23 @@
 /* ── Token definitions ───────────────────────────────────────────────────── */
-:root,
+:root {
+  --hdr-bg:            #ffffff;
+  --hdr-border:        rgba(0,0,0,0.07);
+  --hdr-text-primary:  #0f0f12;
+  --hdr-text-secondary:rgba(0,0,0,0.45);
+  --hdr-text-tertiary: rgba(0,0,0,0.32);
+  --hdr-surface:       rgba(0,0,0,0.03);
+  --hdr-surface-hover: rgba(0,0,0,0.06);
+  --hdr-divider:       rgba(0,0,0,0.07);
+  --hdr-crumb:         rgba(0,0,0,0.32);
+  --hdr-avatar-bg:     rgba(99,102,241,0.07);
+  --hdr-avatar-border: rgba(99,102,241,0.2);
+  --hdr-avatar-text:   #4f46e5;
+  --hdr-upload-bg:     rgba(0,0,0,0.03);
+  --hdr-upload-border: rgba(0,0,0,0.1);
+  --hdr-upload-text:   #0f0f12;
+  --hdr-mobile-bg:     rgba(255,255,255,0.94);
+}
+
 [data-theme="dark"] {
   --hdr-bg:            #0b0f19;
   --hdr-border:        rgba(255,255,255,0.07);
@@ -19,24 +37,7 @@
   --hdr-mobile-bg:     rgba(11,15,25,0.92);
 }
 
-[data-theme="light"] {
-  --hdr-bg:            #ffffff;
-  --hdr-border:        rgba(0,0,0,0.07);
-  --hdr-text-primary:  #0f0f12;
-  --hdr-text-secondary:rgba(0,0,0,0.45);
-  --hdr-text-tertiary: rgba(0,0,0,0.32);
-  --hdr-surface:       rgba(0,0,0,0.03);
-  --hdr-surface-hover: rgba(0,0,0,0.06);
-  --hdr-divider:       rgba(0,0,0,0.07);
-  --hdr-crumb:         rgba(0,0,0,0.32);
-  --hdr-avatar-bg:     rgba(99,102,241,0.07);
-  --hdr-avatar-border: rgba(99,102,241,0.2);
-  --hdr-avatar-text:   #4f46e5;
-  --hdr-upload-bg:     rgba(0,0,0,0.03);
-  --hdr-upload-border: rgba(0,0,0,0.1);
-  --hdr-upload-text:   #0f0f12;
-  --hdr-mobile-bg:     rgba(255,255,255,0.94);
-}
+
 
 /* ── Header shell ────────────────────────────────────────────────────────── */
 .app-header {

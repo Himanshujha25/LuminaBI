@@ -57,3 +57,84 @@ exports.deleteDashboard = async (req, res) => {
         res.status(500).json({ error: "Internal server error" });
     }
 };
+
+exports.updateDashboard = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, layout, charts, dataset_id } = req.body;
+        const userId = req.user.id;
+
+        // I removed the 'updated_at' line from the SET clause here
+        const result = await pool.query(
+            `UPDATE dashboards 
+             SET name = COALESCE($1, name), 
+                 layout = COALESCE($2, layout), 
+                 charts = COALESCE($3, charts),
+                 dataset_id = COALESCE($4, dataset_id)
+             WHERE id = $5 AND user_id = $6 
+             RETURNING *`,
+            [
+                name, 
+                layout ? JSON.stringify(layout) : null, 
+                charts ? JSON.stringify(charts) : null, 
+                dataset_id, 
+                id, 
+                userId
+            ]
+        );
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: "Dashboard not found or unauthorized" });
+        }
+
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error("Error updating dashboard:", err);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+// Add this to controllers/dashboardController.js
+exports.getDashboardById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.id;
+
+        const result = await pool.query(
+            "SELECT * FROM dashboards WHERE id = $1 AND user_id = $2",
+            [id, userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: "Dashboard not found or unauthorized" });
+        }
+
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error("Error fetching single dashboard:", err);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+
+
+// Add this to the bottom of dashboardController.js
+exports.getDashboardById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.id;
+
+        const result = await pool.query(
+            "SELECT * FROM dashboards WHERE id = $1 AND user_id = $2",
+            [id, userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: "Dashboard not found" });
+        }
+
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error("Error fetching single dashboard:", err);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};

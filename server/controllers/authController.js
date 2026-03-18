@@ -82,4 +82,49 @@ const getMe = async (req, res) => {
     }
 }
 
-module.exports = { register, login, getMe };
+const deleteAccount = async (req, res) => {
+    const userId = req.user.id;
+    const client = await pool.connect();
+
+    try {
+        await client.query('BEGIN'); // Start transaction
+
+        // 1. Get all table names for datasets owned by this user
+        const datasetsRes = await client.query(
+            'SELECT table_name FROM datasets WHERE user_id = $1',
+            [userId]
+        );
+
+        // 2. Physically DROP the SQL tables created from CSVs
+        for (let row of datasetsRes.rows) {
+            // We use DROP TABLE IF EXISTS. 
+            // Note: Use "" around table name to handle case sensitivity in Postgres
+            await client.query(`DROP TABLE IF EXISTS "${row.table_name}"`);
+        }
+
+        // 3. Delete DB rows (Cascade handles some, but let's be explicit)
+        await client.query('DELETE FROM chat_histories WHERE user_id = $1', [userId]);
+        await client.query('DELETE FROM dashboards WHERE user_id = $1', [userId]);
+        await client.query('DELETE FROM datasets WHERE user_id = $1', [userId]);
+        
+        // 4. Finally, delete the user
+        const finalRes = await client.query('DELETE FROM users WHERE id = $1', [userId]);
+
+        if (finalRes.rowCount === 0) {
+            throw new Error("User not found");
+        }
+
+        await client.query('COMMIT');
+        res.json({ message: "Account and all associated data wiped successfully." });
+
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error("Account Wipe Error:", err);
+        res.status(500).json({ error: "Could not fully delete account. Please contact admin." });
+    } finally {
+        client.release();
+    }
+};
+
+module.exports = { register, login, getMe, deleteAccount};
+

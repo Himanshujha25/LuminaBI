@@ -11,7 +11,7 @@ import {
   Sun, Moon, ChevronDown, MonitorPlay, Columns,
   X, Loader2, BarChart3, LineChart,
   PieChart, Table as TableIcon, Send, Cpu,
-  Zap, Database, CheckCircle2, Eye, Activity, TrendingUp, FileText
+  Zap, Database, CheckCircle2, Eye, Activity, TrendingUp, FileText, Edit2, Save
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -27,7 +27,7 @@ const MemoizedChart = React.memo(DynamicChartComponent, (prev, next) =>
   prev.exportWidth === next.exportWidth
 );
 
-export default function DynamicDashboard({ charts, onClose }) {
+export default function DynamicDashboard({ charts, onClose, initialLayout, dashboardName }) {
   const { isDark, toggleTheme, token, activeDataset } = useStore();
 
   // ── FIX: use navigate as fallback if onClose not provided ────────────────
@@ -58,6 +58,21 @@ export default function DynamicDashboard({ charts, onClose }) {
   const [exportType,        setExportType]        = useState('pdf');
   const [reportName,        setReportName]        = useState('');
 
+  // ── SAVE DASHBOARD STATE ──
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [saveModalName, setSaveModalName] = useState(''); // Renamed to avoid prop conflict
+  const [isSavingDashboard, setIsSavingDashboard] = useState(false);
+
+  // ── TITLE EDITING STATE ──
+  const [localCharts, setLocalCharts] = useState(charts);
+  const [editingIndex, setEditingIndex] = useState(null); 
+  const [tempTitle, setTempTitle] = useState('');
+
+  // Sync if props change
+  useEffect(() => {
+    setLocalCharts(charts);
+  }, [charts]);
+
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -82,7 +97,7 @@ export default function DynamicDashboard({ charts, onClose }) {
     localStorage.setItem(chatStorageKey, JSON.stringify(chatMessages));
   }, [chatMessages, chatStorageKey]);
 
-  const generateLayout = useCallback((preset = '3col', filteredCharts = charts) =>
+  const generateLayout = useCallback((preset = '3col', filteredCharts = localCharts) =>
     filteredCharts.map((chart, i) => {
       let w = 4, h = 4;
       if (preset === '1col')  { w = 12; h = 5; }
@@ -92,14 +107,15 @@ export default function DynamicDashboard({ charts, onClose }) {
         w = (chart.chart_type === 'line' || chart.chart_type === 'area') ? 8 : chart.chart_type === 'pie' ? 4 : 6;
         h = 4;
       }
-      return { i: String(chart.id), x: (i * w) % 12, y: Math.floor((i * w) / 12) * h, w, h, minW: 2, minH: 4 };
-    }), [charts]);
+      return { i: String(chart.id || i), x: (i * w) % 12, y: Math.floor((i * w) / 12) * h, w, h, minW: 2, minH: 4 };
+    }), [localCharts]);
 
-  const [layouts, setLayouts] = useState(() => ({ lg: generateLayout('3col') }));
-
+  const [layouts, setLayouts] = useState(() => initialLayout || { lg: generateLayout('3col') });
+  
+  // ── FIX: Derive visible charts from localCharts so edits show instantly ──
   const visibleCharts = useMemo(() =>
-    charts.filter(c => !removedPanels.includes(String(c.id)) && (chartFilter === 'all' || c.chart_type === chartFilter)),
-    [charts, removedPanels, chartFilter]);
+    localCharts.filter(c => !removedPanels.includes(String(c.id)) && (chartFilter === 'all' || c.chart_type === chartFilter)),
+    [localCharts, removedPanels, chartFilter]);
 
   useEffect(() => {
     setLayouts({ lg: generateLayout(activePreset, visibleCharts) });
@@ -118,13 +134,12 @@ export default function DynamicDashboard({ charts, onClose }) {
   const saveExportToBackend = async (type, content) => {
     try {
       const res = await axios.post(`${API_URL}/exports/save`, {
-        type, content, name: activeDataset?.name, dashboard_id: charts[0]?.dashboard_id
+        type, content, name: activeDataset?.name, dashboard_id: localCharts[0]?.dashboard_id
       }, { headers: { Authorization: `Bearer ${token}` } });
       navigator.clipboard.writeText(res.data.shareUrl);
       return res.data.shareUrl;
     } catch (e) { console.error('Save export failed', e); return null; }
   };
-
 
   const captureGrid = async () => {
     const gridEl = document.querySelector('.react-grid-layout');
@@ -191,7 +206,6 @@ export default function DynamicDashboard({ charts, onClose }) {
     }
   };
 
-
   const handleExportPPT = async name => {
     setIsExportModalOpen(false);
     await new Promise(r => setTimeout(r, 350));
@@ -251,11 +265,88 @@ export default function DynamicDashboard({ charts, onClose }) {
       const reply = q.includes('trend')
         ? `The line charts indicate a consistent growth pattern. Consider seasonality as a factor.`
         : q.includes('top')
-        ? `The primary variance driver is ${charts[0]?.x_axis_column || 'the lead dimension'}.`
-        : `${charts.length} visualizations are loaded from ${activeDataset?.name}. Ask me anything specific.`;
+        ? `The primary variance driver is ${localCharts[0]?.x_axis_column || 'the lead dimension'}.`
+        : `${localCharts.length} visualizations are loaded from ${activeDataset?.name}. Ask me anything specific.`;
       setChatMessages(p => [...p, { role: 'ai', text: reply }]);
       setIsAITyping(false);
     }, 900);
+  };
+
+  const saveChartTitle = async (targetIndex) => {
+    if (!tempTitle.trim() || targetIndex === null) {
+      setEditingIndex(null);
+      return;
+    }
+
+    // 1. Update local state immediately so it changes on the screen instantly!
+    const updatedCharts = [...localCharts];
+    updatedCharts[targetIndex] = { 
+      ...updatedCharts[targetIndex], 
+      title: tempTitle 
+    };
+    
+    setLocalCharts(updatedCharts);
+    setEditingIndex(null);
+
+    // 2. ONLY send to the backend if this chart belongs to an already-saved dashboard.
+    // (If it doesn't have a dashboard_id, it means it's just a dynamic preview view!)
+    const dashboardId = updatedCharts[0]?.dashboard_id; 
+
+    if (!dashboardId) {
+      console.log("✏️ Title updated on screen. It will be saved permanently when you save the full dashboard.");
+      return; // STOP HERE. Do not make the API call.
+    }
+
+    // 3. Send to backend (This only runs if dashboardId actually exists)
+    try {
+      await axios.put(`${API_URL}/dashboards/${dashboardId}`, {
+        charts: updatedCharts
+      }, { 
+        headers: { Authorization: `Bearer ${token}` } 
+      });
+      console.log("✅ Title saved to database!");
+    } catch (error) {
+      console.error("❌ Failed to save new chart title to database:", error);
+    }
+  };
+
+  const handleSaveDashboard = async () => {
+    if (!saveModalName.trim()) return;
+    setIsSavingDashboard(true);
+    
+    try {
+      // 1. Prepare the payload for your backend
+      const payload = {
+        name: saveModalName,
+        layout: layouts, // the current grid layout
+        charts: localCharts, // your charts with the updated titles
+        dataset_id: activeDataset?.id
+      };
+
+      // 2. Send the POST request to create the dashboard
+      const response = await axios.post(`${API_URL}/dashboards`, payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      // 3. The backend returns the new dashboard object (including its new ID)
+      const newDashboardId = response.data.id;
+
+      // 4. Update our local charts so they now know they belong to a saved dashboard!
+      const updatedChartsWithId = localCharts.map(c => ({
+        ...c,
+        dashboard_id: newDashboardId
+      }));
+      setLocalCharts(updatedChartsWithId);
+
+      setIsSaveModalOpen(false);
+      alert('✅ Dashboard saved successfully!'); 
+
+    } catch (error) {
+      console.error("❌ Failed to save dashboard:", error);
+      alert('Failed to save dashboard. Check console for details.');
+    } finally {
+      setIsSavingDashboard(false);
+    }
   };
 
   const chartTypeLabels = {
@@ -271,7 +362,6 @@ export default function DynamicDashboard({ charts, onClose }) {
       {/* ── Header ── */}
       <header className="dd-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {/* ── FIXED back button — type=button, uses handleBack ── */}
           <button type="button" onClick={handleBack} className="dd-back-btn">
             <ArrowLeft size={14} />
             <span>Back</span>
@@ -279,7 +369,7 @@ export default function DynamicDashboard({ charts, onClose }) {
           <div style={{ width: 1, height: 18, background: 'var(--dd-border)', flexShrink: 0 }} />
           <div>
             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--dd-text-1)', lineHeight: 1.2 }}>
-              {activeDataset?.name || 'Analytics'}
+              {dashboardName || activeDataset?.name || 'Analytics'}
             </div>
             <div style={{ fontSize: 11, color: 'var(--dd-text-3)', lineHeight: 1.2 }}>
               {visibleCharts.length} panels
@@ -289,7 +379,6 @@ export default function DynamicDashboard({ charts, onClose }) {
 
         {!isPresentMode && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {/* Chart type filter */}
             <div className="dd-filter-bar">
               {[
                 { k: 'all',   i: <Grid3x3 size={13} /> },
@@ -304,7 +393,6 @@ export default function DynamicDashboard({ charts, onClose }) {
               ))}
             </div>
 
-            {/* Layout picker */}
             <div style={{ position: 'relative' }} ref={dropdownRef}>
               <button type="button" onClick={() => setIsLayoutOpen(!isLayoutOpen)} className="dd-btn-outline" style={{ gap: 6 }}>
                 <LayoutDashboard size={13} />
@@ -353,6 +441,21 @@ export default function DynamicDashboard({ charts, onClose }) {
             <MonitorPlay size={13} />
             <span>PPT</span>
           </button>
+          
+          {/* ── SAVE DASHBOARD BUTTON ── */}
+          <button 
+            type="button" 
+            onClick={() => {
+              setSaveModalName(dashboardName || (activeDataset?.name ? `${activeDataset.name} Dashboard` : 'My Dashboard'));
+              setIsSaveModalOpen(true);
+            }} 
+            className="dd-btn-primary" 
+            style={{ background: 'var(--dd-blue)' }} 
+          >
+            <Save size={13} />
+            <span>Save</span>
+          </button>
+
           <button type="button" onClick={() => setIsConsultOpen(!isConsultOpen)} className="dd-btn-primary">
             <Sparkles size={13} />
             <span>AI</span>
@@ -361,19 +464,7 @@ export default function DynamicDashboard({ charts, onClose }) {
       </header>
 
       {/* ── KPI Strip ── */}
-      <div className="dd-kpi-strip">
-        {[
-          { label: 'Panels',  value: String(visibleCharts.length), icon: <Activity size={11} /> },
-          { label: 'Engine',  value: 'Lumina v2.5',                icon: <Zap size={11} /> },
-          { label: 'Status',  value: 'Live',                       icon: <TrendingUp size={11} /> },
-        ].map((k, i) => (
-          <div key={i} className="dd-kpi-item">
-            <span className="dd-kpi-label">{k.label}</span>
-            <span className="dd-kpi-value">{k.icon}{k.value}</span>
-          </div>
-        ))}
-      </div>
-
+      
       {/* ── Body ── */}
       <div className="dd-body">
         <div className="dd-canvas-area">
@@ -389,32 +480,89 @@ export default function DynamicDashboard({ charts, onClose }) {
             margin={[14, 14]}
             compactType="vertical"
           >
-            {visibleCharts.map(c => (
-              <div key={String(c.id)} id={`panel-${c.id}`} className="dd-panel group">
+            {/* ── FIX: Maps using visibleCharts but references the exact trueIndex ── */}
+            {visibleCharts.map((c, i) => {
+              const trueIndex = localCharts.indexOf(c);
+              
+              return (
+              <div key={String(c.id || trueIndex)} id={`panel-${c.id || trueIndex}`} className="dd-panel group">
                 <div className="dd-panel-header drag-handle">
                   <div className="dd-panel-drag-area">
                     <span className="dd-panel-title">
                       <span className="dd-panel-title-icon">{chartTypeLabels[c.chart_type]}</span>
-                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 180 }}>
-                        {c.title || 'Untitled'}
-                      </span>
+                      
+                      {/* ── FIX: Index based checking + Event Stoppers ── */}
+                      {editingIndex === trueIndex ? (
+                        <input
+                          autoFocus
+                          type="text"
+                          value={tempTitle}
+                          onChange={(e) => setTempTitle(e.target.value)}
+                          onBlur={() => saveChartTitle(trueIndex)}
+                          onMouseDown={(e) => e.stopPropagation()} // Prevents dragging when clicking
+                          onKeyDown={(e) => {
+                            e.stopPropagation(); // Prevents grid from eating keystrokes
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              saveChartTitle(trueIndex);
+                            }
+                            if (e.key === 'Escape') {
+                              setEditingIndex(null);
+                            }
+                          }}
+                          style={{
+                            background: 'var(--dd-bg)',
+                            border: '1px solid var(--dd-blue)',
+                            color: 'var(--dd-text-1)',
+                            borderRadius: '4px',
+                            padding: '2px 6px',
+                            fontSize: '12px',
+                            outline: 'none',
+                            maxWidth: 160
+                          }}
+                        />
+                      ) : (
+                        <div 
+                          onClick={() => {
+                            setEditingIndex(trueIndex);
+                            setTempTitle(c.title || 'Untitled');
+                          }}
+                          title="Click to rename"
+                          style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '6px', 
+                            cursor: 'pointer', 
+                            maxWidth: 180 
+                          }}
+                        >
+                          <span style={{ 
+                            overflow: 'hidden', 
+                            textOverflow: 'ellipsis', 
+                            whiteSpace: 'nowrap' 
+                          }}>
+                            {c.title || 'Untitled'}
+                          </span>
+                          <Edit2 size={12} style={{ color: 'var(--dd-text-3)', flexShrink: 0, opacity: 0.7 }} />
+                        </div>
+                      )}
                     </span>
                   </div>
                   <div className="dd-panel-actions">
                     <button
                       type="button"
                       onClick={() => setPinnedInsights(p =>
-                        p.includes(String(c.id)) ? p.filter(x => x !== String(c.id)) : [...p, String(c.id)]
+                        p.includes(String(c.id || trueIndex)) ? p.filter(x => x !== String(c.id || trueIndex)) : [...p, String(c.id || trueIndex)]
                       )}
-                      className={`dd-panel-action ${pinnedInsights.includes(String(c.id)) ? 'dd-active-pin' : ''}`}
+                      className={`dd-panel-action ${pinnedInsights.includes(String(c.id || trueIndex)) ? 'dd-active-pin' : ''}`}
                       title="Pin insight"
                     >
-                      <Zap size={12} fill={pinnedInsights.includes(String(c.id)) ? 'currentColor' : 'none'} />
+                      <Zap size={12} fill={pinnedInsights.includes(String(c.id || trueIndex)) ? 'currentColor' : 'none'} />
                     </button>
-                    <button type="button" onClick={() => handleExportImage(String(c.id))} className="dd-panel-action" title="Export PNG">
+                    <button type="button" onClick={() => handleExportImage(String(c.id || trueIndex))} className="dd-panel-action" title="Export PNG">
                       <ImageIcon size={12} />
                     </button>
-                    <button type="button" onClick={() => setRemovedPanels(p => [...p, String(c.id)])} className="dd-panel-action" title="Remove">
+                    <button type="button" onClick={() => setRemovedPanels(p => [...p, String(c.id || trueIndex)])} className="dd-panel-action" title="Remove">
                       <Trash2 size={12} />
                     </button>
                   </div>
@@ -425,17 +573,17 @@ export default function DynamicDashboard({ charts, onClose }) {
                 </div>
 
                 {c.explanation && (
-                  <div className={`dd-insight-overlay ${pinnedInsights.includes(String(c.id)) ? 'dd-pinned-insight' : ''}`}>
+                  <div className={`dd-insight-overlay ${pinnedInsights.includes(String(c.id || trueIndex)) ? 'dd-pinned-insight' : ''}`}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                       <button 
                         type="button"
                         onClick={() => setPinnedInsights(p =>
-                          p.includes(String(c.id)) ? p.filter(x => x !== String(c.id)) : [...p, String(c.id)]
+                          p.includes(String(c.id || trueIndex)) ? p.filter(x => x !== String(c.id || trueIndex)) : [...p, String(c.id || trueIndex)]
                         )}
                         style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', flexShrink: 0, marginTop: 4 }}
                         title="Pin Summary"
                       >
-                        <Zap size={14} fill={pinnedInsights.includes(String(c.id)) ? 'var(--dd-blue)' : 'none'} style={{ color: pinnedInsights.includes(String(c.id)) ? 'var(--dd-blue)' : 'var(--dd-text-3)' }} />
+                        <Zap size={14} fill={pinnedInsights.includes(String(c.id || trueIndex)) ? 'var(--dd-blue)' : 'none'} style={{ color: pinnedInsights.includes(String(c.id || trueIndex)) ? 'var(--dd-blue)' : 'var(--dd-text-3)' }} />
                       </button>
                       <div className="flex-1 min-w-0">
                         <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--dd-text-3)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 2 }}>AI Summary</div>
@@ -448,7 +596,7 @@ export default function DynamicDashboard({ charts, onClose }) {
                 )}
 
               </div>
-            ))}
+            )})}
           </ResponsiveGridLayout>
         </div>
 
@@ -578,6 +726,77 @@ export default function DynamicDashboard({ charts, onClose }) {
           </div>
         </div>
       )}
+
+      {/* ── Save Dashboard Modal ── */}
+      {isSaveModalOpen && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 3000,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(4px)', padding: 16,
+        }}>
+          <div style={{
+            background: 'var(--dd-surface)', border: '1px solid var(--dd-border)',
+            borderRadius: 12, padding: 28, maxWidth: 380, width: '100%',
+            boxShadow: '0 24px 48px rgba(0,0,0,0.15)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+              <Save size={17} style={{ color: 'var(--dd-blue)' }} />
+              <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--dd-text-1)' }}>
+                Save Dashboard
+              </span>
+            </div>
+            <p style={{ fontSize: 12, color: 'var(--dd-text-3)', margin: '0 0 22px' }}>
+              Save this layout and all renamed charts to your workspace.
+            </p>
+            <div style={{ marginBottom: 18 }}>
+              <label style={{ display: 'block', fontSize: 10, fontWeight: 600, color: 'var(--dd-text-3)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Dashboard Name
+              </label>
+              <input
+                type="text"
+                value={saveModalName}
+                onChange={e => setSaveModalName(e.target.value)}
+                autoFocus
+                style={{
+                  width: '100%', padding: '9px 13px',
+                  background: 'var(--dd-bg)', border: '1px solid var(--dd-border)',
+                  borderRadius: 8, fontSize: 13, color: 'var(--dd-text-1)',
+                  outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box',
+                  transition: 'border-color 0.12s',
+                }}
+                onFocus={e => e.target.style.borderColor = 'var(--dd-blue)'}
+                onBlur={e => e.target.style.borderColor = 'var(--dd-border)'}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                type="button"
+                onClick={() => setIsSaveModalOpen(false)}
+                disabled={isSavingDashboard}
+                style={{ flex: 1, padding: '9px', borderRadius: 8, border: '1px solid var(--dd-border)', background: 'none', color: 'var(--dd-text-2)', fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveDashboard}
+                disabled={isSavingDashboard || !saveModalName.trim()}
+                style={{
+                  flex: 2, padding: '9px', borderRadius: 8, border: 'none',
+                  background: 'var(--dd-blue)', color: '#fff',
+                  fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  opacity: (isSavingDashboard || !saveModalName.trim()) ? 0.4 : 1,
+                  transition: 'opacity 0.12s',
+                }}
+              >
+                {isSavingDashboard ? <Loader2 size={13} className="animate-spin" /> : 'Save Now'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

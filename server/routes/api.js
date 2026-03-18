@@ -4,8 +4,8 @@ const multer = require('multer');
 const { uploadCSV, getDatasets, getDatasetPreview, deleteDataset } = require('../controllers/uploadController');
 const { handleQuery } = require('../controllers/queryController');
 const { getChats, clearChats, deleteMessage } = require('../controllers/chatController');
-const { register, login, getMe } = require('../controllers/authController');
-const { saveDashboard, getDashboards, deleteDashboard } = require('../controllers/dashboardController');
+const { register, login, getMe, deleteAccount } = require('../controllers/authController');
+const { saveDashboard, getDashboards, deleteDashboard, updateDashboard, getDashboardById } = require('../controllers/dashboardController');
 const exportController = require('../controllers/exportController');
 const { protect } = require('../middleware/auth');
 const fs = require('fs');
@@ -22,6 +22,7 @@ const upload = multer({
 router.post('/auth/register', register);
 router.post('/auth/login', login);
 router.get('/auth/me', protect, getMe);
+router.delete('/auth/delete-account', protect, deleteAccount);
 
 // CSV Upload Routes
 router.post('/datasets/upload', protect, upload.single('file'), uploadCSV);
@@ -41,6 +42,8 @@ router.post('/query', protect, handleQuery);
 router.post('/dashboards', protect, saveDashboard);
 router.get('/dashboards', protect, getDashboards);
 router.delete('/dashboards/:id', protect, deleteDashboard);
+router.put('/dashboards/:id', protect, updateDashboard);
+router.get('/dashboards/:id', protect,  getDashboardById);
 
 // Export & PDF Routes
 router.post('/exports', exportController.saveExport);
