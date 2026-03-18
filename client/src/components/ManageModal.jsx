@@ -2,7 +2,12 @@ import React, { useState } from 'react';
 import { Database, Trash2, X, AlertCircle, Calendar, Table, Activity, ChevronRight, HardDrive } from 'lucide-react';
 import './ManageModal.css';
 
-const ManageModal = ({ isOpen, onClose, datasets, onDelete }) => {
+import useStore from '../store/useStore';
+
+const ManageModal = () => {
+  const { isManageOpen: isOpen, setIsManageOpen, datasets, handleDeleteDataset: onDelete } = useStore();
+  const onClose = () => setIsManageOpen(false);
+
   const [deletingId, setDeletingId] = useState(null);
   const [hoveredId, setHoveredId] = useState(null);
 
@@ -13,6 +18,7 @@ const ManageModal = ({ isOpen, onClose, datasets, onDelete }) => {
     await onDelete(id);
     setDeletingId(null);
   };
+
 
   return (
     <div className="modal-overlay-minimal animate-fade-in" onClick={onClose}>

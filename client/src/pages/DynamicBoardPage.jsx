@@ -5,7 +5,10 @@ import { API_URL } from '../config';
 import DynamicDashboard from '../components/DynamicDashboard';
 import { Loader2 } from 'lucide-react';
 
-export default function DynamicBoardPage({ isDark, toggleTheme }) {
+import useStore from '../store/useStore';
+
+export default function DynamicBoardPage() {
+    const { isDark, toggleTheme, token, datasets } = useStore();
     const { datasetName, datasetId, slug } = useParams();
     const navigate = useNavigate();
     const [charts, setCharts] = useState([]);
@@ -16,26 +19,27 @@ export default function DynamicBoardPage({ isDark, toggleTheme }) {
         const loadPageData = async () => {
             setLoading(true);
             try {
-                const token = localStorage.getItem('token');
                 if (!token) {
                     navigate('/login');
                     return;
                 }
 
-                // 1. Fetch Dataset Details
-                const dsRes = await axios.get(`${API_URL}/datasets`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                const currentDs = dsRes.data.find(d => String(d.id) === String(datasetId));
+                // 1. Find Dataset Details from store or fetch if needed
+                let currentDs = datasets.find(d => String(d.id) === String(datasetId));
                 
+                if (!currentDs) {
+                    // Fallback fetch if not in store
+                    const dsRes = await axios.get(`${API_URL}/datasets`, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    currentDs = dsRes.data.find(d => String(d.id) === String(datasetId));
+                }
+
                 if (currentDs) {
                     setActiveDataset(currentDs);
                 }
 
                 // 2. Fetch Chat History to reconstruct the "dashboard" (pinned/all viz)
-                // Or if slug implies a saved dashboard ID, fetch that instead.
-                // For "professional" dynamic routes, we often rebuild from history or a saved board.
-                
                 if (slug === 'lumina_25') {
                     const userData = JSON.parse(localStorage.getItem("user") || "{}");
                     const userId = userData?.id || "guest";
@@ -67,7 +71,6 @@ export default function DynamicBoardPage({ isDark, toggleTheme }) {
                 });
                 const allCharts = chatRes.data
                     .filter(msg => msg.role === 'ai' && msg.data && msg.data.chart_type)
-
                     .map(msg => ({
                         ...msg.data,
                         id: msg.id,
@@ -83,7 +86,7 @@ export default function DynamicBoardPage({ isDark, toggleTheme }) {
         };
 
         loadPageData();
-    }, [datasetId, slug, navigate]);
+    }, [datasetId, slug, navigate, token, datasets]);
 
     if (loading) {
         return (
@@ -94,13 +97,10 @@ export default function DynamicBoardPage({ isDark, toggleTheme }) {
         );
     }
 
-    // Restore this return statement!
     return (
         <DynamicDashboard 
             charts={charts} 
-            dataset={activeDataset} 
-            isDark={isDark} 
-            toggleTheme={toggleTheme} 
         />
     );
+
 }

@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
   UploadCloud, Moon, Sun, LogOut,
   PanelLeftClose, PanelLeftOpen, Loader2,
   CheckCircle2, XCircle,
 } from 'lucide-react';
-import axios from 'axios';
-import { API_URL } from '../config';
 import './Header.css';
+import useStore from '../store/useStore';
+
 
 const getInitials = (name) => {
   if (!name) return '?';
@@ -55,43 +55,19 @@ const UploadStatus = ({ uploadState }) => {
 };
 
 /* ── Main component ──────────────────────────────────────────────────────── */
-const Header = ({
-  onUploadClick,
-  onManageClick,
-  toggleTheme,
-  isDark,
-  onLogout,
-  uploadState,
-  isSidebarVisible,
-  setIsSidebarVisible,
-}) => {
-  const [userName, setUserName] = useState('');
-  const [scrolled, setScrolled] = useState(false);
+const Header = () => {
+  const { 
+    isDark, 
+    toggleTheme, 
+    logout, 
+    globalUploadState, 
+    isSidebarVisible, 
+    setIsSidebarVisible, 
+    setIsUploadOpen,
+    user 
+  } = useStore();
 
-  useEffect(() => {
-    const scroller = document.querySelector('.dashboard-main') || window;
-    const onScroll = () => {
-      const top = scroller === window ? window.scrollY : scroller.scrollTop;
-      setScrolled(top > 10);
-    };
-    scroller.addEventListener('scroll', onScroll, { passive: true });
-    return () => scroller.removeEventListener('scroll', onScroll);
-  }, []);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const res = await axios.get(`${API_URL}/auth/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.data?.user?.name) setUserName(res.data.user.name);
-      } catch (err) {
-        console.error('Failed to fetch user:', err);
-      }
-    };
-    fetchUser();
-  }, []);
+  const userName = user?.name || '';
 
   return (
     <>
@@ -106,8 +82,8 @@ const Header = ({
             title={isSidebarVisible ? 'Hide sidebar' : 'Show sidebar'}
           >
             {isSidebarVisible
-              ? <PanelLeftClose size={18} />
-              : <PanelLeftOpen  size={18} />}
+              ? <PanelLeftClose size={16} />
+              : <PanelLeftOpen  size={16} />}
           </button>
           <span className="hdr-crumb">Workspace / Analytics</span>
         </div>
@@ -116,7 +92,7 @@ const Header = ({
         <div className="hdr-right">
 
           {/* Upload status */}
-          <UploadStatus uploadState={uploadState} />
+          <UploadStatus uploadState={globalUploadState} />
 
           {/* Theme toggle */}
           <button
@@ -124,12 +100,12 @@ const Header = ({
             onClick={toggleTheme}
             title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
           >
-            {isDark ? <Sun size={17} /> : <Moon size={17} />}
+            {isDark ? <Sun size={15} /> : <Moon size={15} />}
           </button>
 
           {/* Upload */}
-          <button className="hdr-upload-btn hdr-desktop" onClick={onUploadClick}>
-            <UploadCloud size={15} />
+          <button className="hdr-upload-btn hdr-desktop" onClick={() => setIsUploadOpen(true)}>
+            <UploadCloud size={13} />
             Upload CSV
           </button>
 
@@ -143,10 +119,10 @@ const Header = ({
           {/* Logout */}
           <button
             className="hdr-icon-btn hdr-logout hdr-desktop"
-            onClick={onLogout}
+            onClick={logout}
             title="Log out"
           >
-            <LogOut size={17} />
+            <LogOut size={15} />
           </button>
 
         </div>
@@ -154,7 +130,7 @@ const Header = ({
 
       {/* ── Mobile bottom nav ─────────────────────────────────────────────── */}
       <nav className="hdr-mobile-nav">
-        <button className="hdr-mob-item" onClick={onUploadClick}>
+        <button className="hdr-mob-item" onClick={() => setIsUploadOpen(true)}>
           <div className="hdr-mob-upload">
             <UploadCloud size={22} />
           </div>
@@ -165,7 +141,7 @@ const Header = ({
           <span>Theme</span>
         </button>
 
-        <button className="hdr-mob-item danger" onClick={onLogout}>
+        <button className="hdr-mob-item danger" onClick={logout}>
           <LogOut size={20} />
           <span>Logout</span>
         </button>
@@ -173,5 +149,6 @@ const Header = ({
     </>
   );
 };
+
 
 export default Header;

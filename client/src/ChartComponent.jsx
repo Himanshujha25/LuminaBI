@@ -227,7 +227,15 @@ function DynamicChartComponent({ config, overrideChartType, compact = false, exp
             <YAxis {...yAxisProps} />
             <Tooltip formatter={(v) => [formatNumber(v), safeYKey]} contentStyle={tooltipStyle} cursor={{ fill: 'var(--border-color)', opacity: 0.15 }} />
             <Legend wrapperStyle={legendStyle} iconType="circle" />
-            <Bar isAnimationActive={false} dataKey={safeYKey} fill={`url(#colorBar-${instanceId})`} radius={[5, 5, 0, 0]} maxBarSize={isSmall ? 36 : 56} />
+            <Bar 
+              isAnimationActive={false} 
+              dataKey={safeYKey} 
+              fill={`url(#colorBar-${instanceId})`} 
+              radius={[6, 6, 0, 0]} 
+              maxBarSize={isSmall ? 48 : 120} 
+              barCategoryGap="15%"
+            />
+
           </BarChart>
         );
     }

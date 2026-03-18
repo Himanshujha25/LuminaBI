@@ -358,13 +358,19 @@ const STYLES = `
   }
 `;
 
-const WorkspaceDropdown = ({
-  datasets = [],
-  activeDataset,
-  setActiveDataset,
-  onUploadClick,
-  setShowPreview,
-}) => {
+import useStore from '../store/useStore';
+
+const WorkspaceDropdown = () => {
+  const {
+    datasets,
+    activeDataset,
+    setActiveDataset,
+    setIsUploadOpen,
+    setShowPreview,
+  } = useStore();
+
+  const onUploadClick = () => setIsUploadOpen(true);
+
   const [open, setOpen]         = useState(false);
   const [search, setSearch]     = useState('');
   const ref                     = useRef(null);

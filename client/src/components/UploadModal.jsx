@@ -8,7 +8,12 @@ import axios from 'axios';
 import { API_URL } from '../config';
 import './UploadModal.css';
 
-const UploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
+import useStore from '../store/useStore';
+
+const UploadModal = () => {
+  const { isUploadOpen: isOpen, setIsUploadOpen, handleUploadSuccess, token } = useStore();
+  const onClose = () => setIsUploadOpen(false);
+
   const [file, setFile] = useState(null);
   const [dragActive, setDragActive] = useState(false);
   const [tableName, setTableName] = useState('');
@@ -93,7 +98,10 @@ const UploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
 
     try {
       const res = await axios.post(`${API_URL}/datasets/upload`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: { 
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`
+        },
         onUploadProgress: (progressEvent) => {
           const timeElapsed = (Date.now() - uploadStartTime.current) / 1000;
           if (timeElapsed > 0) {
@@ -118,7 +126,7 @@ const UploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
       // Final transition to success
       setTimeout(() => {
         setStep(4);
-        onUploadSuccess(res.data.dataset);
+        handleUploadSuccess(res.data.dataset);
         
         // GUARANTEED Auto-close after 1.5 seconds of success visibility
         autoCloseTimer.current = setTimeout(() => {
@@ -132,6 +140,7 @@ const UploadModal = ({ isOpen, onClose, onUploadSuccess }) => {
       setStep(1); 
     }
   };
+
 
   return (
     <div className="modal-overlay-minimal animate-fade-in" onClick={() => (step === 1 || step === 4) && onClose()}>

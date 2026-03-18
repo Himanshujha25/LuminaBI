@@ -16,10 +16,26 @@ import KpiCards from './KpiCards';
 import './MainDashboard.css';
 import WorkspaceDropdown from './WorkspaceDropdown';
 
+import useStore from '../store/useStore';
+
 const MemoizedChart = React.memo(DynamicChartComponent);
 
-const MainDashboard = ({ activeDataset, datasets, setActiveDataset, toggleTheme, isDark, onAnalyticsClick, onUploadClick }) => {
+const MainDashboard = () => {
   const navigate = useNavigate();
+  const {
+    activeDataset,
+    datasets,
+    setActiveDataset,
+    toggleTheme,
+    isDark,
+    token,
+    setIsUploadOpen,
+    setCurrentView,
+    user: storeUser,
+    showPreview,
+    setShowPreview,
+  } = useStore();
+
   const [prompt, setPrompt]                   = useState('');
   const [isLoading, setIsLoading]             = useState(false);
   const [isSideLoading, setIsSideLoading]     = useState(false);
@@ -31,13 +47,13 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset, toggleTheme,
   const [sidePrompt, setSidePrompt]           = useState('');
   const [pinState, setPinState]               = useState('idle');
   const [isSidebarOpen, setIsSidebarOpen]     = useState(true);
-  const [showPreview, setShowPreview]         = useState(false);
   const [showDatasetDropdown, setShowDatasetDropdown]   = useState(false);
   const [datasetSearch, setDatasetSearch]     = useState(''); // Added for dropdown search
   const [isExportingPDF, setIsExportingPDF]         = useState(false);
   const [dataSlicerLimit, setDataSlicerLimit]       = useState('All');
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const userId = user?.id || "guest";
+
+  
+  const userId = storeUser?.id || "guest";
   const PIN_STORAGE_KEY = `lumina_pinned_charts_${userId}`;
   
   const [pinnedCharts, setPinnedCharts] = useState(() => {
@@ -54,6 +70,16 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset, toggleTheme,
       return [];
     }
   });
+
+  const handleAnalyticsClick = () => {
+    if (!activeDataset) return;
+    const slugName = activeDataset.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    navigate(`/analytics/${slugName}/${activeDataset.id}/lumina_25`);
+    setCurrentView('analytics');
+  };
+
+  const onUploadClick = () => setIsUploadOpen(true);
+
 
   const dragItem        = useRef(null);
   const dragOverItem    = useRef(null);
@@ -191,25 +217,30 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset, toggleTheme,
   const handleClearChat = async () => {
     if (!activeDataset || !window.confirm('Clear all chat history for this dataset?')) return;
     try {
-      await axios.delete(`${API_URL}/datasets/${activeDataset.id}/chats`);
+      await axios.delete(`${API_URL}/datasets/${activeDataset.id}/chats`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setChatHistories(prev => ({ ...prev, [activeDataset.id]: [] }));
       setPrompt(''); setSidePrompt('');
     } catch (e) { console.error(e); }
   };
 
+
   const handleRemoveMessage = async index => {
     const msg = history[index];
-    if (msg.id) { try { await axios.delete(`${API_URL}/chats/${msg.id}`); } catch {} }
+    const headers = { Authorization: `Bearer ${token}` };
+    if (msg.id) { try { await axios.delete(`${API_URL}/chats/${msg.id}`, { headers }); } catch {} }
     const nh = [...history];
     if (nh[index].role === 'user' && nh[index + 1]?.role === 'ai') {
-      if (nh[index + 1].id) axios.delete(`${API_URL}/chats/${nh[index + 1].id}`).catch(() => {});
+      if (nh[index + 1].id) axios.delete(`${API_URL}/chats/${nh[index + 1].id}`, { headers }).catch(() => {});
       nh.splice(index, 2);
     } else if (nh[index].role === 'ai' && nh[index - 1]?.role === 'user') {
-      if (nh[index - 1].id) axios.delete(`${API_URL}/chats/${nh[index - 1].id}`).catch(() => {});
+      if (nh[index - 1].id) axios.delete(`${API_URL}/chats/${nh[index - 1].id}`, { headers }).catch(() => {});
       nh.splice(index - 1, 2);
     } else { nh.splice(index, 1); }
     setChatHistories(prev => ({ ...prev, [activeDataset.id]: nh }));
   };
+
 
   const exportAsCSV = (data, filename) => {
     if (!data?.length) return;
@@ -273,7 +304,7 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset, toggleTheme,
             <Activity size={18} />
           </div>
           <div className="flex flex-col">
-            <span className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-tertiary)] mb-1">Total {numericKey}</span>
+            <span className="text-[10px] font-bold tracking-widest   text-[var(--text-tertiary)] mb-1"> {numericKey}</span>
             <div className="flex items-baseline gap-2">
               <strong className="text-xl font-black text-[var(--text-primary)] tracking-tight">{total.toLocaleString()}</strong>
             </div>
@@ -310,13 +341,8 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset, toggleTheme,
         <header className="topbar-shell">
           
           {/* 1. Page Title & Workspace Dropdown */}
-         <WorkspaceDropdown
-  datasets={datasets}
-  activeDataset={activeDataset}
-  setActiveDataset={setActiveDataset}
-  onUploadClick={onUploadClick}
-  setShowPreview={setShowPreview}
-/>
+         <WorkspaceDropdown />
+
 
           {/* 2. Search Bar (Mobile Only) */}
           <div className="searchbar sm:!hidden" style={{ flex: 1, position: 'relative' }}>
@@ -442,13 +468,32 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset, toggleTheme,
                   </div>
 
                   {showSQL && (
+
                     <div className="sql-viewer-pro">
                       <div className="sql-label-pro"><Database size={12}/> Executed PostgreSQL Query</div>
                       <code>{currentData.sql_used}</code>
                     </div>
                   )}
 
-                  <div id="main-chart-export" className="chart-content-area">
+                  <div id="main-chart-export" className="chart-content-area flex flex-col gap-6 pt-6">
+                    {currentData.explanation && (
+                      <div className="animate-fade-in bg-[var(--surface-hover)] border border-[var(--border-color)] rounded-xl p-4 sm:p-5 relative overflow-hidden group">
+                        <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500" />
+                        <div className="flex items-start gap-4">
+                          <div className="w-8 h-8">
+                          </div>
+                          <div className="flex-1 space-y-1">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-tertiary)]">Summary</span>
+                            </div>
+                            <p className="text-sm leading-relaxed text-[var(--text-secondary)] font-medium m-0 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                              {currentData.explanation}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {viewMode === 'table' ? (
                       <div className="pro-table-wrapper">
                         <table className="pro-table">
@@ -471,7 +516,7 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset, toggleTheme,
                         </table>
                       </div>
                     ) : (
-                      <div className="pro-chart-wrapper">
+                      <div className="pro-chart-wrapper" style={{ width: '100%', height: 600, minHeight: 500 }}>
                         <MemoizedChart config={slicedConfig} overrideChartType={chartTypeOverride} />
                       </div>
                     )}
@@ -480,6 +525,7 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset, toggleTheme,
               </div>
             </div>
           )}
+
 
           {!isLoading && !currentData && (
             <>
@@ -490,8 +536,8 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset, toggleTheme,
                 </p>
               </div>
 
-              <div className="flex flex-col animate-fade-in py-4 pl-1" style={{ minHeight: '50vh' }}>
-                <div className="hidden sm:flex flex-col items-center justify-center text-center py-8">
+              <div className="flex flex-col animate-fade-in py-4 pl-1 " style={{ minHeight: '40vh' }}>
+                <div className="hidden sm:flex flex-col items-center justify-center text-center py-8 ">
                   <h1 className="text-3xl lg:text-4xl font-black mb-3 leading-tight tracking-tight">
                     Lumina <span className="gradient-text">Conversational BI</span>
                   </h1>
@@ -499,7 +545,7 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset, toggleTheme,
                     Ask anything about your data — trends, breakdowns, comparisons — and let AI render it instantly.
                   </p>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-3xl">
+                  {/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-3xl">
                     {[
                       { icon: <Activity size={17} />, color: 'blue',   title: 'Trend Analysis',      desc: 'Monthly order trend for last quarter.',      q: 'Give me a monthly trend of orders' },
                       { icon: <PieChart size={17} />,  color: 'purple', title: 'Composition Breakdown', desc: 'Revenue breakdown by product category.',      q: 'What is the revenue breakdown by product category?' },
@@ -516,7 +562,7 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset, toggleTheme,
                         </div>
                       </button>
                     ))}
-                  </div>
+                  </div> */}
                 </div>
               </div>
             </>
@@ -542,12 +588,13 @@ const MainDashboard = ({ activeDataset, datasets, setActiveDataset, toggleTheme,
                     {isExportingPDF ? <><span className="spinner" style={{ width: 13, height: 13, borderWidth: 2 }} /> Generating…</> : <><FileText size={14} /> Export PDF</>}
                   </button>
                   <button 
-                    onClick={onAnalyticsClick}
+                    onClick={handleAnalyticsClick}
                     className="exec-pdf-btn"
                     style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.1))', borderColor: 'rgba(139,92,246,0.3)', color: '#8b5cf6' }}
                   >
                     <Sparkles size={14} /> Generate Professional Board
                   </button>
+
                 </div>
               </div>
 

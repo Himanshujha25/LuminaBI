@@ -1,8 +1,10 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Database, BarChart3,
-  Settings, Zap, Sparkles, LifeBuoy, Upload,
+  Settings, Zap, Sparkles, LifeBuoy,
 } from 'lucide-react';
+import useStore from '../store/useStore';
 
 /* ─── All tokens in one place ─────────────────────────────────────────────── */
 const SIDEBAR_STYLES = `
@@ -125,34 +127,38 @@ const SIDEBAR_STYLES = `
   .sb-upgrade:hover { opacity: 0.87; }
 `;
 
-const Sidebar = ({
-  activeDataset,
-  datasets = [],
-  setActiveDataset,
-  onUploadClick,
-  onManageClick,
-  onAnalyticsClick,
-  onSupportClick,
-  onOverviewClick,
-  activeTab = 'overview',
-  isSidebarOpen,
-  setIsSidebarOpen,
-  isVisible,
-}) => {
+const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
+  const navigate = useNavigate();
+  const {
+    activeDataset,
+    currentView: activeTab,
+    isSidebarVisible: isVisible,
+    setCurrentView,
+    setIsUploadOpen,
+    setIsManageOpen,
+  } = useStore();
+
+  const handleAnalyticsClick = () => {
+    if (!activeDataset) return;
+    const slugName = activeDataset.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    navigate(`/analytics/${slugName}/${activeDataset.id}/lumina_25`);
+    setCurrentView('analytics');
+  };
+
   const navGroups = [
     {
       group: 'Workspace',
       items: [
-        { id: 'overview',  label: 'Overview',  Icon: LayoutDashboard, action: onOverviewClick  },
-        { id: 'analytics', label: 'Analytics', Icon: BarChart3,        action: onAnalyticsClick },
-        { id: 'datasets',  label: 'Datasets',  Icon: Database,         action: onManageClick   },
+        { id: 'overview',  label: 'Overview',  Icon: LayoutDashboard, action: () => setCurrentView('overview')  },
+        { id: 'analytics', label: 'Analytics', Icon: BarChart3,        action: handleAnalyticsClick },
+        { id: 'datasets',  label: 'Datasets',  Icon: Database,         action: () => { setIsManageOpen(true); setCurrentView('datasets'); }   },
       ],
     },
     {
       group: 'Account',
       items: [
-        { id: 'support',  label: 'Support',  Icon: LifeBuoy, action: onSupportClick },
-        { id: 'settings', label: 'Settings', Icon: Settings, action: () => {}       },
+        { id: 'support',  label: 'Support',  Icon: LifeBuoy, action: () => setCurrentView('support') },
+        { id: 'settings', label: 'Settings', Icon: Settings, action: () => setCurrentView('settings') },
       ],
     },
   ];
@@ -274,14 +280,6 @@ const Sidebar = ({
               </div>
             ))}
           </nav>
-
-          {/* Upload button
-          <div style={{ padding: '0 12px 12px' }}>
-            <button className="sb-upload" onClick={onUploadClick}>
-              <Upload size={14} />
-              Upload Dataset
-            </button>
-          </div> */}
 
           {/* Upgrade card */}
           <div style={{

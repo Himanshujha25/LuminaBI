@@ -43,30 +43,32 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 20px 0 8px;
+  padding: 0 14px 0 4px;
   position: sticky;
   top: 0;
   z-index: 50;
-  height: 56px;
+  height: 48px;
   background: var(--hdr-bg);
   border-bottom: 1px solid var(--hdr-border);
   transition: background 0.2s ease, border-color 0.2s ease;
+  gap: 8px;
 }
 
 /* ── Left section ────────────────────────────────────────────────────────── */
 .hdr-left {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
+  flex-shrink: 0;
 }
 
 .hdr-crumb {
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--hdr-crumb);
-  padding-left: 6px;
+  padding-left: 4px;
   white-space: nowrap;
 }
 
@@ -74,7 +76,7 @@
 .hdr-right {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 /* ── Icon buttons ────────────────────────────────────────────────────────── */
@@ -82,9 +84,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
   border: none;
   cursor: pointer;
   background: transparent;
@@ -97,22 +99,22 @@
   color: var(--hdr-text-primary);
 }
 
-/* sidebar toggle — slightly wider hit area */
+/* sidebar toggle */
 .hdr-toggle {
-  border-radius: 8px;
+  border-radius: 7px;
 }
 
 /* ── Upload button ───────────────────────────────────────────────────────── */
 .hdr-upload-btn {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 7px 14px;
-  border-radius: 8px;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 7px;
   border: 1px solid var(--hdr-upload-border);
   background: var(--hdr-upload-bg);
   color: var(--hdr-upload-text);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
@@ -133,9 +135,9 @@
 /* ── Divider ─────────────────────────────────────────────────────────────── */
 .hdr-divider {
   width: 1px;
-  height: 20px;
+  height: 18px;
   background: var(--hdr-divider);
-  margin: 0 4px;
+  margin: 0 2px;
   flex-shrink: 0;
 }
 
@@ -146,14 +148,14 @@
   cursor: pointer;
 }
 .hdr-avatar {
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   background: var(--hdr-avatar-bg);
   border: 1px solid var(--hdr-avatar-border);
   color: var(--hdr-avatar-text);
   font-weight: 700;
-  font-size: 13px;
+  font-size: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -217,7 +219,7 @@
 }
 .hdr-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+  background: #3b82f6;
   transition: width 0.3s ease;
 }
 

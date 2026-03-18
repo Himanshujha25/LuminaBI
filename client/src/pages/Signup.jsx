@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { AUTH_URL, BASE_URL } from '../config';
-import { BarChart2, User, Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react';
+import { BarChart2, User, Mail, Lock, ArrowRight, AlertCircle,Loader2 } from 'lucide-react';
 import './Auth.css';
+import useStore from '../store/useStore';
 
-const Signup = ({ setToken }) => {
+
+const Signup = () => {
+  const { setToken } = useStore();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,7 +28,6 @@ const Signup = ({ setToken }) => {
     try {
       const res = await axios.post(`${AUTH_URL}/register`, { name, email, password });
       setToken(res.data.token);
-      localStorage.setItem('token', res.data.token);
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to sign up');
@@ -33,6 +35,7 @@ const Signup = ({ setToken }) => {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="auth-container">
@@ -105,9 +108,32 @@ const Signup = ({ setToken }) => {
             </div>
           </div>
           
-          <button type="submit" className="btn-primary" disabled={loading} style={{width: '100%', marginTop: '12px', padding: '16px'}}>
-            {loading ? 'Processing...' : <><span style={{marginRight: '8px'}}>Get Started</span> <ArrowRight size={18} /></>}
-          </button>
+          <button 
+  type="submit" 
+  className="btn-primary" 
+  disabled={loading} 
+  style={{
+    width: '100%', 
+    marginTop: '12px', 
+    padding: '16px',
+    display: 'flex',          /* Flexbox keeps the icon and text aligned */
+    alignItems: 'center',     /* Centers vertically */
+    justifyContent: 'center', /* Centers horizontally */
+    gap: '8px'                /* Creates perfect spacing without margins */
+  }}
+>
+  {loading ? (
+    <>
+      <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+      <span>Processing...</span>
+    </>
+  ) : (
+    <>
+      <span>Get Started</span> 
+      <ArrowRight size={18} />
+    </>
+  )}
+</button>
         </form>
         
         <p className="auth-footer text-secondary">

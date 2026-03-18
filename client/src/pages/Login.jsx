@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { AUTH_URL, BASE_URL } from '../config';
-import { BarChart2, Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react';
+import { BarChart2, Mail, Lock, ArrowRight, AlertCircle,Loader2 } from 'lucide-react';
 import './Auth.css';
+import useStore from '../store/useStore';
 
-const Login = ({ setToken }) => {
+
+const Login = () => {
+  const { setToken } = useStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
@@ -24,7 +27,6 @@ const Login = ({ setToken }) => {
     try {
       const res = await axios.post(`${AUTH_URL}/login`, { email, password });
       setToken(res.data.token);
-      localStorage.setItem('token', res.data.token);
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to login');
@@ -32,6 +34,7 @@ const Login = ({ setToken }) => {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="auth-container">
@@ -88,9 +91,33 @@ const Login = ({ setToken }) => {
             </div>
           </div>
           
-          <button type="submit" className="btn-primary" disabled={loading} style={{width: '100%', marginTop: '12px', padding: '16px'}}>
-            {loading ? 'Authenticating...' : <><span style={{marginRight: '8px'}}>Sign In</span> <ArrowRight size={18} /></>}
-          </button>
+         <button 
+  type="submit" 
+  className="btn-primary" 
+  disabled={loading} 
+  style={{
+    width: '100%', 
+    marginTop: '12px', 
+    padding: '16px',
+    display: 'flex',          /* Added flexbox for perfect alignment */
+    alignItems: 'center',     /* Vertically centers icon and text */
+    justifyContent: 'center', /* Horizontally centers them in the button */
+    gap: '8px'                /* Replaces the inline marginRight */
+  }}
+>
+  {loading ? (
+    <>
+      {/* Optional: Add a spinning loader icon for better UX */}
+      <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+      <span>Authenticating...</span>
+    </>
+  ) : (
+    <>
+      <span>Sign In</span> 
+      <ArrowRight size={18} />
+    </>
+  )}
+</button>
         </form>
         
         <p className="auth-footer text-secondary">

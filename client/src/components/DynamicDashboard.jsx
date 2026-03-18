@@ -18,6 +18,8 @@ import jsPDF from 'jspdf';
 import axios from 'axios';
 import { API_URL } from '../config';
 
+import useStore from '../store/useStore';
+
 const ResponsiveGridLayout = WidthProvider(Responsive);
 const MemoizedChart = React.memo(DynamicChartComponent, (prev, next) =>
   prev.config === next.config &&
@@ -25,7 +27,9 @@ const MemoizedChart = React.memo(DynamicChartComponent, (prev, next) =>
   prev.exportWidth === next.exportWidth
 );
 
-export default function DynamicDashboard({ charts, onClose, activeDataset, toggleTheme, isDark }) {
+export default function DynamicDashboard({ charts, onClose }) {
+  const { isDark, toggleTheme, token, activeDataset } = useStore();
+
   // ── FIX: use navigate as fallback if onClose not provided ────────────────
   const navigate = useNavigate();
   const handleBack = () => {
@@ -113,7 +117,6 @@ export default function DynamicDashboard({ charts, onClose, activeDataset, toggl
 
   const saveExportToBackend = async (type, content) => {
     try {
-      const token = localStorage.getItem('token');
       const res = await axios.post(`${API_URL}/exports/save`, {
         type, content, name: activeDataset?.name, dashboard_id: charts[0]?.dashboard_id
       }, { headers: { Authorization: `Bearer ${token}` } });
@@ -121,6 +124,7 @@ export default function DynamicDashboard({ charts, onClose, activeDataset, toggl
       return res.data.shareUrl;
     } catch (e) { console.error('Save export failed', e); return null; }
   };
+
 
   const captureGrid = async () => {
     const gridEl = document.querySelector('.react-grid-layout');
@@ -162,7 +166,6 @@ export default function DynamicDashboard({ charts, onClose, activeDataset, toggl
     setIsExportModalOpen(false);
     setIsExportingPDF(true);
     try {
-      const token = localStorage.getItem('token');
       const currentUrl = window.location.href;
       const userData = localStorage.getItem('user') || '{}';
       const userId = JSON.parse(userData)?.id || 'guest';
@@ -187,6 +190,7 @@ export default function DynamicDashboard({ charts, onClose, activeDataset, toggl
       setIsExportingPDF(false);
     }
   };
+
 
   const handleExportPPT = async name => {
     setIsExportModalOpen(false);
@@ -362,7 +366,6 @@ export default function DynamicDashboard({ charts, onClose, activeDataset, toggl
           { label: 'Panels',  value: String(visibleCharts.length), icon: <Activity size={11} /> },
           { label: 'Engine',  value: 'Lumina v2.5',                icon: <Zap size={11} /> },
           { label: 'Status',  value: 'Live',                       icon: <TrendingUp size={11} /> },
-          { label: 'Dataset', value: activeDataset?.name || '—',   icon: <Database size={11} /> },
         ].map((k, i) => (
           <div key={i} className="dd-kpi-item">
             <span className="dd-kpi-label">{k.label}</span>
@@ -397,7 +400,7 @@ export default function DynamicDashboard({ charts, onClose, activeDataset, toggl
                       </span>
                     </span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 2, opacity: 0 }} className="group-hover:opacity-100">
+                  <div className="dd-panel-actions">
                     <button
                       type="button"
                       onClick={() => setPinnedInsights(p =>
@@ -423,12 +426,27 @@ export default function DynamicDashboard({ charts, onClose, activeDataset, toggl
 
                 {c.explanation && (
                   <div className={`dd-insight-overlay ${pinnedInsights.includes(String(c.id)) ? 'dd-pinned-insight' : ''}`}>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                      <Sparkles size={12} style={{ color: 'var(--dd-blue)', flexShrink: 0, marginTop: 1 }} />
-                      <p style={{ margin: 0, fontSize: 12, lineHeight: 1.55, color: 'var(--dd-text-2)' }}>{c.explanation}</p>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                      <button 
+                        type="button"
+                        onClick={() => setPinnedInsights(p =>
+                          p.includes(String(c.id)) ? p.filter(x => x !== String(c.id)) : [...p, String(c.id)]
+                        )}
+                        style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', flexShrink: 0, marginTop: 4 }}
+                        title="Pin Summary"
+                      >
+                        <Zap size={14} fill={pinnedInsights.includes(String(c.id)) ? 'var(--dd-blue)' : 'none'} style={{ color: pinnedInsights.includes(String(c.id)) ? 'var(--dd-blue)' : 'var(--dd-text-3)' }} />
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--dd-text-3)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 2 }}>AI Summary</div>
+                        <p style={{ margin: 0, fontSize: 11.5, lineHeight: 1.5, color: 'var(--dd-text-2)', maxHeight: '100px', overflowY: 'auto' }}>
+                          {c.explanation}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 )}
+
               </div>
             ))}
           </ResponsiveGridLayout>

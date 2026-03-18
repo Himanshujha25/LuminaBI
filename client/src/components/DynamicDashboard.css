@@ -35,7 +35,8 @@
   isolation:   isolate;
 }
 
-.dd-root.dark {
+.dd-root.dark,
+[data-theme="dark"] .dd-root {
   --dd-bg:      #0d0d0c;
   --dd-surface: #141413;
   --dd-border:  #252523;
@@ -45,7 +46,18 @@
   --dd-text-3:  #525250;
   --dd-accent:  #edede9;
 }
+.dd-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  opacity: 0.25; /* Makes them subtly visible by default */
+  transition: opacity 0.15s;
+}
 
+.dd-panel:hover .dd-panel-actions { 
+  opacity: 1; /* Makes them fully visible when the user hovers over the panel */
+}
 /* ── Header ─────────────────────────────────────────────────────────────── */
 .dd-header {
   height: var(--dd-header-h);
@@ -123,7 +135,8 @@
   min-width: 170px;
   overflow: hidden;
 }
-.dd-root.dark .dd-dropdown {
+.dd-root.dark .dd-dropdown,
+[data-theme="dark"] .dd-root .dd-dropdown {
   box-shadow: 0 8px 28px rgba(0,0,0,0.5);
 }
 .dd-dropdown button {
@@ -240,6 +253,21 @@
   scrollbar-color: var(--dd-border) transparent;
 }
 
+/* ── Chart content area ──────────────────────────────────────────────────── */
+/*
+  overflow: visible lets Y-axis labels render outside the padded box.
+  The recharts/chart.js SVG needs left margin to not clip tick labels.
+*/
+.dd-panel .recharts-wrapper,
+.dd-panel canvas {
+  overflow: visible !important;
+}
+
+/* Ensure SVG inside panels can overflow for axis labels */
+.dd-panel svg {
+  overflow: visible !important;
+}
+
 /* ── Panel cards ─────────────────────────────────────────────────────────── */
 /*
   KEY FIX: No backdrop-filter, no transform on hover.
@@ -253,15 +281,16 @@
   border-radius: var(--dd-radius);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  /* Changed from overflow:hidden — was clipping chart Y-axis labels */
+  overflow: visible;
   position: relative;
-  /* Only animate border/shadow — NOT transform or background */
+  /* Clip only the rounded corners visually without hiding chart content */
+  clip-path: inset(0 round var(--dd-radius));
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 .dd-panel:hover {
   border-color: rgba(99,102,241,.35);
   box-shadow: 0 4px 24px rgba(99,102,241,.1);
-  /* NO transform here — transform causes layout repaint */
 }
 
 /* ── Panel header ────────────────────────────────────────────────────────── */
@@ -296,6 +325,16 @@
 }
 .dd-panel-title-icon { color: var(--dd-text-3); flex-shrink: 0; }
 
+.dd-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  opacity: 0.25;
+  transition: opacity 0.15s;
+}
+.dd-panel:hover .dd-panel-actions { opacity: 1; }
+
 .dd-panel-action {
   width: 26px;
   height: 26px;
@@ -310,8 +349,8 @@
   transition: color 0.12s, background 0.12s;
   flex-shrink: 0;
 }
-.dd-panel-action:hover         { color: var(--dd-text-1); background: var(--dd-border); }
-.dd-active-pin                 { color: var(--dd-blue) !important; }
+.dd-panel-action:hover { color: var(--dd-text-1); background: var(--dd-border); }
+.dd-active-pin         { color: var(--dd-blue) !important; }
 
 /* ── Resize handle ───────────────────────────────────────────────────────── */
 .react-resizable-handle {
