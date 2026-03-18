@@ -1,0 +1,218 @@
+/* =========================================
+   FEATURES SECTION
+   ========================================= */
+.features-section {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 120px 24px 80px;
+  position: relative;
+  z-index: 10;
+}
+
+/* ── Section Header ── */
+.fs-header {
+  text-align: center;
+  margin-bottom: 72px;
+}
+
+.fs-eyebrow {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6, #3b82f6);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 16px;
+  animation: eyebrowShimmer 4s linear infinite;
+}
+
+@keyframes eyebrowShimmer {
+  0%   { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+
+.fs-title {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--text-primary);
+  margin: 0 0 16px;
+}
+
+.fs-gradient-text {
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.fs-subtitle {
+  font-size: 1.05rem;
+  color: var(--text-secondary);
+  max-width: 480px;
+  margin: 0 auto;
+  line-height: 1.65;
+}
+
+/* ── Grid ── */
+.fs-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+/* ── Card base ── */
+.fs-card {
+  position: relative;
+  padding: 32px 28px 28px;
+  border-radius: 16px;
+  background: var(--glass-bg);
+  border: 1px solid var(--border-color);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  cursor: default;
+  /* consistent with arch-step glass */
+  will-change: transform;
+
+  /* Hidden before scroll triggers */
+  opacity: 0;
+  transform: translateY(32px);
+  transition:
+    opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+  transition-delay: var(--delay, 0s);
+}
+
+/* Scroll-triggered visible state */
+.fs-card--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Hover — lift + glow border */
+.fs-card:hover {
+  transform: translateY(-6px) scale(1.02);
+  border-color: rgba(139, 92, 246, 0.4);
+  box-shadow:
+    0 0 0 1px rgba(139, 92, 246, 0.2),
+    0 16px 48px rgba(0, 0, 0, 0.12),
+    0 0 40px var(--glow, rgba(139, 92, 246, 0.15));
+}
+
+/* Keep visible when hovered (override transition-delay on hover) */
+.fs-card--visible:hover {
+  transition-delay: 0s;
+}
+
+/* ── Top accent line ── */
+.fs-card-accent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.fs-card:hover .fs-card-accent {
+  opacity: 1;
+}
+
+/* ── Icon wrapper ── */
+.fs-icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 16px var(--glow, rgba(139, 92, 246, 0.3));
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  flex-shrink: 0;
+}
+
+.fs-card:hover .fs-icon-wrap {
+  transform: scale(1.1) rotate(-4deg);
+  box-shadow: 0 8px 24px var(--glow, rgba(139, 92, 246, 0.45));
+}
+
+.fs-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Text ── */
+.fs-card-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+  letter-spacing: -0.02em;
+}
+
+.fs-card-desc {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  margin: 0;
+}
+
+/* ── Radial glow overlay on hover ── */
+.fs-card-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  background: radial-gradient(
+    circle at 50% 0%,
+    var(--glow, rgba(139, 92, 246, 0.08)) 0%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.fs-card:hover .fs-card-glow {
+  opacity: 1;
+}
+
+/* =========================================
+   RESPONSIVE
+   ========================================= */
+@media (max-width: 1024px) {
+  .fs-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .features-section {
+    padding: 80px 16px 60px;
+  }
+
+  .fs-header {
+    margin-bottom: 48px;
+  }
+
+  .fs-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .fs-card {
+    padding: 24px 20px;
+  }
+}

@@ -80,6 +80,7 @@
   min-width: 0;
   overflow-y: auto;
   position: relative;
+  padding-top: 64px;
 }
 
 /* ─── 3. TOPBAR & SEARCH ─── */
@@ -959,6 +960,9 @@
 }
 
 @media (max-width: 768px) {
+  .dashboard-main {
+    padding-top: 56px;
+  }
   .dashboard-wrapper { padding-bottom: 100px; }
   .action-btn-text { display: none; }
   .chart-panel-actions { gap: 8px; }

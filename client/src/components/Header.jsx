@@ -20,6 +20,17 @@ const Header = ({
 }) => {
 
   const [userName, setUserName] = useState('');
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const scroller = document.querySelector('.dashboard-main') || window;
+    const onScroll = () => {
+      const top = scroller === window ? window.scrollY : scroller.scrollTop;
+      setScrolled(top > 10);
+    };
+    scroller.addEventListener('scroll', onScroll, { passive: true });
+    return () => scroller.removeEventListener('scroll', onScroll);
+  }, []);
 
   // Fetch logged-in user
   useEffect(() => {
@@ -46,7 +57,7 @@ const Header = ({
 
   return (
     <>
-      <header className="app-header glass-panel">
+      <header className={`app-header glass-panel${scrolled ? ' header-scrolled' : ''}`}>
         <div className="header-logo">
           <div className="logo-icon">
             <BarChart2 size={24} color="#fff" />
