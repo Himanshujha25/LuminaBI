@@ -66,6 +66,17 @@ const Header = ({
   setIsSidebarVisible,
 }) => {
   const [userName, setUserName] = useState('');
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const scroller = document.querySelector('.dashboard-main') || window;
+    const onScroll = () => {
+      const top = scroller === window ? window.scrollY : scroller.scrollTop;
+      setScrolled(top > 10);
+    };
+    scroller.addEventListener('scroll', onScroll, { passive: true });
+    return () => scroller.removeEventListener('scroll', onScroll);
+  }, []);
 
   useEffect(() => {
     const fetchUser = async () => {
