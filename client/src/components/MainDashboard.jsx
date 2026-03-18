@@ -545,24 +545,13 @@ const MainDashboard = () => {
                     Ask anything about your data — trends, breakdowns, comparisons — and let AI render it instantly.
                   </p>
 
-                  {/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-3xl">
-                    {[
-                      { icon: <Activity size={17} />, color: 'blue',   title: 'Trend Analysis',      desc: 'Monthly order trend for last quarter.',      q: 'Give me a monthly trend of orders' },
-                      { icon: <PieChart size={17} />,  color: 'purple', title: 'Composition Breakdown', desc: 'Revenue breakdown by product category.',      q: 'What is the revenue breakdown by product category?' },
-                      { icon: <ListFilter size={17} />, color: 'green', title: 'Comparative BI',        desc: 'Top 3 regions by customer growth.',           q: 'Compare the performance of our top 3 regions', span: 'sm:col-span-2 lg:col-span-1' },
-                    ].map((c, i) => (
-                      <button key={i} className={`suggestion-card glass-panel text-left group w-full ${c.span || ''}`} onClick={() => handleSubmit(c.q)}>
-                        <div className="flex flex-col">
-                          <div className={`suggestion-icon-box shrink-0 ${c.color} mb-4`}>{c.icon}</div>
-                          <h3 className="suggestion-title mb-1">{c.title}</h3>
-                          <p className="suggestion-text">"{c.desc}"</p>
-                        </div>
-                        <div className="mt-3 pt-3 border-t border-[var(--border-color)] flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)] group-hover:text-indigo-400 transition-colors">
-                          <Sparkles size={9} /> Try this
-                        </div>
-                      </button>
-                    ))}
-                  </div> */}
+                  <button 
+            className="primary-btn px-8 py-4 text-lg rounded-2xl flex items-center gap-3 hover:scale-105 transition-transform"
+            onClick={() => setIsSidebarOpen(true)}
+          >
+            <Sparkles size={20} />
+            Start Conversation with AI
+          </button>
                 </div>
               </div>
             </>
