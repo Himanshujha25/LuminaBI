@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { UploadCloud, BarChart2, Moon, Sun, LogOut, Database } from 'lucide-react';
+import {
+  UploadCloud, Moon, Sun, LogOut,
+  PanelLeftClose, PanelLeftOpen, Loader2,
+  CheckCircle2, XCircle,
+} from 'lucide-react';
 import axios from 'axios';
 import { API_URL } from '../config';
 import './Header.css';
@@ -11,14 +15,56 @@ const getInitials = (name) => {
   return (words[0].charAt(0) + words[words.length - 1].charAt(0)).toUpperCase();
 };
 
+/* ── Upload status pill ──────────────────────────────────────────────────── */
+const UploadStatus = ({ uploadState }) => {
+  if (!uploadState) return null;
+  const { status, progress, fileName } = uploadState;
+
+  if (status === 'uploading') return (
+    <div className="hdr-status uploading">
+      <Loader2 size={14} className="hdr-spin" />
+      <div className="hdr-progress">
+        <div className="hdr-progress-row">
+          <span style={{ maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {fileName}
+          </span>
+          <span className="hdr-progress-pct">{progress ?? 0}%</span>
+        </div>
+        <div className="hdr-progress-track">
+          <div className="hdr-progress-fill" style={{ width: `${progress ?? 0}%` }} />
+        </div>
+      </div>
+    </div>
+  );
+
+  if (status === 'success') return (
+    <div className="hdr-status success">
+      <CheckCircle2 size={14} />
+      <span>Upload complete</span>
+    </div>
+  );
+
+  if (status === 'error') return (
+    <div className="hdr-status error">
+      <XCircle size={14} />
+      <span>Upload failed</span>
+    </div>
+  );
+
+  return null;
+};
+
+/* ── Main component ──────────────────────────────────────────────────────── */
 const Header = ({
   onUploadClick,
   onManageClick,
   toggleTheme,
   isDark,
-  onLogout
+  onLogout,
+  uploadState,
+  isSidebarVisible,
+  setIsSidebarVisible,
 }) => {
-
   const [userName, setUserName] = useState('');
   const [scrolled, setScrolled] = useState(false);
 
@@ -32,88 +78,94 @@ const Header = ({
     return () => scroller.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Fetch logged-in user
   useEffect(() => {
     const fetchUser = async () => {
       try {
         const token = localStorage.getItem('token');
-
         const res = await axios.get(`${API_URL}/auth/me`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+          headers: { Authorization: `Bearer ${token}` },
         });
-
-        if (res.data?.user?.name) {
-          setUserName(res.data.user.name);
-        }
+        if (res.data?.user?.name) setUserName(res.data.user.name);
       } catch (err) {
         console.error('Failed to fetch user:', err);
       }
     };
-
     fetchUser();
   }, []);
 
   return (
     <>
-      <header className={`app-header glass-panel${scrolled ? ' header-scrolled' : ''}`}>
-        <div className="header-logo">
-          <div className="logo-icon">
-            <BarChart2 size={24} color="#fff" />
-          </div>
-          <h1 className="logo-text">
-            Lumina <span className="gradient-text">BI</span>
-          </h1>
+      {/* ── Desktop header ────────────────────────────────────────────────── */}
+      <header className="app-header">
+
+        {/* Left: toggle + breadcrumb */}
+        <div className="hdr-left">
+          <button
+            className="hdr-icon-btn hdr-toggle"
+            onClick={() => setIsSidebarVisible(!isSidebarVisible)}
+            title={isSidebarVisible ? 'Hide sidebar' : 'Show sidebar'}
+          >
+            {isSidebarVisible
+              ? <PanelLeftClose size={18} />
+              : <PanelLeftOpen  size={18} />}
+          </button>
+          <span className="hdr-crumb">Workspace / Analytics</span>
         </div>
 
-        <div className="header-actions">
-          <button className="icon-btn desktop-only" onClick={toggleTheme} title="Toggle Theme">
-            {isDark ? <Sun size={20} /> : <Moon size={20} />}
+        {/* Right: actions */}
+        <div className="hdr-right">
+
+          {/* Upload status */}
+          <UploadStatus uploadState={uploadState} />
+
+          {/* Theme toggle */}
+          <button
+            className="hdr-icon-btn hdr-desktop"
+            onClick={toggleTheme}
+            title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {isDark ? <Sun size={17} /> : <Moon size={17} />}
           </button>
 
-          <button className="btn-secondary desktop-only" onClick={onManageClick}>
-            <Database size={16} />
-            <span>Manage Data</span>
+          {/* Upload */}
+          <button className="hdr-upload-btn hdr-desktop" onClick={onUploadClick}>
+            <UploadCloud size={15} />
+            Upload CSV
           </button>
 
-          <button className="btn-primary desktop-only" onClick={onUploadClick}>
-            <UploadCloud size={18} />
-            <span>Upload CSV</span>
-          </button>
+          <div className="hdr-divider hdr-desktop" />
 
-          <div className="divider-vertical desktop-only"></div>
-
-          <div className="user-profile-badge" title={userName}>
-            <div className="user-avatar">
-              {getInitials(userName)}
-            </div>
+          {/* Avatar */}
+          <div className="hdr-avatar-wrap" title={userName || 'Profile'}>
+            <div className="hdr-avatar">{getInitials(userName)}</div>
           </div>
 
-          <button className="icon-btn btn-logout desktop-only" onClick={onLogout} title="Log Out">
-            <LogOut size={18} />
+          {/* Logout */}
+          <button
+            className="hdr-icon-btn hdr-logout hdr-desktop"
+            onClick={onLogout}
+            title="Log out"
+          >
+            <LogOut size={17} />
           </button>
+
         </div>
       </header>
 
-      <nav className="mobile-bottom-bar glass-panel">
-        <button className="mobile-nav-item" onClick={onManageClick}>
-          <Database size={20} />
-          <span>Manage</span>
-        </button>
-
-        <button className="mobile-nav-item" onClick={onUploadClick}>
-          <div className="upload-nav-icon">
-            <UploadCloud size={24} />
+      {/* ── Mobile bottom nav ─────────────────────────────────────────────── */}
+      <nav className="hdr-mobile-nav">
+        <button className="hdr-mob-item" onClick={onUploadClick}>
+          <div className="hdr-mob-upload">
+            <UploadCloud size={22} />
           </div>
         </button>
 
-        <button className="mobile-nav-item" onClick={toggleTheme}>
+        <button className="hdr-mob-item" onClick={toggleTheme}>
           {isDark ? <Sun size={20} /> : <Moon size={20} />}
           <span>Theme</span>
         </button>
 
-        <button className="mobile-nav-item text-danger" onClick={onLogout}>
+        <button className="hdr-mob-item danger" onClick={onLogout}>
           <LogOut size={20} />
           <span>Logout</span>
         </button>

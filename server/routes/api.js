@@ -6,6 +6,7 @@ const { handleQuery } = require('../controllers/queryController');
 const { getChats, clearChats, deleteMessage } = require('../controllers/chatController');
 const { register, login, getMe } = require('../controllers/authController');
 const { saveDashboard, getDashboards, deleteDashboard } = require('../controllers/dashboardController');
+const exportController = require('../controllers/exportController');
 const { protect } = require('../middleware/auth');
 const fs = require('fs');
 
@@ -40,5 +41,10 @@ router.post('/query', protect, handleQuery);
 router.post('/dashboards', protect, saveDashboard);
 router.get('/dashboards', protect, getDashboards);
 router.delete('/dashboards/:id', protect, deleteDashboard);
+
+// Export & PDF Routes
+router.post('/exports', exportController.saveExport);
+// router.get('/exports/:id', exportController.getExportById);
+router.post('/exports/generate-pdf', exportController.generatePDF);
 
 module.exports = router;

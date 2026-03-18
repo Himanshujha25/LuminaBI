@@ -4,10 +4,10 @@ const { Pool } = require("pg");
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
-  // Speed/Safety settings:
-  statement_timeout: 30000, // 30 seconds
-  query_timeout: 35000,      // 35 seconds
-  connectionTimeoutMillis: 5000 // 5 seconds to connect
+  max: 20, // Increased pool size
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
 });
+
 
 module.exports = pool;
