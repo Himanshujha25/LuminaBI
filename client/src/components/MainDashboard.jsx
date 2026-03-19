@@ -1,9 +1,13 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import ReactDOM from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import {
   Search, Send, MessageSquare, ListFilter, Sparkles, Activity,
   Download, Image as ImageIcon, X, GripHorizontal, Trash2,
-  LayoutDashboard, PieChart, Zap, Eye, FileText, ChevronRight, Database, Table, Plus, ChevronDown
+  LayoutDashboard, PieChart, Zap, Eye, FileText, ChevronRight,
+  Database, ChevronDown, BarChart3, LineChart,
+  TrendingUp, Hash, Sigma, ArrowUpRight,
+  BarChart2, Layers, Check, Maximize2, Minimize2, Pin, Target, Bot
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import axios from 'axios';
@@ -15,11 +19,191 @@ import { generatePDFReport } from '../utils/pdfExport';
 import KpiCards from './KpiCards';
 import './MainDashboard.css';
 import WorkspaceDropdown from './WorkspaceDropdown';
-
 import useStore from '../store/useStore';
 
 const MemoizedChart = React.memo(DynamicChartComponent);
 
+/* ── KPI color themes ─────────────────────────────────────────────────────── */
+const KPI_THEMES = [
+  { bg: 'linear-gradient(135deg,#312e81,#4f46e5)', glow: 'rgba(79,70,229,.35)',  icon: <Sigma size={15}/> },
+  { bg: 'linear-gradient(135deg,#1e3a5f,#0ea5e9)', glow: 'rgba(14,165,233,.35)', icon: <Activity size={15}/> },
+  { bg: 'linear-gradient(135deg,#1a2e1a,#16a34a)', glow: 'rgba(22,163,74,.35)',  icon: <TrendingUp size={15}/> },
+  { bg: 'linear-gradient(135deg,#3b1f1f,#dc2626)', glow: 'rgba(220,38,38,.35)',  icon: <Target size={15}/> },
+  { bg: 'linear-gradient(135deg,#2d1b4e,#9333ea)', glow: 'rgba(147,51,234,.35)', icon: <Hash size={15}/> },
+];
+
+const CHART_TYPES = [
+  { id: 'bar',  label: 'Bar',  icon: <BarChart3 size={12}/> },
+  { id: 'line', label: 'Line', icon: <LineChart size={12}/> },
+  { id: 'area', label: 'Area', icon: <Activity size={12}/> },
+  { id: 'pie',  label: 'Pie',  icon: <PieChart size={12}/> },
+];
+
+const DATA_LIMITS = ['5', '10', '25', '50', 'All'];
+
+/* ── KPI Card ─────────────────────────────────────────────────────────────── */
+function KpiCard({ theme, label, value, sub }) {
+  return (
+    <div className="lm-kpi-card" style={{ '--kpi-bg': theme.bg, '--kpi-glow': theme.glow }}>
+      <div className="lm-kpi-icon">{theme.icon}</div>
+      <div className="lm-kpi-body">
+        <span className="lm-kpi-label">{label}</span>
+        <span className="lm-kpi-value">{value}</span>
+        {sub && <span className="lm-kpi-sub">{sub}</span>}
+      </div>
+    </div>
+  );
+}
+
+/* ── Shared dropdown hook ─────────────────────────────────────────────────── */
+/*
+  THE FIX: The `mousedown` listener on `document` used to close the menu
+  immediately when clicking a menu item — before `click` could fire.
+  Solution: attach a `menuRef` to the portal div and exclude it from
+  the close condition. Now mousedown inside the menu is ignored, so
+  the item's onClick fires normally, then closes the menu itself.
+*/
+function useDropdown() {
+  const [open, setOpen] = useState(false);
+  const [pos,  setPos]  = useState({ top: 0, left: 0, minWidth: 0 });
+  const btnRef  = useRef(null);
+  const menuRef = useRef(null);
+
+  const openMenu = () => {
+    if (btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      setPos({ top: r.bottom + 6, left: r.left, minWidth: Math.max(r.width, 148) });
+    }
+    setOpen(true);
+  };
+
+  useEffect(() => {
+    const onMouseDown = e => {
+      // Keep open if clicking inside the trigger or the menu itself
+      if (btnRef.current?.contains(e.target))  return;
+      if (menuRef.current?.contains(e.target)) return;
+      setOpen(false);
+    };
+    const onScroll = () => setOpen(false);
+    document.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('scroll',    onScroll, true);
+    return () => {
+      document.removeEventListener('mousedown', onMouseDown);
+      document.removeEventListener('scroll',    onScroll, true);
+    };
+  }, []);
+
+  return { open, setOpen, pos, btnRef, menuRef, openMenu };
+}
+
+/* ── Chart type dropdown ──────────────────────────────────────────────────── */
+function ChartTypeDropdown({ value, onChange, isDark }) {
+  const { open, setOpen, pos, btnRef, menuRef, openMenu } = useDropdown();
+  const current = CHART_TYPES.find(t => t.id === value) || CHART_TYPES[0];
+
+  const menuStyle = {
+    position: 'fixed', top: pos.top, left: pos.left, zIndex: 99999,
+    background:   isDark ? '#1f2937' : '#ffffff',
+    border:       isDark ? '1px solid #374151' : '1px solid #e2e8f0',
+    borderRadius: 10,
+    boxShadow: isDark
+      ? '0 20px 25px -5px rgba(0,0,0,.6), 0 8px 10px -6px rgba(0,0,0,.5)'
+      : '0 10px 25px -5px rgba(0,0,0,.12), 0 4px 10px -6px rgba(0,0,0,.06)',
+    minWidth: pos.minWidth, overflow: 'hidden',
+  };
+  const itemBase = {
+    display: 'flex', alignItems: 'center', gap: 8,
+    width: '100%', padding: '9px 14px', border: 'none',
+    fontFamily: 'inherit', fontSize: 13, cursor: 'pointer', textAlign: 'left',
+  };
+  const itemStyle = active => ({
+    ...itemBase,
+    background: active ? (isDark ? 'rgba(99,102,241,.25)' : '#e0e7ff') : 'transparent',
+    color: active ? (isDark ? '#a5b4fc' : '#4338ca') : (isDark ? '#d1d5db' : '#374151'),
+    fontWeight: active ? 600 : 400,
+  });
+
+  return (
+    <>
+      <button ref={btnRef} className="lm-dropdown-btn"
+        onClick={open ? () => setOpen(false) : openMenu}>
+        {current.icon}<span>{current.label}</span>
+        <ChevronDown size={10} style={{ opacity: .5 }}/>
+      </button>
+      {open && ReactDOM.createPortal(
+        <div ref={menuRef} style={menuStyle}>
+          {CHART_TYPES.map(t => (
+            <button key={t.id}
+              style={itemStyle(value === t.id)}
+              onMouseEnter={e => { if (value !== t.id) { e.currentTarget.style.background = isDark ? '#374151' : '#f5f3ff'; }}}
+              onMouseLeave={e => { e.currentTarget.style.background = value === t.id ? (isDark ? 'rgba(99,102,241,.25)' : '#e0e7ff') : 'transparent'; }}
+              onClick={() => { onChange(t.id); setOpen(false); }}>
+              {t.icon}{t.label}
+              {value === t.id && <Check size={10} style={{ marginLeft: 'auto', color: isDark ? '#a5b4fc' : '#4338ca' }}/>}
+            </button>
+          ))}
+        </div>,
+        document.body
+      )}
+    </>
+  );
+}
+
+/* ── Data limit dropdown ──────────────────────────────────────────────────── */
+function DataLimitDropdown({ value, onChange, isDark }) {
+  const { open, setOpen, pos, btnRef, menuRef, openMenu } = useDropdown();
+
+  const menuStyle = {
+    position: 'fixed', top: pos.top, left: pos.left, zIndex: 99999,
+    background:   isDark ? '#1f2937' : '#ffffff',
+    border:       isDark ? '1px solid #374151' : '1px solid #e2e8f0',
+    borderRadius: 10,
+    boxShadow: isDark
+      ? '0 20px 25px -5px rgba(0,0,0,.6), 0 8px 10px -6px rgba(0,0,0,.5)'
+      : '0 10px 25px -5px rgba(0,0,0,.12), 0 4px 10px -6px rgba(0,0,0,.06)',
+    minWidth: pos.minWidth, overflow: 'hidden',
+  };
+  const itemBase = {
+    display: 'flex', alignItems: 'center', gap: 8,
+    width: '100%', padding: '9px 14px', border: 'none',
+    fontFamily: 'inherit', fontSize: 13, cursor: 'pointer', textAlign: 'left',
+  };
+  const itemStyle = active => ({
+    ...itemBase,
+    background: active ? (isDark ? 'rgba(99,102,241,.25)' : '#e0e7ff') : 'transparent',
+    color: active ? (isDark ? '#a5b4fc' : '#4338ca') : (isDark ? '#d1d5db' : '#374151'),
+    fontWeight: active ? 600 : 400,
+  });
+
+  return (
+    <>
+      <button ref={btnRef} className="lm-dropdown-btn"
+        onClick={open ? () => setOpen(false) : openMenu}>
+        <Layers size={12}/><span>Top {value}</span>
+        <ChevronDown size={10} style={{ opacity: .5 }}/>
+      </button>
+      {open && ReactDOM.createPortal(
+        <div ref={menuRef} style={menuStyle}>
+          {DATA_LIMITS.map(o => (
+            <button key={o}
+              style={itemStyle(value === o)}
+              onMouseEnter={e => { if (value !== o) { e.currentTarget.style.background = isDark ? '#374151' : '#f5f3ff'; }}}
+              onMouseLeave={e => { e.currentTarget.style.background = value === o ? (isDark ? 'rgba(99,102,241,.25)' : '#e0e7ff') : 'transparent'; }}
+              onClick={() => { onChange(o); setOpen(false); }}>
+              <Hash size={11}/>{o === 'All' ? 'All rows' : `Top ${o}`}
+              {value === o && <Check size={10} style={{ marginLeft: 'auto', color: isDark ? '#a5b4fc' : '#4338ca' }}/>}
+            </button>
+          ))}
+        </div>,
+        document.body
+      )}
+    </>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   MAIN COMPONENT
+══════════════════════════════════════════════════════════════════ */
 const MainDashboard = () => {
   const navigate = useNavigate();
   const {
@@ -27,7 +211,7 @@ const MainDashboard = () => {
     datasets,
     setActiveDataset,
     toggleTheme,
-    isDark,
+    isDark: isDarkStore,
     token,
     setIsUploadOpen,
     setCurrentView,
@@ -36,39 +220,39 @@ const MainDashboard = () => {
     setShowPreview,
   } = useStore();
 
-  const [prompt, setPrompt]                   = useState('');
-  const [isLoading, setIsLoading]             = useState(false);
-  const [isSideLoading, setIsSideLoading]     = useState(false);
-  const [error, setError]                     = useState(null);
-  const [chatHistories, setChatHistories]     = useState({});
+  /* Reliable dark detection — store value OR DOM attribute */
+  const isDark = isDarkStore ?? (document.documentElement.getAttribute('data-theme') === 'dark') ?? false;
+
+  const [prompt, setPrompt]                         = useState('');
+  const [isLoading, setIsLoading]                   = useState(false);
+  const [isSideLoading, setIsSideLoading]           = useState(false);
+  const [error, setError]                           = useState(null);
+  const [chatHistories, setChatHistories]           = useState({});
   const [chartTypeOverride, setChartTypeOverride]   = useState(null);
-  const [showSQL, setShowSQL]                 = useState(false);
-  const [viewMode, setViewMode]               = useState('chart');
-  const [sidePrompt, setSidePrompt]           = useState('');
-  const [pinState, setPinState]               = useState('idle');
-  const [isSidebarOpen, setIsSidebarOpen]     = useState(true);
-  const [showDatasetDropdown, setShowDatasetDropdown]   = useState(false);
-  const [datasetSearch, setDatasetSearch]     = useState(''); // Added for dropdown search
+  const [showSQL, setShowSQL]                       = useState(false);
+  const [viewMode, setViewMode]                     = useState('chart');
+  const [sidePrompt, setSidePrompt]                 = useState('');
+  const [pinState, setPinState]                     = useState('idle');
+  const [isSidebarOpen, setIsSidebarOpen]           = useState(true);
+  const [showDatasetDropdown, setShowDatasetDropdown] = useState(false);
+  const [datasetSearch, setDatasetSearch]           = useState('');
   const [isExportingPDF, setIsExportingPDF]         = useState(false);
   const [dataSlicerLimit, setDataSlicerLimit]       = useState('All');
+  const [isChartFullscreen, setIsChartFullscreen]   = useState(false);
 
-  
-  const userId = storeUser?.id || "guest";
+  const userId          = storeUser?.id || 'guest';
   const PIN_STORAGE_KEY = `lumina_pinned_charts_${userId}`;
-  
+
   const [pinnedCharts, setPinnedCharts] = useState(() => {
     try {
-      const parsed = JSON.parse(localStorage.getItem(PIN_STORAGE_KEY) || "[]");
+      const parsed = JSON.parse(localStorage.getItem(PIN_STORAGE_KEY) || '[]');
       const seen = new Set();
       return parsed.filter(c => {
         const key = `${c.sql_used}_${c.chart_type}`;
         if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
+        seen.add(key); return true;
       });
-    } catch {
-      return [];
-    }
+    } catch { return []; }
   });
 
   const handleAnalyticsClick = () => {
@@ -80,7 +264,6 @@ const MainDashboard = () => {
 
   const onUploadClick = () => setIsUploadOpen(true);
 
-
   const dragItem        = useRef(null);
   const dragOverItem    = useRef(null);
   const chatScrollRef   = useRef(null);
@@ -90,100 +273,83 @@ const MainDashboard = () => {
 
   const history = activeDataset ? (chatHistories[activeDataset.id] || []) : [];
 
-  // Filter datasets based on search input inside the dropdown
   const filteredDatasets = useMemo(() => {
     if (!datasetSearch.trim()) return datasets;
-    const lowerQuery = datasetSearch.toLowerCase();
-    return datasets.filter(d => 
-      d.name.toLowerCase().includes(lowerQuery) || 
-      String(d.id).includes(lowerQuery)
-    );
+    const q = datasetSearch.toLowerCase();
+    return datasets.filter(d => d.name.toLowerCase().includes(q) || String(d.id).includes(q));
   }, [datasets, datasetSearch]);
 
-  // Persist pins
-  useEffect(() => {
-    localStorage.setItem(PIN_STORAGE_KEY, JSON.stringify(pinnedCharts));
-  }, [pinnedCharts, PIN_STORAGE_KEY]);
+  useEffect(() => { localStorage.setItem(PIN_STORAGE_KEY, JSON.stringify(pinnedCharts)); }, [pinnedCharts, PIN_STORAGE_KEY]);
 
-  // Load chat history
   useEffect(() => {
     const ctrl = new AbortController();
     if (activeDataset?.id && !chatHistories[activeDataset.id]) {
       setIsSideLoading(true);
-      const token = localStorage.getItem('token');
-      axios.get(`${API_URL}/datasets/${activeDataset.id}/chats`, { 
-        signal: ctrl.signal, 
-        timeout: 10000,
-        headers: { Authorization: `Bearer ${token}` }
+      const tkn = localStorage.getItem('token');
+      axios.get(`${API_URL}/datasets/${activeDataset.id}/chats`, {
+        signal: ctrl.signal, timeout: 10000, headers: { Authorization: `Bearer ${tkn}` }
       })
-        .then(res => setChatHistories(prev => ({ ...prev, [activeDataset.id]: res.data.map(r => ({ id: r.id, role: r.role, text: r.text, data: r.data || null })) })))
+        .then(res => setChatHistories(prev => ({
+          ...prev,
+          [activeDataset.id]: res.data.map(r => ({ id: r.id, role: r.role, text: r.text, data: r.data || null }))
+        })))
         .catch(err => { if (err.name !== 'CanceledError') console.error(err); })
         .finally(() => setIsSideLoading(false));
     }
     return () => ctrl.abort();
   }, [activeDataset?.id]);
 
-  // Viewport height for mobile
   useEffect(() => {
     const setVh = () => document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
     window.addEventListener('resize', setVh); setVh();
     return () => window.removeEventListener('resize', setVh);
   }, []);
 
-  // Ctrl+K focus
   useEffect(() => {
     const fn = e => { if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); searchInputRef.current?.focus(); } };
     window.addEventListener('keydown', fn);
     return () => window.removeEventListener('keydown', fn);
   }, []);
 
-  // Click-outside dataset dropdown
   useEffect(() => {
     const fn = e => {
       if (datasetDropRef.current && !datasetDropRef.current.contains(e.target)) {
-        setShowDatasetDropdown(false);
-        setDatasetSearch(''); // Clear search when closing
+        setShowDatasetDropdown(false); setDatasetSearch('');
       }
     };
     document.addEventListener('mousedown', fn);
     return () => document.removeEventListener('mousedown', fn);
   }, []);
 
-  // Reset on dataset change
   useEffect(() => {
-    setChartTypeOverride(null); setShowSQL(false); setViewMode('chart'); setPrompt(''); setSidePrompt(''); setDataSlicerLimit('All');
+    setChartTypeOverride(null); setShowSQL(false); setViewMode('chart');
+    setPrompt(''); setSidePrompt(''); setDataSlicerLimit('All');
   }, [activeDataset?.id]);
 
-  // Auto-scroll chat
   useEffect(() => {
     if (chatScrollRef.current) chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
   }, [history, isSideLoading]);
 
-  useEffect(() => { 
+  useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 450);
+    setTimeout(() => window.dispatchEvent(new Event('resize')), 450);
   }, [history, isSidebarOpen]);
 
-  // ── Handlers ──
   const handleSubmit = async (overridePrompt, isSideSearch = false) => {
     const q = (overridePrompt || prompt).trim();
     if (!q || !activeDataset) return;
     isSideSearch ? setIsSideLoading(true) : setIsLoading(true);
-    setError(null);
-    setChartTypeOverride(null);
-    setDataSlicerLimit('All');
+    setError(null); setChartTypeOverride(null); setDataSlicerLimit('All');
     setChatHistories(prev => ({ ...prev, [activeDataset.id]: [...(prev[activeDataset.id] || []), { role: 'user', text: q }] }));
     isSideSearch ? setSidePrompt('') : setPrompt('');
     try {
-      const token = localStorage.getItem('token');
-      const { data } = await axios.post(`${API_URL}/query`, { 
-        prompt: q, 
-        datasetId: activeDataset.id, 
-        history: history.slice(-6) 
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setChatHistories(prev => ({ ...prev, [activeDataset.id]: [...(prev[activeDataset.id] || []), { id: data.message_id, role: 'ai', text: data.explanation || data.message || 'Here is what I found.', data }] }));
+      const tkn = localStorage.getItem('token');
+      const { data } = await axios.post(`${API_URL}/query`, {
+        prompt: q, datasetId: activeDataset.id, history: history.slice(-6)
+      }, { headers: { Authorization: `Bearer ${tkn}` } });
+      setChatHistories(prev => ({ ...prev, [activeDataset.id]: [...(prev[activeDataset.id] || []),
+        { id: data.message_id, role: 'ai', text: data.explanation || data.message || 'Here is what I found.', data }
+      ]}));
     } catch (err) {
       const msg = `❌ ${err.response?.data?.error || 'Something went wrong'}`;
       setChatHistories(prev => ({ ...prev, [activeDataset.id]: [...(prev[activeDataset.id] || []), { role: 'ai', text: msg }] }));
@@ -205,6 +371,7 @@ const MainDashboard = () => {
   };
 
   const handleUnpinChart = id => setPinnedCharts(prev => prev.filter(c => c.id !== id));
+
   const handleSort = () => {
     if (dragItem.current === null || dragOverItem.current === null) return;
     const arr = [...pinnedCharts];
@@ -217,14 +384,11 @@ const MainDashboard = () => {
   const handleClearChat = async () => {
     if (!activeDataset || !window.confirm('Clear all chat history for this dataset?')) return;
     try {
-      await axios.delete(`${API_URL}/datasets/${activeDataset.id}/chats`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios.delete(`${API_URL}/datasets/${activeDataset.id}/chats`, { headers: { Authorization: `Bearer ${token}` } });
       setChatHistories(prev => ({ ...prev, [activeDataset.id]: [] }));
       setPrompt(''); setSidePrompt('');
     } catch (e) { console.error(e); }
   };
-
 
   const handleRemoveMessage = async index => {
     const msg = history[index];
@@ -241,11 +405,10 @@ const MainDashboard = () => {
     setChatHistories(prev => ({ ...prev, [activeDataset.id]: nh }));
   };
 
-
   const exportAsCSV = (data, filename) => {
     if (!data?.length) return;
     const headers = Object.keys(data[0]).join(',');
-    const rows = data.map(r => Object.values(r).map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const rows = data.map(r => Object.values(r).map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([`${headers}\n${rows}`], { type: 'text/csv' }));
     a.download = `${filename}.csv`; a.click(); URL.revokeObjectURL(a.href);
@@ -255,14 +418,17 @@ const MainDashboard = () => {
     const el = document.getElementById(elementId); if (!el) return;
     try {
       const canvas = await html2canvas(el, { backgroundColor: null, scale: 2 });
-      const a = document.createElement('a'); a.download = `${filename}.png`; a.href = canvas.toDataURL('image/png'); a.click();
+      const a = document.createElement('a'); a.download = `${filename}.png`;
+      a.href = canvas.toDataURL('image/png'); a.click();
     } catch {}
   };
 
-  const currentData = useMemo(() => history.slice().reverse().find(h => h.role === 'ai' && h.data)?.data, [history]);
+  const currentData = useMemo(() =>
+    history.slice().reverse().find(h => h.role === 'ai' && h.data)?.data,
+  [history]);
 
   const slicedData = useMemo(() => {
-    if (!currentData || !currentData.data) return null;
+    if (!currentData?.data) return null;
     if (dataSlicerLimit === 'All') return currentData.data;
     return currentData.data.slice(0, parseInt(dataSlicerLimit, 10));
   }, [currentData, dataSlicerLimit]);
@@ -272,446 +438,433 @@ const MainDashboard = () => {
     return { ...currentData, data: slicedData };
   }, [currentData, slicedData]);
 
-  const Skeleton = ({ className }) => <div className={`skeleton rounded-xl ${className}`} />;
-
-  const renderKPIsHorizontal = (data, xAxis, yAxis) => {
-    if (!data || data.length === 0) return null;
-    let total = 0;
-    let max = -Infinity;
-    let numericKey = yAxis;
+  /* ── Robust KPI stats ── */
+  const kpiStats = useMemo(() => {
+    if (!currentData?.data?.length) return null;
+    const data = currentData.data;
     const keys = Object.keys(data[0]);
-    
-    if (!numericKey || isNaN(parseFloat(data[0][numericKey]))) {
-      numericKey = keys.find(k => k !== xAxis && !isNaN(parseFloat(data[0][k])));
-    }
 
-    if (numericKey) {
-      data.forEach(row => {
-        const val = parseFloat(row[numericKey]);
-        if (!isNaN(val)) {
-          total += val;
-          if (val > max) max = val;
-        }
+    const isNumeric = (row, k) => {
+      const v = row[k];
+      if (v === null || v === undefined || v === '') return false;
+      return !isNaN(parseFloat(String(v).replace(/,/g, '')));
+    };
+    const parseNum = v => parseFloat(String(v).replace(/,/g, ''));
+
+    let numKey = null;
+    if (currentData.y_axis_column && isNumeric(data[0], currentData.y_axis_column)) {
+      numKey = currentData.y_axis_column;
+    } else {
+      const numericKeys = keys.filter(k => k !== currentData.x_axis_column && isNumeric(data[0], k));
+      numKey = numericKeys[0] || keys.find(k => {
+        const count = data.filter(r => isNumeric(r, k)).length;
+        return count > data.length * 0.5;
       });
     }
 
-    if (!numericKey) return null;
+    if (!numKey) {
+      return [{ ...KPI_THEMES[4], label: 'Records', value: data.length.toLocaleString(), sub: 'Total rows' }];
+    }
 
-    return (
-      <div className="flex flex-wrap items-center justify-between w-full gap-4">
-        <div className="premium-metric-card group">
-          <div className="metric-icon-box bg-indigo-500/10 text-indigo-500 border border-indigo-500/10">
-            <Activity size={18} />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] font-bold tracking-widest   text-[var(--text-tertiary)] mb-1"> {numericKey}</span>
-            <div className="flex items-baseline gap-2">
-              <strong className="text-xl font-black text-[var(--text-primary)] tracking-tight">{total.toLocaleString()}</strong>
-            </div>
-          </div>
-        </div>
+    const vals = data.map(r => parseNum(r[numKey])).filter(v => !isNaN(v));
+    if (!vals.length) return null;
+    const total = vals.reduce((a, b) => a + b, 0);
+    const avg   = total / vals.length;
+    const max   = Math.max(...vals);
+    const min   = Math.min(...vals);
+    const fmt   = v => {
+      const abs = Math.abs(v);
+      if (abs >= 1e9) return `${(v/1e9).toFixed(1)}B`;
+      if (abs >= 1e6) return `${(v/1e6).toFixed(1)}M`;
+      if (abs >= 1e3) return `${(v/1e3).toFixed(1)}K`;
+      return v.toLocaleString(undefined, { maximumFractionDigits: 1 });
+    };
+    return [
+      { ...KPI_THEMES[0], label: numKey,    value: fmt(total), sub: 'Total sum' },
+      { ...KPI_THEMES[1], label: 'Average', value: fmt(avg),   sub: 'Per record' },
+      { ...KPI_THEMES[2], label: 'Peak',    value: fmt(max),   sub: 'Highest' },
+      { ...KPI_THEMES[3], label: 'Min',     value: fmt(min),   sub: 'Lowest' },
+      { ...KPI_THEMES[4], label: 'Records', value: data.length.toLocaleString(), sub: 'Total rows' },
+    ];
+  }, [currentData]);
 
-        <div className="premium-metric-card group">
-          <div className="metric-icon-box bg-purple-500/10 text-purple-500 border border-purple-500/10">
-            <Zap size={18} />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[10px] font-bold tracking-widest uppercase text-[var(--text-tertiary)] mb-1">Average Value</span>
-            <div className="flex items-baseline gap-2">
-              <strong className="text-xl font-black text-[var(--text-primary)] tracking-tight">
-                {(total / data.length).toLocaleString(undefined, { maximumFractionDigits: 1 })}
-              </strong>
-              <span className="text-[10px] font-medium text-[var(--text-tertiary)]">per record</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const chartTypes = ['bar', 'line', 'area', 'pie'];
+  const Skeleton = ({ className }) => <div className={`skeleton rounded-xl ${className}`} />;
+  const suggestedPrompts = ['Show top 10 by revenue', 'Monthly trend analysis', 'Compare categories', 'Distribution breakdown'];
 
   return (
     <div className="dashboard-wrapper">
+
       <button className="mobile-assistant-toggle" onClick={() => setIsSidebarOpen(true)}>
         <Sparkles size={18} />
       </button>
 
       <main className="dashboard-main flex flex-col min-h-0">
+
+        {/* ── Topbar ── */}
         <header className="topbar-shell">
-          
-          {/* 1. Page Title & Workspace Dropdown */}
-         <WorkspaceDropdown />
+          <WorkspaceDropdown />
 
-
-          {/* 2. Search Bar (Mobile Only) */}
-          <div className="searchbar sm:!hidden" style={{ flex: 1, position: 'relative' }}>
-            {isLoading ? <span className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} /> : <Search size={18} className="searchbar__icon" />}
+          <div className="searchbar" style={{ flex: 1, position: 'relative' }}>
+            {isLoading
+              ? <span className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} />
+              : <Search size={18} className="searchbar__icon" />}
             <div className="relative flex-1 flex flex-col justify-center min-w-0">
               <input
-                ref={searchInputRef}
-                type="text"
+                ref={searchInputRef} type="text"
                 className="searchbar__input w-full pr-8"
-                value={prompt}
-                onChange={e => setPrompt(e.target.value)}
-                onKeyDown={handleKeyPress}
-                placeholder={activeDataset ? 'Ask anything about your data...' : 'Select a dataset to begin...'}
+                value={prompt} onChange={e => setPrompt(e.target.value)} onKeyDown={handleKeyPress}
+                placeholder={activeDataset ? 'Ask anything about your data… (Ctrl+K)' : 'Select a dataset to begin...'}
                 disabled={isLoading || !activeDataset}
               />
-              {prompt.trim() !== '' && (
-                <button
-                  type="button"
-                  onClick={() => { setPrompt(''); searchInputRef.current?.focus(); }}
-                  className="absolute right-2 p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors rounded-full"
-                >
+              {prompt.trim() && (
+                <button type="button" onClick={() => { setPrompt(''); searchInputRef.current?.focus(); }}
+                  className="absolute right-2 p-1 text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors rounded-full">
                   <X size={15} />
                 </button>
               )}
             </div>
-            <span style={{ display: 'none', padding: '4px 8px', fontSize: '11px', fontWeight: 600, color: 'var(--text-tertiary)', background: 'var(--surface-hover)', borderRadius: '6px', border: '1px solid var(--border-color)' }} className="sm:inline-block">
-              Ctrl K
-            </span>
             <button className="searchbar__btn" onClick={() => handleSubmit()} disabled={isLoading || !prompt.trim() || !activeDataset}>
-              <Sparkles size={14} />
-              <span style={{ display: 'none' }} className="sm:inline">Generate</span>
+              <Sparkles size={14} /><span>Ask</span>
+            </button>
+          </div>
+
+          <div className="lm-topbar-right">
+
+            <button className={`lm-ai-toggle ${isSidebarOpen ? 'active' : ''}`} onClick={() => setIsSidebarOpen(o => !o)}>
+              {isSidebarOpen
+                ? <><ChevronRight size={14}/><span>Close AI</span></>
+                : <><Sparkles size={14}/><span>AI Chat</span></>
+              }
             </button>
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto px-3 sm:px-6 lg:px-8 py-6 space-y-8">
-          {isLoading && (
-            <div className="space-y-4 animate-fade-in">
-              <Skeleton className="h-7 w-1/3" />
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <Skeleton className="h-24" />
-                <Skeleton className="h-24 sm:col-span-2" />
-              </div>
-              <Skeleton className="h-80" />
-            </div>
-          )}
+        {/* ── Body row ── */}
+        <div className="lm-body-row">
 
-          {!isLoading && currentData && (
-            <div className="animate-slide-up pb-8 pl-1 sm:pl-2 xl:pl-4">
-              <div className="flex flex-col min-w-0">
-                <div className="flex flex-col mb-6">
-                   <div className="w-full">
-                      {renderKPIsHorizontal(currentData.data, currentData.x_axis_column, currentData.y_axis_column)}
-                   </div>
+          {/* Content column */}
+          <div className="lm-content-col">
+
+            {isLoading && (
+              <div className="space-y-4 animate-fade-in" style={{ paddingTop: 20 }}>
+                <div className="lm-kpi-row">
+                  {[...Array(5)].map((_, i) => <div key={i} className="skeleton rounded-xl" style={{ height: 82 }} />)}
                 </div>
+                <Skeleton className="h-12" />
+                <Skeleton className="h-80" />
+              </div>
+            )}
 
-                <div className="chart-panel-container flex-1 flex flex-col m-0 shadow-md">
+            {!isLoading && currentData && (
+              <div className="lm-data-view animate-slide-up">
+
+                {/* KPI Row */}
+                {kpiStats && (
+                  <div className="lm-kpi-row">
+                    {kpiStats.map((k, i) => <KpiCard key={i} theme={k} label={k.label} value={k.value} sub={k.sub} />)}
+                  </div>
+                )}
+
+                {/* Chart panel */}
+                <div className={`chart-panel-container ${isChartFullscreen ? 'lm-fullscreen' : ''}`}>
                   <div className="chart-panel-header">
                     <div className="chart-panel-title">
-                      <Activity size={18} className="title-icon" />
-                      <h2>Data Visualization</h2>
+                      <BarChart2 size={16} className="title-icon" />
+                      <h2>Visualization</h2>
+                      {currentData.chart_type && (
+                        <span className="lm-chart-badge">{chartTypeOverride || currentData.chart_type}</span>
+                      )}
                     </div>
 
                     <div className="chart-panel-actions">
                       <div className="segmented-control">
-                        <button className={`seg-btn ${viewMode === 'table' ? 'active' : ''}`} onClick={() => setViewMode('table')}>
-                          <ListFilter size={14} /> <span>Table</span>
-                        </button>
                         <button className={`seg-btn ${viewMode === 'chart' ? 'active' : ''}`} onClick={() => setViewMode('chart')}>
-                          <PieChart size={14} /> <span>Chart</span>
+                          <BarChart3 size={13}/><span>Chart</span>
+                        </button>
+                        <button className={`seg-btn ${viewMode === 'table' ? 'active' : ''}`} onClick={() => setViewMode('table')}>
+                          <ListFilter size={13}/><span>Table</span>
                         </button>
                       </div>
-
-                      {viewMode === 'chart' && (
-                        <div className="segmented-control">
-                          {chartTypes.map(ct => (
-                            <button key={ct} className={`seg-btn ${(chartTypeOverride || currentData.chart_type) === ct ? 'active' : ''}`} onClick={() => setChartTypeOverride(ct)}>
-                              <span style={{ textTransform: 'capitalize' }}>{ct}</span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
 
                       <div className="divider-vert" />
 
-                      <div className="segmented-control hidden sm:flex">
-                        {['5', '10', 'All'].map(limit => (
-                          <button key={limit} className={`seg-btn ${dataSlicerLimit === limit ? 'active' : ''}`} onClick={() => setDataSlicerLimit(limit)}>
-                            <span>Top {limit}</span>
-                          </button>
-                        ))}
-                      </div>
+                      {viewMode === 'chart' && (
+                        <ChartTypeDropdown
+                          value={chartTypeOverride || currentData.chart_type}
+                          onChange={setChartTypeOverride}
+                          isDark={isDark}
+                        />
+                      )}
+                      <DataLimitDropdown value={dataSlicerLimit} onChange={setDataSlicerLimit} isDark={isDark} />
 
-                      <div className="divider-vert hidden sm:block" />
+                      <div className="divider-vert" />
 
-                      <button className={`action-btn ${showSQL ? 'active' : ''}`} onClick={() => setShowSQL(!showSQL)} title="View SQL">
-                        <Zap size={15} /> <span className="action-btn-text">SQL</span>
+                      <button className={`action-btn ${showSQL ? 'active' : ''}`} onClick={() => setShowSQL(!showSQL)}>
+                        <Database size={14}/><span className="action-btn-text">SQL</span>
                       </button>
-
                       <button className="action-btn icon-only" onClick={() => exportAsCSV(currentData.data, 'lumina_export')} title="Export CSV">
-                        <Download size={15} />
+                        <Download size={14}/>
                       </button>
                       <button className="action-btn icon-only" onClick={() => exportAsPNG('main-chart-export', 'lumina_insight')} title="Export PNG">
-                        <ImageIcon size={15} />
+                        <ImageIcon size={14}/>
                       </button>
+
+                      <div className="divider-vert" />
 
                       <button onClick={handlePinChart} className={`primary-btn ${pinState !== 'idle' ? pinState : ''}`}>
-                        <LayoutDashboard size={14} />
+                        <Pin size={13}/>
                         <span className="action-btn-text">
-                          {pinState === 'success' ? 'Pinned!' : pinState === 'duplicate' ? 'Saved' : 'Pin to Board'}
+                          {pinState === 'success' ? 'Pinned!' : pinState === 'duplicate' ? 'Saved' : 'Pin'}
                         </span>
-                      </button>
-
-                      <button
-                        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                        className={`action-btn ${isSidebarOpen ? 'active' : ''}`}
-                        style={isSidebarOpen ? { background: 'var(--accent-blue)', color: 'white' } : { background: 'var(--accent-light)', borderColor: 'var(--accent-blue)', color: 'var(--accent-blue)' }}
-                      >
-                        <MessageSquare size={14} />
-                        <span className="action-btn-text">{isSidebarOpen ? 'Close Chat' : 'Open Chat'}</span>
                       </button>
                     </div>
                   </div>
 
                   {showSQL && (
-
                     <div className="sql-viewer-pro">
                       <div className="sql-label-pro"><Database size={12}/> Executed PostgreSQL Query</div>
                       <code>{currentData.sql_used}</code>
                     </div>
                   )}
 
-                  <div id="main-chart-export" className="chart-content-area flex flex-col gap-6 pt-6">
-                    {currentData.explanation && (
-                      <div className="animate-fade-in bg-[var(--surface-hover)] border border-[var(--border-color)] rounded-xl p-4 sm:p-5 relative overflow-hidden group">
-                        <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500" />
-                        <div className="flex items-start gap-4">
-                          <div className="w-8 h-8">
-                          </div>
-                          <div className="flex-1 space-y-1">
-                            <div className="flex items-center justify-between">
-                              <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-tertiary)]">Summary</span>
-                            </div>
-                            <p className="text-sm leading-relaxed text-[var(--text-secondary)] font-medium m-0 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-                              {currentData.explanation}
-                            </p>
-                          </div>
-                        </div>
+                  {/* AI Summary — sits between header and chart, always visible */}
+                  {currentData.explanation && (
+                    <div className="lm-summary-bar animate-fade-in">
+                      <div className="lm-summary-accent" />
+                      <div className="lm-summary-content">
+                        <span className="lm-summary-tag">AI Summary</span>
+                        <p className="lm-summary-text">{currentData.explanation}</p>
                       </div>
-                    )}
+                    </div>
+                  )}
 
+                  <div id="main-chart-export" className="chart-content-area">
                     {viewMode === 'table' ? (
                       <div className="pro-table-wrapper">
                         <table className="pro-table">
                           <thead>
-                            <tr>
-                              {slicedConfig?.data?.[0] && Object.keys(slicedConfig.data[0]).map(k => (
-                                <th key={k}>{k}</th>
-                              ))}
-                            </tr>
+                            <tr>{slicedConfig?.data?.[0] && Object.keys(slicedConfig.data[0]).map(k => <th key={k}>{k}</th>)}</tr>
                           </thead>
                           <tbody>
                             {slicedConfig?.data?.slice(0, 100).map((row, i) => (
-                              <tr key={i}>
-                                {Object.values(row).map((v, j) => (
-                                  <td key={j}>{String(v ?? '')}</td>
-                                ))}
-                              </tr>
+                              <tr key={i}>{Object.values(row).map((v, j) => <td key={j}>{String(v ?? '')}</td>)}</tr>
                             ))}
                           </tbody>
                         </table>
                       </div>
                     ) : (
-                      <div className="pro-chart-wrapper" style={{ width: '100%', height: 600, minHeight: 500 }}>
+                      <div className="pro-chart-wrapper">
                         <MemoizedChart config={slicedConfig} overrideChartType={chartTypeOverride} />
                       </div>
                     )}
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-
-          {!isLoading && !currentData && (
-            <>
-              <div className="flex sm:hidden flex-col items-center justify-center text-center px-6 animate-fade-in" style={{ minHeight: '45vh' }}>
-                <Search size={32} className="mb-4 opacity-20" style={{ color: 'var(--text-tertiary)' }} />
-                <p className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                  Type a question about your data above to get started.
-                </p>
-              </div>
-
-              <div className="flex flex-col animate-fade-in py-4 pl-1 " style={{ minHeight: '40vh' }}>
-                <div className="hidden sm:flex flex-col items-center justify-center text-center py-8 ">
-                  <h1 className="text-3xl lg:text-4xl font-black mb-3 leading-tight tracking-tight">
-                    Lumina <span className="gradient-text">Conversational BI</span>
-                  </h1>
-                  <p className="text-base text-[var(--text-secondary)] max-w-md mb-10 leading-relaxed">
-                    Ask anything about your data — trends, breakdowns, comparisons — and let AI render it instantly.
-                  </p>
-
-                  <button 
-            className="primary-btn px-8 py-4 text-lg rounded-2xl flex items-center gap-3 hover:scale-105 transition-transform"
-            onClick={() => setIsSidebarOpen(true)}
-          >
-            <Sparkles size={20} />
-            Start Conversation with AI
-          </button>
+            {!isLoading && !currentData && (
+              <>
+                <div className="flex sm:hidden flex-col items-center justify-center text-center px-6 animate-fade-in" style={{ minHeight: '45vh' }}>
+                  <Search size={32} className="mb-4 opacity-20" style={{ color: 'var(--text-tertiary)' }} />
+                  <p className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>Type a question about your data above.</p>
                 </div>
-              </div>
-            </>
-          )}
-
-          {pinnedCharts.length > 0 && !isLoading && (
-            <div className="exec-dashboard-section animate-slide-up">
-              <div className="exec-dashboard-header">
-                <div className="exec-dashboard-title-group">
-                  <div>
-                    <h2 className="exec-dashboard-title">Executive Dashboard</h2>
-                    <p className="exec-dashboard-sub">
-                      <span className="">{pinnedCharts.length}</span>{' '}insight{pinnedCharts.length !== 1 ? 's' : ''} · drag cards to reorder
+                <div className="flex flex-col animate-fade-in py-4 pl-1" style={{ minHeight: '40vh' }}>
+                  <div className="hidden sm:flex flex-col items-center justify-center text-center py-8">
+                    <h1 className="text-3xl lg:text-4xl font-black mb-3 leading-tight tracking-tight">
+                      Lumina <span className="gradient-text">Conversational BI</span>
+                    </h1>
+                    <p className="text-base max-w-md mb-8 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                      Ask anything about your data — trends, breakdowns, comparisons — AI renders it instantly.
                     </p>
+                    <div style={{ display:'flex', flexWrap:'wrap', gap:10, justifyContent:'center', maxWidth:480 }}>
+                      {suggestedPrompts.map((s, i) => (
+                        <button key={i} className="lm-suggestion-chip" onClick={() => handleSubmit(s)}>
+                          <Sparkles size={11}/>{s}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={async () => { setIsExportingPDF(true); try { await generatePDFReport(pinnedCharts, activeDataset?.name || 'Report'); } finally { setIsExportingPDF(false); } }}
-                    disabled={isExportingPDF}
-                    className="exec-pdf-btn"
-                  >
-                    {isExportingPDF ? <><span className="spinner" style={{ width: 13, height: 13, borderWidth: 2 }} /> Generating…</> : <><FileText size={14} /> Export PDF</>}
-                  </button>
-                  <button 
-                    onClick={handleAnalyticsClick}
-                    className="exec-pdf-btn"
-                    style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.1))', borderColor: 'rgba(139,92,246,0.3)', color: '#8b5cf6' }}
-                  >
-                    <Sparkles size={14} /> Generate Professional Board
-                  </button>
+              </>
+            )}
 
+            {pinnedCharts.length > 0 && !isLoading && (
+              <div className="exec-dashboard-section animate-slide-up">
+                <div className="exec-dashboard-header">
+                  <div className="exec-dashboard-title-group">
+                    <div>
+                      <h2 className="exec-dashboard-title">Executive Board</h2>
+                      <p className="exec-dashboard-sub">{pinnedCharts.length} insight{pinnedCharts.length !== 1 ? 's' : ''} · drag to reorder</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={async () => { setIsExportingPDF(true); try { await generatePDFReport(pinnedCharts, activeDataset?.name || 'Report'); } finally { setIsExportingPDF(false); } }}
+                      disabled={isExportingPDF} className="exec-pdf-btn">
+                      {isExportingPDF ? <><span className="spinner" style={{ width:13, height:13, borderWidth:2 }}/> Generating…</> : <><FileText size={14}/> Export PDF</>}
+                    </button>
+                    <button onClick={handleAnalyticsClick} className="exec-pdf-btn"
+                      style={{ background:'linear-gradient(135deg,rgba(99,102,241,.1),rgba(139,92,246,.1))', borderColor:'rgba(139,92,246,.3)', color:'#8b5cf6' }}>
+                      <Sparkles size={14}/> Professional Board
+                    </button>
+                  </div>
+                </div>
+                <div className="pinned-cards-grid">
+                  {pinnedCharts.map((chart, index) => {
+                    const typeColors = {
+                      bar:  { accent:'#6366f1', glow:'rgba(99,102,241,0.15)',  label:'BAR' },
+                      line: { accent:'#22d3ee', glow:'rgba(34,211,238,0.15)',  label:'LINE' },
+                      area: { accent:'#a78bfa', glow:'rgba(167,139,250,0.15)', label:'AREA' },
+                      pie:  { accent:'#f472b6', glow:'rgba(244,114,182,0.15)', label:'PIE' },
+                    };
+                    const tc = typeColors[chart.chart_type] || typeColors.bar;
+                    return (
+                      <div key={chart.id} className="pinned-card"
+                        style={{ '--card-accent':tc.accent, '--card-glow':tc.glow }}
+                        draggable
+                        onDragStart={e => { dragItem.current=index; e.currentTarget.classList.add('dragging'); }}
+                        onDragEnter={() => { dragOverItem.current=index; }}
+                        onDragEnd={e => { e.currentTarget.classList.remove('dragging'); handleSort(); }}
+                        onDragOver={e => e.preventDefault()}>
+                        <div className="pinned-card__drag-strip">
+                          <GripHorizontal size={13}/>
+                          <span className="pinned-card__type-badge" style={{ color:tc.accent, background:tc.glow }}>{tc.label}</span>
+                        </div>
+                        <p className="pinned-card__summary">{chart.explanation}</p>
+                        <div id={`pinned-chart-${chart.id}`} className="pinned-card__chart">
+                          <MemoizedChart config={chart} compact={true}/>
+                        </div>
+                        <div className="pinned-card__actions">
+                          <button className="pca-btn" onClick={() => exportAsCSV(chart.data, `pinned_${chart.id}`)}><Download size={11}/> CSV</button>
+                          <button className="pca-btn" onClick={() => exportAsPNG(`pinned-chart-${chart.id}`, `pinned_${chart.id}`)}><ImageIcon size={11}/> PNG</button>
+                          <button className="pca-btn pca-btn--danger" onClick={() => handleUnpinChart(chart.id)}><Trash2 size={11}/> Remove</button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
+            )}
 
-              <div className="pinned-cards-grid">
-                {pinnedCharts.map((chart, index) => {
-                  const typeColors = {
-                    bar:   { accent: '#6366f1', glow: 'rgba(99,102,241,0.15)',  label: 'BAR' },
-                    line:  { accent: '#22d3ee', glow: 'rgba(34,211,238,0.15)',  label: 'LINE' },
-                    area:  { accent: '#a78bfa', glow: 'rgba(167,139,250,0.15)', label: 'AREA' },
-                    pie:   { accent: '#f472b6', glow: 'rgba(244,114,182,0.15)', label: 'PIE' },
-                  };
-                  const tc = typeColors[chart.chart_type] || typeColors.bar;
+            <div style={{ height: 80 }} />
+          </div>
 
-                  return (
-                    <div
-                      key={chart.id}
-                      className="pinned-card"
-                      style={{ '--card-accent': tc.accent, '--card-glow': tc.glow }}
-                      draggable
-                      onDragStart={e => { dragItem.current = index; e.currentTarget.classList.add('dragging'); }}
-                      onDragEnter={() => dragOverItem.current = index}
-                      onDragEnd={e => { e.currentTarget.classList.remove('dragging'); handleSort(); }}
-                      onDragOver={e => e.preventDefault()}
-                    >
-                      <div className="pinned-card__drag-strip">
-                        <GripHorizontal size={13} />
-                        <span className="pinned-card__type-badge" style={{ color: tc.accent, background: tc.glow }}>{tc.label}</span>
-                      </div>
-                      <p className="pinned-card__summary">{chart.explanation}</p>
-                      <div id={`pinned-chart-${chart.id}`} className="pinned-card__chart">
-                        <MemoizedChart config={chart} compact={true} />
-                      </div>
-                      <div className="pinned-card__actions">
-                        <button className="pca-btn" title="Export CSV" onClick={() => exportAsCSV(chart.data, `pinned_${chart.id}`)}>
-                          <Download size={11} /> CSV
-                        </button>
-                        <button className="pca-btn" title="Export PNG" onClick={() => exportAsPNG(`pinned-chart-${chart.id}`, `pinned_${chart.id}`)}>
-                          <ImageIcon size={11} /> PNG
-                        </button>
-                        <button className="pca-btn pca-btn--danger" title="Remove" onClick={() => handleUnpinChart(chart.id)}>
-                          <Trash2 size={11} /> Remove
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
+          {/* AI Sidebar */}
+          <aside className={`lm-ai-sidebar ${isSidebarOpen ? 'open' : ''}`} style={{ position:'relative' }}>
+            <button className="lm-sidebar-tab" onClick={() => setIsSidebarOpen(false)} title="Close AI">
+              <ChevronRight size={13}/>
+            </button>
+
+            <div className="lm-sidebar-header">
+              <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                <div className="lm-sidebar-logo"><Sparkles size={13} color="#fff"/></div>
+                <div>
+                  <div style={{ fontSize:12, fontWeight:700, color:'var(--text-primary)' }}>Lumina AI</div>
+                  <div style={{ fontSize:10, color:'var(--text-tertiary)', overflow:'hidden', textOverflow:'ellipsis', maxWidth:160, whiteSpace:'nowrap' }}>
+                    {activeDataset ? activeDataset.name : 'No dataset'}
+                  </div>
+                </div>
+              </div>
+              <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+                {history.length > 0 && (
+                  <button onClick={handleClearChat} title="Clear history"
+                    style={{ width:28, height:28, display:'flex', alignItems:'center', justifyContent:'center', background:'none', border:'none', cursor:'pointer', color:'var(--text-tertiary)', borderRadius:6 }}
+                    onMouseEnter={e => e.currentTarget.style.color='#f87171'}
+                    onMouseLeave={e => e.currentTarget.style.color='var(--text-tertiary)'}>
+                    <Trash2 size={13}/>
+                  </button>
+                )}
+                <button onClick={() => setIsSidebarOpen(false)}
+                  style={{ display:'flex', alignItems:'center', gap:4, padding:'5px 9px', borderRadius:6, background:'none', border:'none', fontFamily:'inherit', fontSize:'10.5px', fontWeight:700, textTransform:'uppercase', letterSpacing:'.05em', color:'var(--text-tertiary)', cursor:'pointer' }}
+                  onMouseEnter={e => { e.currentTarget.style.color='#f87171'; e.currentTarget.style.background='rgba(248,113,113,.1)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.color='var(--text-tertiary)'; e.currentTarget.style.background='none'; }}>
+                 
+                </button>
               </div>
             </div>
-          )}
-          <div style={{ height: '120px' }} className="sm:hidden" />
-          <div style={{ height: '64px' }} className="hidden sm:block" />
-        </div>
-      </main>
 
-      {isSidebarOpen && <div className="sidebar-backdrop" onClick={() => setIsSidebarOpen(false)} />}
-
-      <aside className={`assistant-sidebar glass-panel ${isSidebarOpen ? 'open' : ''}`}>
-        <div className="mobile-drag-handle" onClick={() => setIsSidebarOpen(false)}>
-          <div className="drag-pill" />
-        </div>
-        <div className="sidebar-header flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-indigo-500/15 flex items-center justify-center">
-              <MessageSquare size={13} className="text-indigo-400" />
-            </div>
-            <h3 className="text-sm font-bold text-[var(--text-primary)] m-0">Assistant Chat</h3>
-          </div>
-          <div className="flex items-center gap-1.5">
-            {history.length > 0 && (
-              <button onClick={handleClearChat} title="Clear history" className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--text-tertiary)] hover:text-red-400 hover:bg-red-400/10 transition-all">
-                <Trash2 size={13} />
-              </button>
-            )}
-            <button onClick={() => setIsSidebarOpen(false)} title="Close Assistant" className="close-sidebar-btn px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-[var(--text-tertiary)] hover:text-red-400 hover:bg-red-400/10 transition-all font-bold text-[11px] uppercase tracking-wider">
-              <X size={14} /> <span>Close</span>
-            </button>
-          </div>
-        </div>
-
-        <div className="chat-history" ref={chatScrollRef}>
-          {history.length === 0 && !isSideLoading ? (
-            <div className="empty-chat">
-              <Sparkles size={22} className="opacity-20 mb-3" />
-              <p className="text-xs text-[var(--text-tertiary)] text-center leading-relaxed">
-                Ask a question in the search bar above.<br />The conversation will appear here.
-              </p>
-            </div>
-          ) : (
-            history.map((msg, i) => {
-              const chips = msg.role === 'ai' && msg.data ? (msg.data.suggested_follow_ups?.length > 0 ? msg.data.suggested_follow_ups : ['Tell me more', 'Key takeaways?']) : [];
-              return (
-                <div key={i} className={`chat-bubble ${msg.role === 'user' ? 'user-bubble' : 'ai-bubble'} relative group`}>
-                  <button onClick={() => handleRemoveMessage(i)} className="absolute top-2 right-2 w-4 h-4 flex items-center justify-center rounded-lg opacity-0 hover:opacity-100 bg-transparent border-none cursor-pointer text-[var(--text-tertiary)] hover:text-red-400 hover:bg-red-400/10 transition-all" title="Remove">
-                    <X size={10} />
-                  </button>
-                  <div className="bubble-content text-xs leading-relaxed">{msg.text}</div>
-                  {chips.length > 0 && (
-                    <div className="flex flex-col gap-1.5 mt-3 pt-3 border-t border-dashed border-[var(--border-color)]">
-                      <span className="text-[9px] font-black uppercase tracking-wider text-[var(--text-tertiary)]">Follow-ups</span>
-                      {chips.map((f, idx) => (
-                        <button key={idx} onClick={() => handleSubmit(f, true)} className="chat-chip-btn">
-                          <Sparkles size={9} /> <span className="text-xs leading-snug">{f}</span>
+            <div className="chat-history lm-chat-messages" ref={chatScrollRef}>
+              {history.length === 0 && !isSideLoading ? (
+                <div className="empty-chat">
+                  <Sparkles size={22} className="opacity-20 mb-3"/>
+                  <p style={{ fontSize:12, color:'var(--text-tertiary)', textAlign:'center', lineHeight:1.65 }}>
+                    Ask a question in the search bar.<br/>Conversation appears here.
+                  </p>
+                  {activeDataset && (
+                    <div style={{ display:'flex', flexDirection:'column', gap:6, marginTop:12, width:'100%' }}>
+                      {suggestedPrompts.slice(0,3).map((s,i) => (
+                        <button key={i} className="chat-chip-btn" onClick={() => handleSubmit(s, true)}>
+                          <Sparkles size={9}/><span className="text-xs">{s}</span>
                         </button>
                       ))}
                     </div>
                   )}
                 </div>
-              );
-            })
-          )}
-          {isSideLoading && (
-            <div className="chat-bubble ai-bubble flex items-center gap-2">
-                <span className="spinner" style={{ width: 11, height: 11, borderWidth: 2 }} />
-                <span className="text-xs text-[var(--text-secondary)]">Analyzing…</span>
+              ) : (
+                history.map((msg, i) => {
+                  const chips = msg.role === 'ai' && msg.data
+                    ? (msg.data.suggested_follow_ups?.length > 0 ? msg.data.suggested_follow_ups : ['Tell me more', 'Key takeaways?'])
+                    : [];
+                  return (
+                    <div key={i} className={`chat-bubble ${msg.role === 'user' ? 'user-bubble' : 'ai-bubble'} relative group`}>
+                      <button onClick={() => handleRemoveMessage(i)} className="lm-delete-msg"
+                        style={{ position:'absolute', top:6, right:6, width:18, height:18, display:'flex', alignItems:'center', justifyContent:'center', background:'none', border:'none', cursor:'pointer', color:'var(--text-tertiary)', borderRadius:4, opacity:0, transition:'opacity .12s' }}>
+                        <X size={9}/>
+                      </button>
+                      <div className="bubble-content text-xs leading-relaxed">{msg.text}</div>
+                      {chips.length > 0 && (
+                        <div style={{ display:'flex', flexDirection:'column', gap:6, marginTop:10, paddingTop:10, borderTop:'1px dashed var(--border-color)' }}>
+                          <span style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:'.08em', color:'var(--text-tertiary)' }}>Follow-ups</span>
+                          {chips.map((f,idx) => (
+                            <button key={idx} onClick={() => handleSubmit(f, true)} className="chat-chip-btn">
+                              <Sparkles size={9}/><span className="text-xs leading-snug">{f}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+              {isSideLoading && (
+                <div className="chat-bubble ai-bubble flex items-center gap-2">
+                  <span className="spinner" style={{ width:11, height:11, borderWidth:2 }}/>
+                  <span className="text-xs" style={{ color:'var(--text-secondary)' }}>Analyzing…</span>
+                </div>
+              )}
+              <div ref={chatEndRef}/>
             </div>
-          )}
-          <div ref={chatEndRef} />
-        </div>
 
-        <div className="sidebar-input-area">
-          <div className="side-search-container glass-panel">
-            <input type="text" value={sidePrompt} onChange={e => setSidePrompt(e.target.value)} onKeyDown={handleSideKeyPress} placeholder={history.length === 0 ? "Ask anything about your data..." : "Ask follow-up..."} disabled={isLoading || isSideLoading || !activeDataset} className="flex-1 bg-transparent border-none outline-none text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]" />
-            <button onClick={() => handleSubmit(sidePrompt, true)} disabled={isLoading || isSideLoading || !sidePrompt.trim() || !activeDataset} className="side-send-btn">
-              <Send size={15} />
-            </button>
-          </div>
+            <div className="sidebar-input-area">
+              <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:10 }}>
+                {['Trends', 'Top performer', 'Summarize'].map(s => (
+                  <button key={s} className="lm-quick-chip" onClick={() => setSidePrompt(s)}>{s}</button>
+                ))}
+              </div>
+              <div className="side-search-container glass-panel">
+                <input type="text" value={sidePrompt} onChange={e => setSidePrompt(e.target.value)}
+                  onKeyDown={handleSideKeyPress}
+                  placeholder={history.length === 0 ? 'Ask anything…' : 'Ask a follow-up…'}
+                  disabled={isLoading || isSideLoading || !activeDataset}
+                  className="flex-1 bg-transparent border-none outline-none text-sm"
+                  style={{ color:'var(--text-primary)' }}
+                />
+                <button onClick={() => handleSubmit(sidePrompt, true)}
+                  disabled={isLoading || isSideLoading || !sidePrompt.trim() || !activeDataset}
+                  className="side-send-btn">
+                  <Send size={15}/>
+                </button>
+              </div>
+            </div>
+          </aside>
+
         </div>
-      </aside>
+      </main>
+
+      {isSidebarOpen && (
+        <div className="sidebar-backdrop" onClick={() => setIsSidebarOpen(false)}
+          style={{ display:'none' }} />
+      )}
 
       {showPreview && <DatasetPreview dataset={activeDataset} onClose={() => setShowPreview(false)} />}
     </div>
