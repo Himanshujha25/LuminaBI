@@ -1,398 +1,514 @@
-/* ─────────────────────────────────────────
-   DynamicDashboard.css  —  Fixed & Clean
-   - Removed ALL duplicate rule blocks
-   - Removed backdrop-filter from panels (causes blink on text select)
-   - Replaced transform:translateY on hover with box-shadow only
-   - will-change: transform on overlay prevents repaints
-───────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────
+   DynamicDashboard.css  —  Dark-first redesign matching Login aesthetic
+   Deep dark bg (#0d0f1a), indigo-violet accents, DM Sans, grid bg
+   Full responsive + new features
+───────────────────────────────────────────────────────────────── */
 
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap');
 
 /* ── Root tokens ─────────────────────────────────────────────────────────── */
 .dd-root {
-  /* Light */
-  --dd-bg:        #f4f4f2;
-  --dd-surface:   #ffffff;
-  --dd-border:    #e4e4e2;
-  --dd-border-2:  #d0d0ce;
-  --dd-text-1:    #111110;
-  --dd-text-2:    #6a6a66;
-  --dd-text-3:    #a4a09a;
-  --dd-accent:    #1a1a1a;
-  --dd-blue:      #4f46e5;
-  --dd-radius:    9px;
-  --dd-header-h:  52px;
+  /* DARK (default — mirrors Login page) */
+  --dd-page:      #0d0f1a;
+  --dd-bg:        #0d0f1a;
+  --dd-surface:   #13161f;
+  --dd-surface-2: #1a1d28;
+  --dd-border:    rgba(255,255,255,.07);
+  --dd-border-2:  rgba(255,255,255,.13);
+  --dd-text-1:    #e8eaf5;
+  --dd-text-2:    rgba(232,234,245,.55);
+  --dd-text-3:    rgba(232,234,245,.28);
+  --dd-accent:    #e8eaf5;
+  --dd-blue:      #4f52e8;
+  --dd-violet:    #7c5cf6;
+  --dd-blue-glow: rgba(79,82,232,.25);
+  --dd-gradient:  linear-gradient(135deg, #4f52e8, #7c5cf6);
+  --dd-radius:    10px;
+  --dd-radius-sm: 7px;
+  --dd-header-h:  54px;
 
-  background:  var(--dd-bg);
-  color:       var(--dd-text-1);
-  font-family: 'DM Sans', sans-serif;
-  height:      100vh;
-  width:       100vw;
-  display:     flex;
+  background:     var(--dd-bg);
+  color:          var(--dd-text-1);
+  font-family:    'DM Sans', sans-serif;
+  height:         100vh;
+  width:          100vw;
+  display:        flex;
   flex-direction: column;
-  overflow:    hidden;
-  /* GPU-composite the whole root so child repaints stay isolated */
-  isolation:   isolate;
+  overflow:       hidden;
+  isolation:      isolate;
+  position:       relative;
 }
 
-.dd-root.dark,
-[data-theme="dark"] .dd-root {
-  --dd-bg:      #0d0d0c;
-  --dd-surface: #141413;
-  --dd-border:  #252523;
-  --dd-border-2:#333331;
-  --dd-text-1:  #edede9;
-  --dd-text-2:  #86867f;
-  --dd-text-3:  #525250;
-  --dd-accent:  #edede9;
-}
-.dd-panel-actions {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  flex-shrink: 0;
-  opacity: 0.25; /* Makes them subtly visible by default */
-  transition: opacity 0.15s;
+/* ── Subtle grid background (same technique as Login) ─────────────────────── */
+.dd-root::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255,255,255,.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.022) 1px, transparent 1px);
+  background-size: 52px 52px;
+  mask-image: radial-gradient(ellipse 110% 80% at 50% 0%, black 30%, transparent 100%);
 }
 
-.dd-panel:hover .dd-panel-actions { 
-  opacity: 1; /* Makes them fully visible when the user hovers over the panel */
+/* ── LIGHT MODE override ──────────────────────────────────────────────────── */
+.dd-root.light {
+  --dd-page:      #f0f1f8;
+  --dd-bg:        #f0f1f8;
+  --dd-surface:   #ffffff;
+  --dd-surface-2: #f5f6fc;
+  --dd-border:    rgba(79,82,232,.12);
+  --dd-border-2:  rgba(79,82,232,.22);
+  --dd-text-1:    #12142a;
+  --dd-text-2:    #5a5e80;
+  --dd-text-3:    #9a9eb8;
+  --dd-accent:    #12142a;
+  --dd-blue-glow: rgba(79,82,232,.15);
 }
+.dd-root.light::before {
+  background-image:
+    linear-gradient(rgba(79,82,232,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(79,82,232,.04) 1px, transparent 1px);
+}
+
+/* Legacy dark class compatibility */
+.dd-root.dark { /* already the default, no overrides needed */ }
+
 /* ── Header ─────────────────────────────────────────────────────────────── */
 .dd-header {
-  height: var(--dd-header-h);
-  background: var(--dd-surface);
+  height:        var(--dd-header-h);
+  background:    rgba(13,15,26,.88);
   border-bottom: 1px solid var(--dd-border);
-  display: flex;
-  align-items: center;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  display:       flex;
+  align-items:   center;
   justify-content: space-between;
-  padding: 0 20px;
+  padding:       0 20px;
+  flex-shrink:   0;
+  z-index:       100;
+  gap:           10px;
+  position:      relative;
+}
+.dd-root.light .dd-header {
+  background: rgba(240,241,248,.9);
+}
+
+/* Logo mark in header */
+.dd-logo-mark {
+  width: 28px; height: 28px;
+  border-radius: 7px;
+  background: var(--dd-gradient);
+  display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
-  z-index: 100;
-  gap: 12px;
 }
 
 /* ── Back button ─────────────────────────────────────────────────────────── */
 .dd-back-btn {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  background: none;
-  border: 1px solid var(--dd-border);
-  border-radius: var(--dd-radius);
-  color: var(--dd-text-2);
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  padding: 5px 11px;
-  transition: background 0.12s, color 0.12s, border-color 0.12s;
-  white-space: nowrap;
+  display:       flex;
+  align-items:   center;
+  gap:           7px;
+  background:    rgba(255,255,255,.05);
+  border:        1px solid var(--dd-border);
+  border-radius: var(--dd-radius-sm);
+  color:         var(--dd-text-2);
+  font-family:   inherit;
+  font-size:     12px;
+  font-weight:   500;
+  cursor:        pointer;
+  padding:       5px 11px;
+  transition:    background .15s, color .15s, border-color .15s;
+  white-space:   nowrap;
 }
 .dd-back-btn:hover {
-  background: var(--dd-border);
-  color: var(--dd-text-1);
-  border-color: var(--dd-border-2);
+  background:    rgba(255,255,255,.09);
+  color:         var(--dd-text-1);
+  border-color:  var(--dd-border-2);
 }
+.dd-root.light .dd-back-btn { background: rgba(79,82,232,.06); }
+.dd-root.light .dd-back-btn:hover { background: rgba(79,82,232,.12); }
 
 /* ── Filter bar ──────────────────────────────────────────────────────────── */
 .dd-filter-bar {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  background: var(--dd-bg);
-  border: 1px solid var(--dd-border);
-  border-radius: var(--dd-radius);
-  padding: 3px;
+  display:       flex;
+  align-items:   center;
+  gap:           2px;
+  background:    rgba(255,255,255,.04);
+  border:        1px solid var(--dd-border);
+  border-radius: var(--dd-radius-sm);
+  padding:       3px;
 }
+.dd-root.light .dd-filter-bar { background: rgba(79,82,232,.05); }
 
 .dd-tool-btn {
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  border: none;
-  background: none;
-  color: var(--dd-text-3);
-  cursor: pointer;
-  transition: color 0.12s, background 0.12s;
+  width:         28px; height: 28px;
+  display:       flex;
+  align-items:   center; justify-content: center;
+  border-radius: 5px;
+  border:        none;
+  background:    none;
+  color:         var(--dd-text-3);
+  cursor:        pointer;
+  transition:    color .12s, background .12s;
 }
-.dd-tool-btn:hover  { color: var(--dd-text-1); background: var(--dd-surface); }
-.dd-tool-btn.active { color: var(--dd-blue);   background: var(--dd-surface); }
+.dd-tool-btn:hover  { color: var(--dd-text-1); background: rgba(255,255,255,.07); }
+.dd-tool-btn.active {
+  color:         #818cf8;
+  background:    rgba(79,82,232,.18);
+}
 
 /* ── Layout dropdown ─────────────────────────────────────────────────────── */
 .dd-dropdown {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  background: var(--dd-surface);
-  border: 1px solid var(--dd-border);
+  position:      absolute;
+  top:           calc(100% + 6px);
+  left:          0;
+  background:    var(--dd-surface);
+  border:        1px solid var(--dd-border-2);
   border-radius: var(--dd-radius);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-  z-index: 200;
-  min-width: 170px;
-  overflow: hidden;
+  box-shadow:    0 12px 40px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.04);
+  z-index:       200;
+  min-width:     180px;
+  overflow:      hidden;
+  animation:     ddDropIn .14s ease both;
 }
-.dd-root.dark .dd-dropdown,
-[data-theme="dark"] .dd-root .dd-dropdown {
-  box-shadow: 0 8px 28px rgba(0,0,0,0.5);
+.dd-root.light .dd-dropdown {
+  box-shadow: 0 8px 32px rgba(79,82,232,.12), 0 0 0 1px rgba(79,82,232,.08);
 }
+
+@keyframes ddDropIn {
+  from { opacity: 0; transform: translateY(-6px) scale(.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 .dd-dropdown button {
-  width: 100%;
-  text-align: left;
-  padding: 9px 14px;
+  width:       100%;
+  text-align:  left;
+  padding:     9px 14px;
   font-family: inherit;
-  font-size: 12px;
+  font-size:   12.5px;
   font-weight: 500;
-  color: var(--dd-text-2);
-  background: none;
-  border: none;
-  cursor: pointer;
-  display: flex;
+  color:       var(--dd-text-2);
+  background:  none;
+  border:      none;
+  cursor:      pointer;
+  display:     flex;
   align-items: center;
-  gap: 8px;
-  transition: background 0.1s, color 0.1s;
+  gap:         9px;
+  transition:  background .1s, color .1s;
 }
-.dd-dropdown button:hover { background: var(--dd-bg); color: var(--dd-text-1); }
+.dd-dropdown button:hover {
+  background: rgba(79,82,232,.12);
+  color:      var(--dd-text-1);
+}
+.dd-dropdown-divider {
+  height: 1px;
+  background: var(--dd-border);
+  margin: 4px 0;
+}
+.dd-dropdown-section {
+  padding: 6px 14px 4px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--dd-text-3);
+}
 
 /* ── Header buttons ──────────────────────────────────────────────────────── */
 .dd-btn-primary {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  height: 30px;
-  padding: 0 13px;
-  border-radius: var(--dd-radius);
-  border: none;
-  background: var(--dd-accent);
-  color: var(--dd-bg);
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.12s;
-  white-space: nowrap;
+  display:       flex;
+  align-items:   center;
+  gap:           6px;
+  height:        30px;
+  padding:       0 13px;
+  border-radius: var(--dd-radius-sm);
+  border:        none;
+  background:    var(--dd-gradient);
+  color:         #fff;
+  font-family:   inherit;
+  font-size:     12px;
+  font-weight:   600;
+  cursor:        pointer;
+  transition:    opacity .12s, transform .1s, box-shadow .15s;
+  white-space:   nowrap;
+  box-shadow:    0 2px 12px var(--dd-blue-glow);
 }
-.dd-btn-primary:hover:not(:disabled) { opacity: 0.84; }
-.dd-btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+.dd-btn-primary:hover:not(:disabled) {
+  opacity: .88;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 18px var(--dd-blue-glow);
+}
+.dd-btn-primary:active:not(:disabled) { transform: translateY(0) scale(.97); }
+.dd-btn-primary:disabled { opacity: .4; cursor: not-allowed; }
+
+/* Override colors for specific buttons */
+.dd-btn-primary.dd-btn-orange { background: linear-gradient(135deg, #ea580c, #f97316); box-shadow: 0 2px 12px rgba(234,88,12,.3); }
+.dd-btn-primary.dd-btn-save   { background: linear-gradient(135deg, #059669, #10b981); box-shadow: 0 2px 12px rgba(5,150,105,.3); }
 
 .dd-btn-outline {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  height: 30px;
-  padding: 0 13px;
-  border-radius: var(--dd-radius);
-  border: 1px solid var(--dd-border);
-  background: var(--dd-surface);
-  color: var(--dd-text-2);
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: border-color 0.12s, color 0.12s, background 0.12s;
-  white-space: nowrap;
+  display:       flex;
+  align-items:   center;
+  gap:           6px;
+  height:        30px;
+  padding:       0 12px;
+  border-radius: var(--dd-radius-sm);
+  border:        1px solid var(--dd-border);
+  background:    rgba(255,255,255,.04);
+  color:         var(--dd-text-2);
+  font-family:   inherit;
+  font-size:     12px;
+  font-weight:   500;
+  cursor:        pointer;
+  transition:    border-color .12s, color .12s, background .12s;
+  white-space:   nowrap;
 }
 .dd-btn-outline:hover:not(:disabled) {
   border-color: var(--dd-border-2);
-  color: var(--dd-text-1);
-  background: var(--dd-bg);
+  color:        var(--dd-text-1);
+  background:   rgba(255,255,255,.08);
 }
-.dd-btn-outline:disabled { opacity: 0.4; cursor: not-allowed; }
+.dd-btn-outline:disabled { opacity: .4; cursor: not-allowed; }
+.dd-root.light .dd-btn-outline { background: rgba(79,82,232,.04); }
+.dd-root.light .dd-btn-outline:hover { background: rgba(79,82,232,.10); }
+
+/* Icon-only button */
+.dd-btn-icon {
+  width: 30px; height: 30px; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--dd-radius-sm);
+  border: 1px solid var(--dd-border);
+  background: rgba(255,255,255,.04);
+  color: var(--dd-text-2);
+  cursor: pointer;
+  transition: all .12s;
+}
+.dd-btn-icon:hover {
+  border-color: var(--dd-border-2);
+  color: var(--dd-text-1);
+  background: rgba(255,255,255,.08);
+}
+.dd-btn-icon.dd-active {
+  color: #818cf8;
+  background: rgba(79,82,232,.18);
+  border-color: rgba(79,82,232,.35);
+}
+
+/* ── Header right group ───────────────────────────────────────────────────── */
+.dd-header-right {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: nowrap;
+}
+
+/* ── Separator ────────────────────────────────────────────────────────────── */
+.dd-sep {
+  width: 1px; height: 18px;
+  background: var(--dd-border);
+  flex-shrink: 0;
+}
 
 /* ── KPI strip ───────────────────────────────────────────────────────────── */
 .dd-kpi-strip {
-  display: flex;
-  gap: 1px;
-  background: var(--dd-border);
-  border-bottom: 1px solid var(--dd-border);
-  flex-shrink: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
+  display:          flex;
+  gap:              1px;
+  background:       var(--dd-border);
+  border-bottom:    1px solid var(--dd-border);
+  flex-shrink:      0;
+  overflow-x:       auto;
+  scrollbar-width:  none;
+  position:         relative;
+  z-index:          1;
 }
 .dd-kpi-strip::-webkit-scrollbar { display: none; }
 
 .dd-kpi-item {
-  flex: 1;
-  min-width: 140px;
+  flex:       1;
+  min-width:  130px;
   background: var(--dd-surface);
-  padding: 12px 18px;
+  padding:    11px 18px;
+  position:   relative;
+  overflow:   hidden;
 }
+.dd-kpi-item::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: var(--dd-gradient);
+  opacity: 0;
+  transition: opacity .2s;
+}
+.dd-kpi-item:hover::before { opacity: 1; }
 .dd-kpi-label {
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--dd-text-3);
-  display: block;
-  margin-bottom: 4px;
+  font-size: 9px; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--dd-text-3);
+  display: block; margin-bottom: 4px;
 }
 .dd-kpi-value {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 14px; font-weight: 700;
   color: var(--dd-text-1);
-  display: flex;
-  align-items: center;
-  gap: 5px;
+  display: flex; align-items: center; gap: 6px;
+  font-family: 'DM Mono', monospace;
 }
+.dd-kpi-delta {
+  font-size: 10px; font-weight: 600;
+  padding: 2px 6px; border-radius: 4px;
+  font-family: 'DM Sans', sans-serif;
+}
+.dd-kpi-delta.up   { color: #34d399; background: rgba(52,211,153,.12); }
+.dd-kpi-delta.down { color: #f87171; background: rgba(248,113,113,.12); }
 
 /* ── Body layout ─────────────────────────────────────────────────────────── */
 .dd-body {
-  flex: 1;
-  display: flex;
+  flex:     1;
+  display:  flex;
   overflow: hidden;
+  position: relative;
+  z-index:  1;
 }
 
 .dd-canvas-area {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
+  flex:           1;
+  overflow-y:     auto;
+  padding:        16px;
   scrollbar-width: thin;
-  scrollbar-color: var(--dd-border) transparent;
+  scrollbar-color: rgba(255,255,255,.1) transparent;
 }
-
-/* ── Chart content area ──────────────────────────────────────────────────── */
-/*
-  overflow: visible lets Y-axis labels render outside the padded box.
-  The recharts/chart.js SVG needs left margin to not clip tick labels.
-*/
-.dd-panel .recharts-wrapper,
-.dd-panel canvas {
-  overflow: visible !important;
-}
-
-/* Ensure SVG inside panels can overflow for axis labels */
-.dd-panel svg {
-  overflow: visible !important;
-}
+.dd-canvas-area::-webkit-scrollbar { width: 5px; }
+.dd-canvas-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 3px; }
 
 /* ── Panel cards ─────────────────────────────────────────────────────────── */
-/*
-  KEY FIX: No backdrop-filter, no transform on hover.
-  backdrop-filter causes the entire stacking context to repaint on
-  any change (text select, hover, resize) → visible blink.
-  We use box-shadow only for the hover lift effect.
-*/
 .dd-panel {
-  background: var(--dd-surface);
-  border: 1px solid var(--dd-border);
-  border-radius: var(--dd-radius);
-  display: flex;
+  background:     var(--dd-surface);
+  border:         1px solid var(--dd-border);
+  border-radius:  var(--dd-radius);
+  display:        flex;
   flex-direction: column;
-  /* Changed from overflow:hidden — was clipping chart Y-axis labels */
-  overflow: visible;
-  position: relative;
-  /* Clip only the rounded corners visually without hiding chart content */
-  clip-path: inset(0 round var(--dd-radius));
-  transition: border-color 0.15s, box-shadow 0.15s;
+  /* overflow:visible is required so the resize handle (positioned outside)
+     is not clipped. clip-path was removed for the same reason. */
+  overflow:       visible;
+  position:       relative;
+  transition:     border-color .18s, box-shadow .18s;
+  box-shadow:     0 2px 12px rgba(0,0,0,.25);
 }
 .dd-panel:hover {
-  border-color: rgba(99,102,241,.35);
-  box-shadow: 0 4px 24px rgba(99,102,241,.1);
+  border-color: rgba(79,82,232,.4);
+  box-shadow:   0 6px 28px rgba(79,82,232,.14), 0 2px 8px rgba(0,0,0,.3);
 }
+.dd-root.light .dd-panel { box-shadow: 0 2px 10px rgba(79,82,232,.05); }
+.dd-root.light .dd-panel:hover { box-shadow: 0 6px 24px rgba(79,82,232,.12); }
+
+/* Panel chart area */
+.dd-panel .recharts-wrapper,
+.dd-panel canvas,
+.dd-panel svg { overflow: visible !important; }
 
 /* ── Panel header ────────────────────────────────────────────────────────── */
 .dd-panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--dd-border);
-  background: var(--dd-surface);
-  cursor: grab;
-  /* Prevent text-select cursor bleed into drag area */
-  user-select: none;
+  display:          flex;
+  align-items:      center;
+  justify-content:  space-between;
+  padding:          10px 13px;
+  border-bottom:    1px solid var(--dd-border);
+  background:       var(--dd-surface);
+  cursor:           grab;
+  user-select:      none;
   -webkit-user-select: none;
+  gap:              8px;
 }
 .dd-panel-header:active { cursor: grabbing; }
 
 .dd-panel-drag-area { flex: 1; display: flex; align-items: center; min-width: 0; }
 
 .dd-panel-title {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-size: 11px; font-weight: 600;
+  letter-spacing: .04em; text-transform: uppercase;
   color: var(--dd-text-2);
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  display: flex; align-items: center; gap: 6px;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 .dd-panel-title-icon { color: var(--dd-text-3); flex-shrink: 0; }
 
 .dd-panel-actions {
-  display: flex;
+  display:    flex;
   align-items: center;
-  gap: 2px;
+  gap:         2px;
   flex-shrink: 0;
-  opacity: 0.25;
-  transition: opacity 0.15s;
+  opacity:     0;
+  transition:  opacity .15s;
 }
 .dd-panel:hover .dd-panel-actions { opacity: 1; }
 
 .dd-panel-action {
-  width: 26px;
-  height: 26px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  background: none;
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  border: none; background: none;
   color: var(--dd-text-3);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: color 0.12s, background 0.12s;
+  border-radius: 5px; cursor: pointer;
+  transition: color .12s, background .12s;
   flex-shrink: 0;
 }
-.dd-panel-action:hover { color: var(--dd-text-1); background: var(--dd-border); }
-.dd-active-pin         { color: var(--dd-blue) !important; }
+.dd-panel-action:hover { color: var(--dd-text-1); background: rgba(255,255,255,.08); }
+.dd-active-pin { color: #818cf8 !important; }
+.dd-root.light .dd-panel-action:hover { background: rgba(79,82,232,.1); }
+
+/* ── Panel type badge ─────────────────────────────────────────────────────── */
+.dd-type-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 7px; border-radius: 4px;
+  font-size: 9.5px; font-weight: 600; letter-spacing: .04em;
+  text-transform: uppercase;
+  background: rgba(79,82,232,.12);
+  color: #818cf8;
+  flex-shrink: 0;
+}
 
 /* ── Resize handle ───────────────────────────────────────────────────────── */
+/*
+  IMPORTANT: The handle is injected by react-resizable as a direct child of
+  the grid item (sibling of .dd-panel). Do NOT use clip-path or
+  overflow:hidden on .dd-panel — both will swallow the handle.
+*/
 .react-resizable-handle {
-  width: 18px !important;
-  height: 18px !important;
-  bottom: 0 !important;
-  right: 0 !important;
+  position:       absolute !important;
+  width:          20px !important;
+  height:         20px !important;
+  bottom:         0 !important;
+  right:          0 !important;
   background-image: none !important;
-  cursor: nwse-resize !important;
-  opacity: 0;
-  transition: opacity 0.15s;
+  cursor:         nwse-resize !important;
+  z-index:        20 !important;
+  pointer-events: all !important;
+  opacity:        0;
+  transition:     opacity .15s;
 }
-.dd-panel:hover .react-resizable-handle { opacity: 1; }
+/* Show handle whenever the grid item wrapper is hovered (not just .dd-panel) */
+.react-grid-item:hover .react-resizable-handle { opacity: 1; }
 .react-resizable-handle::after {
   content: '';
   position: absolute;
-  right: 5px; bottom: 5px;
-  width: 9px; height: 9px;
-  border-right: 2px solid var(--dd-text-3);
-  border-bottom: 2px solid var(--dd-text-3);
+  right:  5px;
+  bottom: 5px;
+  width:  9px;
+  height: 9px;
+  border-right:  2px solid rgba(129,140,248,.7);
+  border-bottom: 2px solid rgba(129,140,248,.7);
+  border-radius: 1px;
 }
 
 /* ── AI insight overlay ──────────────────────────────────────────────────── */
-/*
-  KEY FIX: Use will-change + opacity/transform only.
-  Promoted to its own compositing layer so it doesn't trigger
-  a repaint of sibling text nodes when it slides in.
-*/
 .dd-insight-overlay {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  background: var(--dd-surface);
-  border-top: 1px solid var(--dd-border);
-  padding: 11px 14px;
-  /* Start off-screen below, no scale — scale causes layout recalc */
-  transform: translateY(100%);
-  opacity: 0;
-  transition: transform 0.2s ease, opacity 0.2s ease;
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: linear-gradient(0deg, var(--dd-surface) 70%, rgba(19,22,31,0) 100%);
+  padding: 14px 13px 11px;
+  transform: translateY(100%); opacity: 0;
+  transition: transform .2s ease, opacity .2s ease;
   z-index: 10;
-  /* Promote to own layer BEFORE hover to prevent repaint blink */
   will-change: transform, opacity;
-  /* No backdrop-filter here */
+}
+.dd-root.light .dd-insight-overlay {
+  background: linear-gradient(0deg, #fff 70%, rgba(255,255,255,0) 100%);
 }
 .dd-panel:hover .dd-insight-overlay,
 .dd-pinned-insight {
@@ -402,46 +518,62 @@
 
 /* ── AI sidebar ──────────────────────────────────────────────────────────── */
 .dd-sidebar {
-  width: 340px;
-  background: var(--dd-surface);
-  border-left: 1px solid var(--dd-border);
-  display: flex;
+  width:          340px;
+  background:     var(--dd-surface);
+  border-left:    1px solid var(--dd-border);
+  display:        flex;
   flex-direction: column;
-  flex-shrink: 0;
+  flex-shrink:    0;
+  position:       relative;
 }
 .dd-sidebar-header {
-  padding: 14px 18px;
+  padding:       14px 16px;
   border-bottom: 1px solid var(--dd-border);
-  display: flex;
-  align-items: center;
+  display:       flex;
+  align-items:   center;
   justify-content: space-between;
 }
+.dd-sidebar-tabs {
+  display: flex; gap: 4px;
+  padding: 10px 14px 0;
+  border-bottom: 1px solid var(--dd-border);
+}
+.dd-sidebar-tab {
+  padding: 6px 12px;
+  font-size: 11px; font-weight: 600;
+  color: var(--dd-text-3);
+  background: none; border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer; font-family: inherit;
+  transition: color .12s, border-color .12s;
+  margin-bottom: -1px;
+}
+.dd-sidebar-tab.active {
+  color: #818cf8;
+  border-bottom-color: #818cf8;
+}
 .dd-chat-messages {
-  flex: 1;
-  overflow-y: auto;
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  flex: 1; overflow-y: auto;
+  padding: 14px; display: flex; flex-direction: column; gap: 10px;
   scrollbar-width: thin;
-  scrollbar-color: var(--dd-border) transparent;
+  scrollbar-color: rgba(255,255,255,.08) transparent;
 }
 .dd-bubble {
-  padding: 9px 13px;
-  border-radius: var(--dd-radius);
-  font-size: 12px;
-  line-height: 1.6;
+  padding: 9px 12px;
+  border-radius: var(--dd-radius-sm);
+  font-size: 12.5px; line-height: 1.6;
   max-width: 88%;
 }
 .dd-bubble-ai {
-  background: var(--dd-bg);
+  background: rgba(255,255,255,.04);
   border: 1px solid var(--dd-border);
   color: var(--dd-text-1);
   align-self: flex-start;
 }
 .dd-bubble-user {
-  background: var(--dd-accent);
-  color: var(--dd-bg);
+  background: rgba(79,82,232,.2);
+  border: 1px solid rgba(79,82,232,.3);
+  color: var(--dd-text-1);
   align-self: flex-end;
 }
 .dd-sidebar-footer {
@@ -449,90 +581,304 @@
   border-top: 1px solid var(--dd-border);
 }
 .dd-input-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--dd-bg);
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,.04);
   border: 1px solid var(--dd-border);
-  border-radius: var(--dd-radius);
+  border-radius: var(--dd-radius-sm);
   padding: 5px 5px 5px 11px;
-  transition: border-color 0.12s;
+  transition: border-color .15s, box-shadow .15s;
 }
-.dd-input-group:focus-within { border-color: var(--dd-blue); }
+.dd-input-group:focus-within {
+  border-color: rgba(129,140,248,.5);
+  box-shadow: 0 0 0 3px rgba(79,82,232,.15);
+}
 .dd-input-group input {
-  flex: 1;
-  background: none;
-  border: none;
-  outline: none;
-  font-family: inherit;
-  font-size: 12px;
+  flex: 1; background: none; border: none; outline: none;
+  font-family: inherit; font-size: 12.5px;
   color: var(--dd-text-1);
 }
 .dd-input-group input::placeholder { color: var(--dd-text-3); }
-
 .dd-send-btn {
   width: 28px; height: 28px;
   display: flex; align-items: center; justify-content: center;
-  background: var(--dd-accent);
-  color: var(--dd-bg);
-  border: none; border-radius: 6px;
-  cursor: pointer;
-  transition: opacity 0.12s;
+  background: var(--dd-gradient);
+  color: #fff; border: none; border-radius: 6px;
+  cursor: pointer; transition: opacity .12s;
+  box-shadow: 0 2px 8px var(--dd-blue-glow);
 }
-.dd-send-btn:hover { opacity: 0.8; }
+.dd-send-btn:hover { opacity: .8; }
 
 /* ── Sidebar slide-in ────────────────────────────────────────────────────── */
 @keyframes slideInRight {
-  from { transform: translateX(16px); opacity: 0; }
+  from { transform: translateX(20px); opacity: 0; }
   to   { transform: translateX(0);    opacity: 1; }
 }
-.animate-in { animation: slideInRight 0.18s ease; }
+.animate-in { animation: slideInRight .18s ease; }
 
 /* ── Present-mode exit button ────────────────────────────────────────────── */
 .dd-exit-present-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  display: flex; align-items: center; gap: 8px;
   background: var(--dd-surface);
-  border: 1px solid var(--dd-border);
+  border: 1px solid var(--dd-border-2);
   color: var(--dd-text-2);
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: 500;
-  padding: 8px 16px;
-  border-radius: 999px;
-  cursor: pointer;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  font-family: inherit; font-size: 12px; font-weight: 500;
+  padding: 8px 18px; border-radius: 999px; cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0,0,0,.35);
+  transition: background .12s, color .12s;
 }
 .dd-exit-present-btn:hover {
-  background: var(--dd-bg);
-  border-color: var(--dd-border-2);
+  background: var(--dd-surface-2);
   color: var(--dd-text-1);
 }
 .dd-exit-icon {
   width: 20px; height: 20px;
   display: flex; align-items: center; justify-content: center;
-  background: var(--dd-border);
+  background: rgba(255,255,255,.1);
   border-radius: 50%;
 }
 
+/* ── Modal overlay ───────────────────────────────────────────────────────── */
+.dd-modal-overlay {
+  position: fixed; inset: 0; z-index: 3000;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(7,9,18,.7);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  padding: 16px;
+  animation: ddFadeIn .15s ease;
+}
+@keyframes ddFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.dd-modal {
+  background:    var(--dd-surface);
+  border:        1px solid var(--dd-border-2);
+  border-radius: 14px;
+  padding:       28px;
+  max-width:     400px; width: 100%;
+  box-shadow:    0 30px 60px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.04);
+  animation:     ddModalIn .18s ease;
+}
+@keyframes ddModalIn {
+  from { opacity: 0; transform: translateY(10px) scale(.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.dd-root.light .dd-modal {
+  box-shadow: 0 24px 48px rgba(79,82,232,.12), 0 0 0 1px rgba(79,82,232,.06);
+}
+
+.dd-modal-title {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 15px; font-weight: 700;
+  color: var(--dd-text-1); margin-bottom: 6px;
+}
+.dd-modal-sub {
+  font-size: 12.5px; color: var(--dd-text-3);
+  margin: 0 0 22px; line-height: 1.5;
+}
+.dd-modal-label {
+  display: block; font-size: 10px; font-weight: 700;
+  color: var(--dd-text-3); margin-bottom: 7px;
+  text-transform: uppercase; letter-spacing: .07em;
+}
+.dd-modal-input {
+  width: 100%; padding: 10px 13px;
+  background: rgba(255,255,255,.05);
+  border: 1px solid var(--dd-border-2);
+  border-radius: var(--dd-radius-sm);
+  font-size: 13.5px; color: var(--dd-text-1);
+  outline: none; font-family: inherit; box-sizing: border-box;
+  transition: border-color .15s, box-shadow .15s;
+}
+.dd-modal-input:focus {
+  border-color: rgba(129,140,248,.55);
+  box-shadow: 0 0 0 3px rgba(79,82,232,.18);
+}
+.dd-modal-input::placeholder { color: var(--dd-text-3); }
+.dd-root.light .dd-modal-input {
+  background: rgba(79,82,232,.04);
+  border-color: rgba(79,82,232,.15);
+}
+
+.dd-modal-actions { display: flex; gap: 8px; margin-top: 20px; }
+.dd-modal-cancel {
+  flex: 1; padding: 10px; border-radius: var(--dd-radius-sm);
+  border: 1px solid var(--dd-border); background: none;
+  color: var(--dd-text-2); font-size: 12.5px; font-weight: 500;
+  cursor: pointer; font-family: inherit;
+  transition: background .12s, color .12s;
+}
+.dd-modal-cancel:hover { background: rgba(255,255,255,.06); color: var(--dd-text-1); }
+.dd-modal-confirm {
+  flex: 2; padding: 10px; border-radius: var(--dd-radius-sm);
+  border: none; color: #fff; font-size: 12.5px; font-weight: 600;
+  cursor: pointer; font-family: inherit;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: opacity .12s, transform .1s;
+  box-shadow: 0 2px 12px var(--dd-blue-glow);
+}
+.dd-modal-confirm:hover:not(:disabled) { opacity: .88; transform: translateY(-1px); }
+.dd-modal-confirm:disabled { opacity: .35; cursor: not-allowed; }
+
+/* ── Theme picker in modal ────────────────────────────────────────────────── */
+.dd-theme-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 8px; margin-bottom: 16px;
+}
+.dd-theme-swatch {
+  aspect-ratio: 1;
+  border-radius: 8px; border: 2px solid transparent;
+  cursor: pointer; transition: border-color .15s, transform .12s;
+  position: relative; overflow: hidden;
+}
+.dd-theme-swatch:hover { transform: scale(1.05); }
+.dd-theme-swatch.selected { border-color: #818cf8; }
+.dd-theme-swatch::after {
+  content: '✓';
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 14px; font-weight: 700;
+  opacity: 0; transition: opacity .12s;
+  background: rgba(79,82,232,.3);
+}
+.dd-theme-swatch.selected::after { opacity: 1; }
+
+/* ── Background options panel ─────────────────────────────────────────────── */
+.dd-bg-options {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.dd-bg-option {
+  aspect-ratio: 16/9;
+  border-radius: 8px; border: 2px solid transparent;
+  cursor: pointer; transition: all .15s;
+  position: relative; overflow: hidden;
+}
+.dd-bg-option:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,.3); }
+.dd-bg-option.selected { border-color: #818cf8; }
+.dd-bg-option span {
+  position: absolute; bottom: 5px; left: 0; right: 0;
+  text-align: center; font-size: 9px; font-weight: 600;
+  color: rgba(255,255,255,.8); letter-spacing: .04em;
+  text-transform: uppercase; text-shadow: 0 1px 4px rgba(0,0,0,.5);
+}
+
+/* ── Notify toast ─────────────────────────────────────────────────────────── */
+.dd-toast {
+  position: fixed; bottom: 24px; right: 24px; z-index: 4000;
+  background: var(--dd-surface);
+  border: 1px solid var(--dd-border-2);
+  border-radius: var(--dd-radius);
+  padding: 12px 16px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 12.5px; color: var(--dd-text-1);
+  box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  animation: ddToastIn .2s ease, ddToastOut .2s ease 2.8s forwards;
+  max-width: 280px;
+}
+@keyframes ddToastIn {
+  from { opacity: 0; transform: translateY(8px) scale(.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes ddToastOut {
+  to { opacity: 0; transform: translateY(6px) scale(.97); }
+}
+.dd-toast-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #34d399; flex-shrink: 0;
+  box-shadow: 0 0 8px rgba(52,211,153,.6);
+}
+.dd-toast-dot.error { background: #f87171; box-shadow: 0 0 8px rgba(248,113,113,.6); }
+
+/* ── Removed panels restore banner ───────────────────────────────────────── */
+.dd-restore-bar {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  z-index: 2000;
+  background: var(--dd-surface);
+  border: 1px solid var(--dd-border-2);
+  border-radius: 999px;
+  padding: 8px 16px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 12px; color: var(--dd-text-2);
+  box-shadow: 0 8px 28px rgba(0,0,0,.4);
+  animation: slideUp .2s ease;
+  white-space: nowrap;
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+.dd-restore-bar button {
+  background: none; border: none; color: #818cf8;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  font-family: inherit; padding: 0;
+  transition: color .12s;
+}
+.dd-restore-bar button:hover { color: #a5b4fc; }
+
+/* ── Fullscreen panel ─────────────────────────────────────────────────────── */
+.dd-fullscreen-panel {
+  position: fixed; inset: 0; z-index: 2500;
+  background: var(--dd-bg);
+  display: flex; flex-direction: column;
+  animation: ddFadeIn .15s ease;
+}
+.dd-fullscreen-panel .dd-panel-header {
+  border-bottom: 1px solid var(--dd-border);
+  padding: 14px 20px;
+}
+
+/* ── Density toggle ───────────────────────────────────────────────────────── */
+.dd-density-bar {
+  display: flex; align-items: center; gap: 2px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid var(--dd-border);
+  border-radius: var(--dd-radius-sm);
+  padding: 3px;
+}
+
+/* ── Custom backgrounds ───────────────────────────────────────────────────── */
+.dd-root.bg-aurora { background: radial-gradient(ellipse at 20% 50%, #1a0533 0%, #0d0f1a 50%, #001a33 100%); }
+.dd-root.bg-mesh   { background: radial-gradient(at 40% 20%, #1a0e2e 0%, transparent 50%), radial-gradient(at 80% 80%, #0a1628 0%, transparent 50%), radial-gradient(at 20% 80%, #0d1f0d 0%, transparent 50%), #0d0f1a; }
+.dd-root.bg-slate  { background: #0e1117; }
+.dd-root.bg-warm   { background: radial-gradient(ellipse at 70% 30%, #1c1208 0%, #0d0f1a 60%); }
+.dd-root.bg-ocean  { background: radial-gradient(ellipse at 30% 70%, #021022 0%, #0d0f1a 60%); }
+.dd-root.bg-forest { background: radial-gradient(ellipse at 60% 40%, #081a0a 0%, #0d0f1a 60%); }
+
+/* Light background variants */
+.dd-root.light.bg-aurora { background: radial-gradient(ellipse at 20% 50%, #f5effe 0%, #f0f1f8 50%, #eef5ff 100%); }
+.dd-root.light.bg-mesh   { background: radial-gradient(at 40% 20%, #f0e8ff 0%, transparent 50%), radial-gradient(at 80% 80%, #e8f0ff 0%, transparent 50%), #f0f1f8; }
+
+/* ── Animate spin utility ─────────────────────────────────────────────────── */
+@keyframes spin { to { transform: rotate(360deg); } }
+.animate-spin { animation: spin .65s linear infinite; }
+
 /* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 1200px) {
+  .dd-header-right .dd-btn-outline span,
+  .dd-header-right .dd-btn-primary span { display: none; }
+  .dd-header-right .dd-btn-outline,
+  .dd-header-right .dd-btn-primary { padding: 0 10px; min-width: 30px; justify-content: center; }
+}
+
 @media (max-width: 1024px) {
   .dd-sidebar {
     position: fixed;
-    right: 0;
-    top: var(--dd-header-h);
-    bottom: 0;
-    width: 100%;
-    max-width: 380px;
-    box-shadow: -6px 0 24px rgba(0,0,0,0.12);
+    right: 0; top: var(--dd-header-h); bottom: 0;
+    width: 100%; max-width: 360px;
+    box-shadow: -6px 0 28px rgba(0,0,0,.4);
     z-index: 300;
   }
 }
 
-@media (max-width: 640px) {
-  .dd-header { padding: 0 12px; gap: 8px; }
-  .dd-kpi-item { padding: 10px 14px; }
+@media (max-width: 768px) {
+  .dd-header { padding: 0 12px; gap: 6px; }
   .dd-canvas-area { padding: 10px; }
+  .dd-filter-bar { display: none; }
+  .dd-header-center { display: none; }
+}
+
+@media (max-width: 480px) {
+  .dd-header { padding: 0 10px; }
+  .dd-btn-outline, .dd-btn-primary { height: 28px; }
+  .dd-modal { padding: 22px 18px; }
 }
