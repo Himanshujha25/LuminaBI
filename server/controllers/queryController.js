@@ -33,6 +33,9 @@ const handleQuery = async (req, res) => {
         const { table_name, columns, ai_keys, preferred_provider } = userAndDatasetRes.rows[0];
         tableName = table_name;
         columnsInfo = columns;
+        
+        console.log('[QueryController] Preferred provider:', preferred_provider);
+        console.log('[QueryController] AI keys available:', Object.keys(ai_keys || {}));
 
         // 2. Check Insight Cache
         const historyHash = history ? crypto.createHash('md5').update(JSON.stringify(history.slice(-3))).digest('hex') : 'no_hist';
@@ -40,6 +43,7 @@ const handleQuery = async (req, res) => {
         let aiResponse = insightCache.get(insightKey);
 
         if (!aiResponse) {
+            console.log('[QueryController] Calling AI orchestrator...');
             // --- NEW: THE AI SWITCHBOARD ---
             // Pass the user's preferred provider and their personal keys to the orchestrator
             aiResponse = await AIOrchestrator.generateResponse({
@@ -50,14 +54,23 @@ const handleQuery = async (req, res) => {
                 provider: preferred_provider || 'gemini',
                 userKeys: ai_keys || {}
             });
+            
+            console.log('[QueryController] AI Response received:', {
+                hasError: !!aiResponse.error,
+                isDataQuery: aiResponse.is_data_query,
+                hasSqlQuery: !!aiResponse.sql_query
+            });
 
             if (!aiResponse.error) {
                 insightCache.set(insightKey, aiResponse);
             }
+        } else {
+            console.log('[QueryController] Using cached response');
         }
 
         // 3. Handle AI Hallucinations
         if (aiResponse.error) {
+            console.error('[QueryController] AI returned error:', aiResponse.error);
             return res.json({ error: aiResponse.error });
         }
 
@@ -91,7 +104,9 @@ const handleQuery = async (req, res) => {
         // 5. Execute the SQL query
         let result;
         try {
+            console.log('[QueryController] Executing SQL:', aiResponse.sql_query);
             result = await pool.query(aiResponse.sql_query);
+            console.log('[QueryController] SQL executed successfully, rows:', result.rows.length);
         } catch (sqlErr) {
             console.error("❌ SQL Execution Error:", sqlErr.message);
             return res.json({ error: "AI generated an invalid SQL query. " + sqlErr.message });
@@ -137,9 +152,12 @@ const handleQuery = async (req, res) => {
             suggested_follow_ups: aiResponse.suggested_follow_ups || [],
             provider_used: preferred_provider // Show the user which AI did the work
         });
+        
+        console.log('[QueryController] Response sent successfully');
 
     } catch (error) {
         console.error("Query Error:", error);
+        console.error("Query Error Stack:", error.stack);
         res.status(500).json({ error: "Sorry, I couldn't generate a valid query for that." });
     }
 };

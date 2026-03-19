@@ -74,7 +74,10 @@ const login = async (req, res) => {
 
 const getMe = async (req, res) => {
     try {
-         const user = await pool.query('SELECT id, name, email FROM users WHERE id = $1', [req.user.id]);
+         const user = await pool.query(
+             'SELECT id, name, email, bio, ai_keys, preferred_provider, notification_prefs, created_at FROM users WHERE id = $1',
+             [req.user.id]
+         );
          if (user.rows.length === 0) return res.status(404).json({ error: "User not found" });
          res.json({ user: user.rows[0] });
     } catch(err) {
@@ -82,11 +85,44 @@ const getMe = async (req, res) => {
     }
 }
 
+const updateProfile = async (req, res) => {
+    try {
+        const { name, bio } = req.body;
+        if (!name || !name.trim()) return res.status(400).json({ error: 'Name is required.' });
+        const result = await pool.query(
+            'UPDATE users SET name = $1, bio = $2 WHERE id = $3 RETURNING id, name, email, bio',
+            [name.trim(), bio || '', req.user.id]
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'User not found.' });
+        res.json({ user: result.rows[0] });
+    } catch (err) {
+        console.error('Update profile error:', err);
+        res.status(500).json({ error: 'Server error updating profile.' });
+    }
+};
+
 const deleteAccount = async (req, res) => {
     const userId = req.user.id;
+    const { password } = req.body;
+
+    if (!password) {
+        return res.status(400).json({ error: 'Password is required to delete account.' });
+    }
+
     const client = await pool.connect();
 
     try {
+        // Verify password first
+        const userResult = await client.query('SELECT password FROM users WHERE id = $1', [userId]);
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+
+        const isMatch = await bcrypt.compare(password, userResult.rows[0].password);
+        if (!isMatch) {
+            return res.status(400).json({ error: 'Incorrect password. Account deletion cancelled.' });
+        }
+
         await client.query('BEGIN'); // Start transaction
 
         // 1. Get all table names for datasets owned by this user
@@ -126,5 +162,94 @@ const deleteAccount = async (req, res) => {
     }
 };
 
-module.exports = { register, login, getMe, deleteAccount};
+const updatePassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        if (!currentPassword || !newPassword)
+            return res.status(400).json({ error: 'Both current and new password are required.' });
+        if (newPassword.length < 8)
+            return res.status(400).json({ error: 'New password must be at least 8 characters.' });
 
+        const result = await pool.query('SELECT password FROM users WHERE id = $1', [req.user.id]);
+        if (result.rows.length === 0) return res.status(404).json({ error: 'User not found.' });
+
+        const isMatch = await bcrypt.compare(currentPassword, result.rows[0].password);
+        if (!isMatch) return res.status(400).json({ error: 'Current password is incorrect.' });
+
+        const hashed = await bcrypt.hash(newPassword, 8);
+        await pool.query('UPDATE users SET password = $1 WHERE id = $2', [hashed, req.user.id]);
+        res.json({ message: 'Password updated successfully.' });
+    } catch (err) {
+        console.error('Update password error:', err);
+        res.status(500).json({ error: 'Server error updating password.' });
+    }
+};
+
+const updateKeys = async (req, res) => {
+    try {
+        const { ai_keys, preferred_provider } = req.body;
+        const result = await pool.query(
+            'UPDATE users SET ai_keys = $1, preferred_provider = $2 WHERE id = $3 RETURNING id, name, email, bio, ai_keys, preferred_provider, notification_prefs',
+            [JSON.stringify(ai_keys || {}), preferred_provider || 'gemini', req.user.id]
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'User not found.' });
+        res.json({ user: result.rows[0] });
+    } catch (err) {
+        console.error('Update keys error:', err);
+        res.status(500).json({ error: 'Server error updating AI keys.' });
+    }
+};
+
+const updateNotifications = async (req, res) => {
+    try {
+        const prefs = req.body;
+        const result = await pool.query(
+            'UPDATE users SET notification_prefs = $1 WHERE id = $2 RETURNING id, notification_prefs',
+            [JSON.stringify(prefs), req.user.id]
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'User not found.' });
+        res.json({ user: result.rows[0] });
+    } catch (err) {
+        console.error('Update notifications error:', err);
+        res.status(500).json({ error: 'Server error updating notification preferences.' });
+    }
+};
+
+const getBillingStats = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        
+        // Get datasets count
+        const datasetsResult = await pool.query(
+            'SELECT COUNT(*) as count FROM datasets WHERE user_id = $1',
+            [userId]
+        );
+        
+        // Get storage usage (sum of file sizes)
+        const storageResult = await pool.query(
+            'SELECT COALESCE(SUM(file_size), 0) as total_size FROM datasets WHERE user_id = $1',
+            [userId]
+        );
+        
+        // Get AI queries count
+        const queriesResult = await pool.query(
+            'SELECT COUNT(*) as count FROM chat_histories WHERE user_id = $1',
+            [userId]
+        );
+        
+        const datasetsCount = parseInt(datasetsResult.rows[0].count);
+        const storageMB = Math.round(parseInt(storageResult.rows[0].total_size) / (1024 * 1024));
+        const queriesCount = parseInt(queriesResult.rows[0].count);
+        
+        res.json({
+            datasets: datasetsCount,
+            storage: storageMB,
+            queries: queriesCount
+        });
+    } catch (err) {
+        console.error('Get billing stats error:', err);
+        res.status(500).json({ error: 'Server error fetching billing stats.' });
+    }
+};
+
+module.exports = { register, login, getMe, deleteAccount, updatePassword, updateProfile, updateKeys, updateNotifications, getBillingStats };
