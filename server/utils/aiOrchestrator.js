@@ -1,21 +1,30 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
-const OpenAI = require("openai");
+const { generateWithGemini } = require('./providers/gemini');
+const { generateWithOpenAI } = require('./providers/openai');
+const { generateWithClaude } = require('./providers/claude');
+const { generateWithDeepSeek } = require('./providers/deepseek');
+const { generateWithGrok } = require('./providers/grok');
+const { generateWithMistral } = require('./providers/mistral');
+const { generateWithPerplexity } = require('./providers/perplexity');
+const { generateWithOpenRouter } = require('./providers/openrouter');
+const { generateWithGroq } = require('./providers/groq');
 
 // ── IMPORT YOUR CORE RULES ──
 const CHART_RULES = `
 CHART SELECTION — follow this decision tree strictly:
 1. Is the user asking for raw rows, a list, or 3+ columns of mixed data? → "table"
-2. Is the X-axis a DATE or TIME field (month, year, day, quarter)?
+2. Is the user asking for summary statistics, totals, or aggregate metrics? → "card"
+3. Is the X-axis a DATE or TIME field (month, year, day, quarter)?
    - If values accumulate over time (revenue, signups, sales) → "area"
    - If values fluctuate (temperature, stock price, score)    → "line"
-3. Is the X-axis a CATEGORY (name, region, product, status)?
+4. Is the X-axis a CATEGORY (name, region, product, status)?
    - If comparing quantities across categories               → "bar"
    - If showing share/proportion (top 6 max, sums to 100%)  → "pie"
    - If many categories (>8) or negative values present     → "bar" (never pie)
-4. Showing distribution/ranking of a single metric? → "bar" (sorted DESC)
-5. Part-to-whole relationship with ≤6 groups? → "pie"
+5. Showing distribution/ranking of a single metric? → "bar" (sorted DESC)
+6. Part-to-whole relationship with ≤6 groups? → "pie"
 DEFAULT fallback: "bar"
 NEVER use pie for: Time series data, >6 slices, negative values.
+if person explicilty ask for your ai model show just tell to them model name and version that you are using without any other information.
 `;
 
 // ── YOUR HELPER FUNCTIONS ──
@@ -49,7 +58,7 @@ RESPONSE FORMAT (JSON ONLY):
 {
   "is_data_query": boolean,
   "sql_query": "string",
-  "chart_type": "bar"|"line"|"pie"|"area"|"table",
+  "chart_type": "bar"|"line"|"pie"|"area"|"table"|"card",
   "x_axis_column": "string (use the ALIAS)",
   "y_axis_column": "string (use the ALIAS)",
   "explanation": "professional insight",
@@ -64,54 +73,67 @@ const generateResponse = async ({ prompt, tableName, columnsInfo, history, provi
   const userKey = userKeys[provider];
   const fullPrompt = buildPrompt(prompt, tableName, columnsInfo, history);
 
+  console.log(`[Orchestrator] Provider: ${provider}`);
+  console.log(`[Orchestrator] Has API key: ${!!userKey}`);
+
+  // Validate API key for non-Gemini providers
+  if (provider !== 'gemini' && !userKey) {
+    return { 
+      error: `No API key configured for ${provider}. Please add your ${provider} API key in Settings > AI Engine.` 
+    };
+  }
+
   try {
-if (provider === 'gemini') {
-  const finalKey = userKey || process.env.GEMINI_API_KEY;
-  const genAI = new GoogleGenerativeAI(finalKey);
+    let response;
 
-   const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
-      generationConfig: {
-        responseMimeType: "application/json",
-        temperature: 0.05,      // near-zero for deterministic SQL
-        topP: 0.9,
-        topK: 20,
-      },
-    });
-
-  const result = await model.generateContent(fullPrompt);
-  const response = await result.response;
-  const text = response.text();
-
-  const cleanJson = text.replace(/```json|```/g, "").trim();
-  return JSON.parse(cleanJson);
-}
-
-    // --- OPENAI COMPATIBLE (DeepSeek, Grok, GPT) ---
-    let clientConfig = { apiKey: userKey };
-    let modelName = "gpt-4o";
-
-    if (provider === 'deepseek') {
-      clientConfig.baseURL = "https://api.deepseek.com";
-      modelName = "deepseek-chat";
+    if (provider === 'gemini') {
+      response = await generateWithGemini(fullPrompt, userKey);
+    } else if (provider === 'openai') {
+      response = await generateWithOpenAI(fullPrompt, userKey);
+    } else if (provider === 'claude') {
+      response = await generateWithClaude(fullPrompt, userKey);
+    } else if (provider === 'deepseek') {
+      response = await generateWithDeepSeek(fullPrompt, userKey);
     } else if (provider === 'grok') {
-      clientConfig.baseURL = "https://api.x.ai/v1";
-      modelName = "grok-beta";
+      response = await generateWithGrok(fullPrompt, userKey);
+    } else if (provider === 'mistral') {
+      response = await generateWithMistral(fullPrompt, userKey);
+    } else if (provider === 'perplexity') {
+      response = await generateWithPerplexity(fullPrompt, userKey);
+    } else if (provider === 'openrouter') {
+      response = await generateWithOpenRouter(fullPrompt, userKey);
+    } else if (provider === 'groq') {
+      response = await generateWithGroq(fullPrompt, userKey);
+    } else {
+      return { error: `Unknown provider: ${provider}` };
     }
 
-    const openai = new OpenAI(clientConfig);
-    const completion = await openai.chat.completions.create({
-      model: modelName,
-      messages: [{ role: "user", content: fullPrompt }],
-      temperature: 0.05,
-      response_format: { type: "json_object" }
-    });
-
-    return JSON.parse(completion.choices[0].message.content);
+    console.log(`[Orchestrator] Successfully parsed JSON for ${provider}`);
+    return response;
 
   } catch (err) {
     console.error(`[Orchestrator] ${provider} error:`, err.message);
-    return { error: `The ${provider} AI failed. Check your API key or network.` };
+    console.error(`[Orchestrator] Full error:`, JSON.stringify(err.response?.data || err.message));
+    
+    // Specific error messages for common issues
+    if (err.status === 401 || err.response?.status === 401) {
+      return { error: `Invalid API key for ${provider}. Please check your key in Settings > AI Engine.` };
+    }
+    if (err.status === 402 || err.response?.status === 402) {
+      return { error: `Insufficient credits for ${provider}. Please add credits to your account.` };
+    }
+    if (err.status === 429 || err.response?.status === 429) {
+      return { error: `Rate limit exceeded for ${provider}. Please try again in a moment.` };
+    }
+    if (err.status === 400 || err.response?.status === 400) {
+      return { error: `Bad request to ${provider}. The model may not support this request format.` };
+    }
+    if (err.name === 'SyntaxError') {
+      console.error('[Orchestrator] JSON Parse Error - Raw response may not be valid JSON');
+      return { error: `${provider} returned invalid JSON. Please try again.` };
+    }
+    
+    return { error: `${provider} error: ${err.message}. Check your API key and network connection.` };
   }
 };
 

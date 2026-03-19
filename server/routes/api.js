@@ -4,7 +4,7 @@ const multer = require('multer');
 const { uploadCSV, getDatasets, getDatasetPreview, deleteDataset } = require('../controllers/uploadController');
 const { handleQuery } = require('../controllers/queryController');
 const { getChats, clearChats, deleteMessage } = require('../controllers/chatController');
-const { register, login, getMe, deleteAccount } = require('../controllers/authController');
+const { register, login, getMe, deleteAccount, updatePassword, updateProfile, updateKeys, updateNotifications, getBillingStats } = require('../controllers/authController');
 const { saveDashboard, getDashboards, deleteDashboard, updateDashboard, getDashboardById } = require('../controllers/dashboardController');
 const exportController = require('../controllers/exportController');
 const { protect } = require('../middleware/auth');
@@ -22,6 +22,11 @@ const upload = multer({
 router.post('/auth/register', register);
 router.post('/auth/login', login);
 router.get('/auth/me', protect, getMe);
+router.patch('/auth/profile', protect, updateProfile);
+router.patch('/auth/password', protect, updatePassword);
+router.patch('/auth/keys', protect, updateKeys);
+router.patch('/auth/notifications', protect, updateNotifications);
+router.get('/auth/billing-stats', protect, getBillingStats);
 router.delete('/auth/delete-account', protect, deleteAccount);
 
 // CSV Upload Routes
