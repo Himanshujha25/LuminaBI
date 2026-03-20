@@ -248,7 +248,7 @@ const STYLES = `
     border-radius:var(--r-lg); box-shadow:var(--shadow-lg); overflow:hidden;
   }
   .sw-drop-search { padding:10px 10px 8px; border-bottom:1px solid var(--border); }
-  .sw-drop-list   { max-height:236px; overflow-y:auto; padding:6px; }
+  .sw-drop-list   { max-height:320px; overflow-y:auto; padding:6px; }
   .sw-drop-item {
     display:flex; align-items:center; gap:11px; padding:9px 10px;
     border-radius:var(--r-md); cursor:pointer; transition:background .1s;
@@ -1187,7 +1187,7 @@ const Settings = () => {
   return (
     <div className="sw">
       <style>{STYLES}</style>
-      <div style={{ padding: '20px', width: '100%', maxHeight: '100vh', overflow: 'hidden' }}>
+      <div style={{ padding: '20px', width: '100%', minHeight: '100vh', overflow: 'visible' }}>
         <div style={{ maxWidth: 880, margin: '0 auto' }}>
 
           {/* Header */}
@@ -1225,7 +1225,7 @@ const Settings = () => {
             </nav>
 
             {/* Main content */}
-            <div style={{ maxHeight: 'calc(100vh - 100px)', overflow: 'hidden' }}>
+           <div style={{ overflow: 'visible' }}>
               <h2 style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--text-1)', marginBottom: 12, letterSpacing: '-.2px' }}>
                 {nav?.label}
               </h2>
