@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const compression = require("compression");
 const multer = require('multer');
-const { Resend } = require('resend'); // Import Resend
+const { Resend } = require('resend'); // Import  //test
 require('dotenv').config();
 
 const apiRoutes = require('./routes/api');
