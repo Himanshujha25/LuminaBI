@@ -1,6 +1,6 @@
 const pool = require('../db/db');
 // We change the import to a more flexible AI orchestrator
-const AIOrchestrator = require('../utils/aiOrchestrator'); 
+const AIOrchestrator = require('../utils/aiOrchestrator')
 const { schemaCache, insightCache } = require('../utils/cache');
 const crypto = require('crypto');
 
@@ -33,7 +33,7 @@ const handleQuery = async (req, res) => {
         const { table_name, columns, ai_keys, preferred_provider } = userAndDatasetRes.rows[0];
         tableName = table_name;
         columnsInfo = columns;
-        
+
         console.log('[QueryController] Preferred provider:', preferred_provider);
         console.log('[QueryController] AI keys available:', Object.keys(ai_keys || {}));
 
@@ -54,7 +54,7 @@ const handleQuery = async (req, res) => {
                 provider: preferred_provider || 'gemini',
                 userKeys: ai_keys || {}
             });
-            
+
             console.log('[QueryController] AI Response received:', {
                 hasError: !!aiResponse.error,
                 isDataQuery: aiResponse.is_data_query,
@@ -76,29 +76,29 @@ const handleQuery = async (req, res) => {
 
         // 4. Handle General Conversation (is_data_query === false)
         if (aiResponse.is_data_query === false) {
-             let userMsgId = null, aiMsgId = null;
-             if (datasetId && userId) {
-                 const uRes = await pool.query(
-                     'INSERT INTO chat_histories (user_id, dataset_id, role, text) VALUES ($1, $2, $3, $4) RETURNING id',
-                     [userId, datasetId, 'user', prompt]
-                 );
-                 userMsgId = uRes.rows[0].id;
-                 const aRes = await pool.query(
-                     'INSERT INTO chat_histories (user_id, dataset_id, role, text, data) VALUES ($1, $2, $3, $4, $5) RETURNING id',
-                     [userId, datasetId, 'ai', aiResponse.explanation, JSON.stringify({ suggested_follow_ups: aiResponse.suggested_follow_ups || [] })]
-                 );
-                 aiMsgId = aRes.rows[0].id;
-             }
+            let userMsgId = null, aiMsgId = null;
+            if (datasetId && userId) {
+                const uRes = await pool.query(
+                    'INSERT INTO chat_histories (user_id, dataset_id, role, text) VALUES ($1, $2, $3, $4) RETURNING id',
+                    [userId, datasetId, 'user', prompt]
+                );
+                userMsgId = uRes.rows[0].id;
+                const aRes = await pool.query(
+                    'INSERT INTO chat_histories (user_id, dataset_id, role, text, data) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+                    [userId, datasetId, 'ai', aiResponse.explanation, JSON.stringify({ suggested_follow_ups: aiResponse.suggested_follow_ups || [] })]
+                );
+                aiMsgId = aRes.rows[0].id;
+            }
 
-             return res.json({
-                 datasetId,
-                 prompt,
-                 userMessageId: userMsgId,
-                 aiMessageId: aiMsgId,
-                 data_query: false,
-                 explanation: aiResponse.explanation,
-                 suggested_follow_ups: aiResponse.suggested_follow_ups || [] 
-             });
+            return res.json({
+                datasetId,
+                prompt,
+                userMessageId: userMsgId,
+                aiMessageId: aiMsgId,
+                data_query: false,
+                explanation: aiResponse.explanation,
+                suggested_follow_ups: aiResponse.suggested_follow_ups || []
+            });
         }
 
         // 5. Execute the SQL query
@@ -115,26 +115,26 @@ const handleQuery = async (req, res) => {
         // 6. Save to Chat History & Response
         let userMsgId = null, aiMsgId = null;
         if (datasetId && userId) {
-             const uRes = await pool.query(
-                 'INSERT INTO chat_histories (user_id, dataset_id, role, text) VALUES ($1, $2, $3, $4) RETURNING id',
-                 [userId, datasetId, 'user', prompt]
-             );
-             userMsgId = uRes.rows[0].id;
+            const uRes = await pool.query(
+                'INSERT INTO chat_histories (user_id, dataset_id, role, text) VALUES ($1, $2, $3, $4) RETURNING id',
+                [userId, datasetId, 'user', prompt]
+            );
+            userMsgId = uRes.rows[0].id;
 
-             const aiFullData = {
-                 chart_type: aiResponse.chart_type,
-                 x_axis_column: aiResponse.x_axis_column,
-                 y_axis_column: aiResponse.y_axis_column,
-                 sql_used: aiResponse.sql_query,
-                 data: result.rows,
-                 suggested_follow_ups: aiResponse.suggested_follow_ups || []
-             };
+            const aiFullData = {
+                chart_type: aiResponse.chart_type,
+                x_axis_column: aiResponse.x_axis_column,
+                y_axis_column: aiResponse.y_axis_column,
+                sql_used: aiResponse.sql_query,
+                data: result.rows,
+                suggested_follow_ups: aiResponse.suggested_follow_ups || []
+            };
 
-             const aRes = await pool.query(
-                 'INSERT INTO chat_histories (user_id, dataset_id, role, text, data) VALUES ($1, $2, $3, $4, $5) RETURNING id',
-                 [userId, datasetId, 'ai', aiResponse.explanation, JSON.stringify(aiFullData)]
-             );
-             aiMsgId = aRes.rows[0].id;
+            const aRes = await pool.query(
+                'INSERT INTO chat_histories (user_id, dataset_id, role, text, data) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+                [userId, datasetId, 'ai', aiResponse.explanation, JSON.stringify(aiFullData)]
+            );
+            aiMsgId = aRes.rows[0].id;
         }
 
         res.json({
@@ -152,7 +152,7 @@ const handleQuery = async (req, res) => {
             suggested_follow_ups: aiResponse.suggested_follow_ups || [],
             provider_used: preferred_provider // Show the user which AI did the work
         });
-        
+
         console.log('[QueryController] Response sent successfully');
 
     } catch (error) {

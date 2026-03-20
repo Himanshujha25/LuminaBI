@@ -1,4 +1,4 @@
-const { generateWithGemini } = require("./providers/gemini");
+const { generateWithGemini } = require('./providers/gemini');
 const { generateWithOpenAI } = require('./providers/openai');
 const { generateWithClaude } = require('./providers/claude');
 const { generateWithDeepSeek } = require('./providers/deepseek');
