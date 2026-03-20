@@ -10,7 +10,7 @@ import DashboardPreview from './DashboardPreview';
    INLINE CSS — zero dependency on Home.css
 ───────────────────────────────────────────────────────────────────────────── */
 const GLOBAL_CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500&family=DM+Mono:wght@400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -28,9 +28,9 @@ const GLOBAL_CSS = `
     --accent-3:  #38bdf8;
     --green:     #34d399;
     --amber:     #fbbf24;
-    --font-head: 'Bricolage Grotesque', sans-serif;
-    --font-body: 'DM Sans', sans-serif;
-    --font-mono: 'DM Mono', monospace;
+    --font-head: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', 'Roboto Mono', monospace;
   }
 
   html { scroll-behavior: smooth; }
@@ -41,6 +41,8 @@ const GLOBAL_CSS = `
     color: var(--text-1);
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
 
   /* ── Scrollbar ── */
@@ -99,8 +101,15 @@ const GLOBAL_CSS = `
   .anim-float     { animation: float 6s ease-in-out infinite; }
 
   /* Reveal on scroll */
-  .reveal { opacity:0; transform:translateY(24px); transition:opacity .6s cubic-bezier(.22,1,.36,1), transform .6s cubic-bezier(.22,1,.36,1); }
-  .reveal.visible { opacity:1; transform:translateY(0); }
+  .reveal { 
+    opacity: 0; 
+    transform: translateY(16px); 
+    transition: opacity .5s cubic-bezier(.22,1,.36,1), transform .5s cubic-bezier(.22,1,.36,1); 
+  }
+  .reveal.visible { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
 
   /* ── Navbar ── */
   .lbi-nav {
@@ -124,7 +133,7 @@ const GLOBAL_CSS = `
   }
   .lbi-logo-text {
     font-family: var(--font-head); font-size: 17px; font-weight: 700;
-    color: var(--text-1); letter-spacing: -.3px;
+    color: var(--text-1); letter-spacing: -.5px;
   }
   .lbi-nav-links { display: flex; align-items: center; gap: 10px; }
   .btn-ghost {
@@ -166,7 +175,7 @@ const GLOBAL_CSS = `
   }
   .hero-title {
     font-family: var(--font-head); font-size: clamp(44px, 7vw, 80px);
-    font-weight: 800; line-height: 1.05; letter-spacing: -.03em;
+    font-weight: 800; line-height: 1.05; letter-spacing: -.04em;
     color: var(--text-1); margin-bottom: 22px;
   }
   .hero-sub {
@@ -214,34 +223,59 @@ const GLOBAL_CSS = `
   /* ── Dashboard preview wrapper ── */
   .preview-wrap {
     position: relative; z-index: 1;
-    padding: 0 40px 80px;
-    max-width: 1200px; margin: 0 auto;
+    padding: 0 40px 100px;
+    max-width: 1400px; margin: 0 auto;
+  }
+  .preview-container {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
   }
   .preview-fade-top {
-    position: absolute; top: 0; left: 0; right: 0; height: 120px; z-index: 2;
+    position: absolute; top: 0; left: 0; right: 0; height: 40px; z-index: 2;
     background: linear-gradient(to bottom, var(--bg), transparent);
+    pointer-events: none;
   }
   .preview-fade-bottom {
-    position: absolute; bottom: 0; left: 0; right: 0; height: 120px; z-index: 2;
+    position: absolute; bottom: 0; left: 0; right: 0; height: 40px; z-index: 2;
     background: linear-gradient(to top, var(--bg), transparent);
+    pointer-events: none;
   }
   .preview-glow {
-    position: absolute; inset: -40px; border-radius: 24px; z-index: 0;
-    background: radial-gradient(ellipse 80% 60% at 50% 50%, rgba(90,95,255,.12), transparent 70%);
+    position: absolute; inset: -60px; border-radius: 24px; z-index: 0;
+    background: radial-gradient(ellipse 70% 50% at 50% 50%, rgba(90,95,255,.15), transparent 70%);
+    filter: blur(60px);
   }
   .preview-inner {
     position: relative; z-index: 1;
-    border: 1px solid rgba(255,255,255,.10);
-    border-radius: 16px; overflow: hidden;
-    box-shadow: 0 32px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 20px; overflow: hidden;
+    box-shadow: 
+      0 40px 100px rgba(0,0,0,.7), 
+      0 20px 60px rgba(99,102,241,.15),
+      0 0 0 1px rgba(255,255,255,.08),
+      inset 0 1px 0 rgba(255,255,255,.1);
+    transition: all .4s cubic-bezier(.22,1,.36,1);
+  }
+  .preview-inner:hover {
+    transform: translateY(-4px);
+    box-shadow: 
+      0 45px 110px rgba(0,0,0,.75), 
+      0 22px 65px rgba(99,102,241,.2),
+      0 0 0 1px rgba(255,255,255,.12),
+      inset 0 1px 0 rgba(255,255,255,.12);
   }
   .preview-chrome {
-    background: var(--surface-2);
-    border-bottom: 1px solid var(--border);
-    padding: 10px 16px;
-    display: flex; align-items: center; gap: 7px;
+    background: linear-gradient(135deg, rgba(14,17,32,.95), rgba(11,15,25,.95));
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    padding: 14px 20px;
+    display: flex; align-items: center; gap: 8px;
+    backdrop-filter: blur(20px);
   }
-  .chrome-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .chrome-dot { 
+    width: 11px; height: 11px; border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.2);
+  }
 
   /* ── Section shared ── */
   .section {
@@ -259,7 +293,7 @@ const GLOBAL_CSS = `
   }
   .section-title {
     font-family: var(--font-head); font-size: clamp(28px, 4vw, 44px);
-    font-weight: 800; line-height: 1.1; letter-spacing: -.03em;
+    font-weight: 800; line-height: 1.1; letter-spacing: -.04em;
     color: var(--text-1); margin-bottom: 14px;
   }
   .section-sub {
@@ -269,89 +303,299 @@ const GLOBAL_CSS = `
 
   /* ── Features grid ── */
   .features-grid {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
-    border: 1px solid var(--border); border-radius: 16px; overflow: hidden;
-    background: var(--border);
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
     margin-top: 60px;
   }
   .feature-cell {
-    background: var(--surface); padding: 32px 28px;
-    transition: background .2s;
+    background: linear-gradient(135deg, rgba(255,255,255,.04) 0%, rgba(255,255,255,.02) 100%);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 16px;
+    padding: 32px 28px;
+    transition: all .3s cubic-bezier(.22,1,.36,1);
     position: relative; overflow: hidden;
+    box-shadow: 
+      0 4px 16px rgba(0,0,0,.2),
+      inset 0 1px 0 rgba(255,255,255,.06);
   }
   .feature-cell::before {
     content: ''; position: absolute; inset: 0;
-    background: radial-gradient(circle 200px at var(--mx,50%) var(--my,50%), rgba(90,95,255,.08), transparent 70%);
-    opacity: 0; transition: opacity .3s;
+    background: radial-gradient(circle 300px at var(--mx,50%) var(--my,50%), rgba(90,95,255,.12), transparent 70%);
+    opacity: 0; transition: opacity .4s;
+  }
+  .feature-cell::after {
+    content: ''; position: absolute; inset: 0;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(99,102,241,.1), rgba(139,92,246,.08));
+    opacity: 0; transition: opacity .4s;
   }
   .feature-cell:hover::before { opacity: 1; }
-  .feature-cell:hover { background: rgba(255,255,255,.025); }
+  .feature-cell:hover::after { opacity: 1; }
+  .feature-cell:hover { 
+    background: linear-gradient(135deg, rgba(255,255,255,.06) 0%, rgba(255,255,255,.03) 100%);
+    border-color: rgba(99,102,241,.25);
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 
+      0 16px 40px rgba(0,0,0,.3),
+      0 8px 20px rgba(99,102,241,.2),
+      inset 0 1px 0 rgba(255,255,255,.1);
+  }
   .feature-icon {
-    width: 40px; height: 40px; border-radius: 10px;
+    width: 48px; height: 48px; border-radius: 12px;
     display: flex; align-items: center; justify-content: center;
-    margin-bottom: 16px; border: 1px solid rgba(255,255,255,.08);
+    margin-bottom: 18px; 
+    border: 1px solid rgba(255,255,255,.1);
+    box-shadow: 
+      0 4px 16px rgba(0,0,0,.2),
+      inset 0 1px 0 rgba(255,255,255,.08);
+    transition: all .3s cubic-bezier(.22,1,.36,1);
+    position: relative;
+    z-index: 1;
+  }
+  .feature-cell:hover .feature-icon {
+    transform: translateY(-4px) scale(1.1) rotate(5deg);
+    box-shadow: 
+      0 8px 24px rgba(0,0,0,.3),
+      inset 0 1px 0 rgba(255,255,255,.15);
   }
   .feature-name {
-    font-family: var(--font-head); font-size: 16px; font-weight: 700;
-    color: var(--text-1); margin-bottom: 7px; letter-spacing: -.02em;
+    font-family: var(--font-head); font-size: 17px; font-weight: 700;
+    color: var(--text-1); margin-bottom: 8px; letter-spacing: -.02em;
+    position: relative; z-index: 1;
   }
-  .feature-desc { font-size: 13.5px; color: var(--text-2); line-height: 1.65; }
+  .feature-desc { 
+    font-size: 14px; color: var(--text-2); line-height: 1.7;
+    position: relative; z-index: 1;
+  }
 
   /* ── How it works ── */
+  .how-it-works-section {
+    position: relative; z-index: 1;
+    padding: 100px 40px;
+    max-width: 1200px; margin: 0 auto;
+  }
+  
   .flow-grid {
-    display: grid; grid-template-columns: repeat(4, 1fr);
-    gap: 0; margin-top: 60px; position: relative;
+    display: grid; 
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px; 
+    margin-top: 60px; 
+    position: relative;
   }
-  .flow-grid::before {
-    content: '';
-    position: absolute; top: 28px; left: calc(12.5% + 28px); right: calc(12.5% + 28px);
-    height: 1px;
-    background: linear-gradient(to right, transparent, var(--accent), var(--accent-2), transparent);
+  
+  .flow-connector {
+    position: absolute;
+    top: 40px;
+    left: 0;
+    right: 0;
+    height: 2px;
     z-index: 0;
+    pointer-events: none;
   }
-  .flow-step { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 0 16px; position: relative; z-index: 1; }
+  
+  .flow-connector-line {
+    position: absolute;
+    top: 0;
+    left: 12.5%;
+    right: 12.5%;
+    height: 100%;
+    background: linear-gradient(
+      to right,
+      transparent 0%,
+      rgba(99,102,241,.3) 10%,
+      rgba(99,102,241,.6) 25%,
+      rgba(139,92,246,.6) 50%,
+      rgba(56,189,248,.6) 75%,
+      rgba(52,211,153,.3) 90%,
+      transparent 100%
+    );
+    animation: flow-pulse 3s ease-in-out infinite;
+  }
+  
+  @keyframes flow-pulse {
+    0%, 100% { opacity: .6; }
+    50% { opacity: 1; }
+  }
+  
+  .flow-step { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    text-align: center; 
+    padding: 0; 
+    position: relative; 
+    z-index: 1;
+    transition: all .4s cubic-bezier(.22,1,.36,1);
+  }
+  
+  .flow-step:hover {
+    transform: translateY(-8px);
+  }
+  
+  .flow-num-wrapper {
+    position: relative;
+    margin-bottom: 24px;
+  }
+  
+  .flow-num-glow {
+    position: absolute;
+    inset: -20px;
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity .4s;
+    filter: blur(30px);
+  }
+  
+  .flow-step:hover .flow-num-glow {
+    opacity: .8;
+  }
+  
   .flow-num {
-    width: 56px; height: 56px; border-radius: 50%;
-    background: var(--surface-2); border: 1px solid var(--border-md);
-    display: flex; align-items: center; justify-content: center;
-    margin-bottom: 20px;
-    box-shadow: 0 0 0 4px var(--bg);
+    width: 80px; 
+    height: 80px; 
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(14,17,32,.95), rgba(11,15,25,.9));
+    border: 2px solid;
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    flex-direction: column;
+    gap: 4px;
+    box-shadow: 
+      0 0 0 8px var(--bg),
+      0 8px 32px rgba(0,0,0,.4),
+      inset 0 2px 0 rgba(255,255,255,.1),
+      inset 0 -2px 8px rgba(0,0,0,.3);
+    transition: all .4s cubic-bezier(.22,1,.36,1);
+    position: relative;
+    overflow: hidden;
   }
+  
+  .flow-num::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.15), transparent 60%);
+    opacity: 0;
+    transition: opacity .4s;
+  }
+  
+  .flow-step:hover .flow-num::before {
+    opacity: 1;
+  }
+  
+  .flow-step:hover .flow-num {
+    transform: scale(1.15) rotate(5deg);
+    box-shadow: 
+      0 0 0 8px var(--bg),
+      0 16px 48px rgba(0,0,0,.5),
+      inset 0 2px 0 rgba(255,255,255,.15),
+      inset 0 -2px 8px rgba(0,0,0,.2);
+  }
+  
+  .flow-num-text {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .05em;
+    opacity: .5;
+    display: block;
+  }
+  
+  .flow-icon-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .flow-step-card {
+    background: linear-gradient(135deg, rgba(255,255,255,.05) 0%, rgba(255,255,255,.02) 100%);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 14px;
+    padding: 20px 18px;
+    box-shadow: 
+      0 4px 20px rgba(0,0,0,.2),
+      inset 0 1px 0 rgba(255,255,255,.08);
+    transition: all .4s cubic-bezier(.22,1,.36,1);
+    position: relative;
+    overflow: hidden;
+    min-height: 140px;
+  }
+  
+  .flow-step-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 0%, rgba(99,102,241,.1), transparent 70%);
+    opacity: 0;
+    transition: opacity .4s;
+  }
+  
+  .flow-step:hover .flow-step-card::before {
+    opacity: 1;
+  }
+  
+  .flow-step:hover .flow-step-card {
+    border-color: rgba(255,255,255,.2);
+    box-shadow: 
+      0 12px 40px rgba(0,0,0,.3),
+      0 4px 16px rgba(99,102,241,.2),
+      inset 0 1px 0 rgba(255,255,255,.12);
+  }
+  
   .flow-step-title {
-    font-family: var(--font-head); font-size: 15px; font-weight: 700;
-    color: var(--text-1); margin-bottom: 8px; letter-spacing: -.02em;
+    font-family: var(--font-head); 
+    font-size: 16px; 
+    font-weight: 700;
+    color: var(--text-1); 
+    margin-bottom: 10px; 
+    letter-spacing: -.02em;
+    position: relative;
+    display: block;
   }
-  .flow-step-desc { font-size: 13px; color: var(--text-2); line-height: 1.65; }
+  
+  .flow-step-desc { 
+    font-size: 13px; 
+    color: var(--text-2); 
+    line-height: 1.7;
+    position: relative;
+    display: block;
+  }
 
 
 
   /* ── CTA section ── */
   .cta-section {
     position: relative; z-index: 1;
-    margin: 0 40px 100px; border-radius: 20px;
+    margin: 0 40px 100px; border-radius: 24px;
     padding: 80px 60px;
-    background: linear-gradient(135deg, rgba(79,82,232,.15) 0%, rgba(124,92,246,.10) 50%, rgba(56,189,248,.08) 100%);
-    border: 1px solid rgba(90,95,255,.2);
+    background: linear-gradient(135deg, rgba(79,82,232,.12) 0%, rgba(124,92,246,.08) 50%, rgba(56,189,248,.06) 100%);
+    border: 1px solid rgba(99,102,241,.25);
     text-align: center; overflow: hidden;
+    box-shadow: 
+      0 20px 60px rgba(0,0,0,.4),
+      0 8px 24px rgba(99,102,241,.15),
+      inset 0 1px 0 rgba(255,255,255,.08);
   }
   .cta-section::before {
     content: ''; position: absolute; inset: 0;
-    background: radial-gradient(ellipse 70% 80% at 50% -20%, rgba(90,95,255,.18), transparent 70%);
+    background: radial-gradient(ellipse 60% 70% at 50% -10%, rgba(99,102,241,.2), transparent 70%);
   }
   .cta-title {
     font-family: var(--font-head); font-size: clamp(28px, 4vw, 46px);
-    font-weight: 800; letter-spacing: -.03em; color: var(--text-1); margin-bottom: 14px;
+    font-weight: 800; letter-spacing: -.04em; color: var(--text-1); margin-bottom: 16px;
     position: relative;
   }
-  .cta-sub { font-size: 16px; color: var(--text-2); margin-bottom: 36px; position: relative; }
+  .cta-sub { font-size: 17px; color: var(--text-2); margin-bottom: 36px; position: relative; line-height: 1.6; }
   .cta-actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; position: relative; }
   .cta-checklist {
-    display: flex; gap: 24px; justify-content: center; flex-wrap: wrap;
-    margin-top: 24px; position: relative;
+    display: flex; gap: 28px; justify-content: center; flex-wrap: wrap;
+    margin-top: 28px; position: relative;
   }
   .cta-check-item {
-    display: flex; align-items: center; gap: 7px;
-    font-size: 13px; color: var(--text-3);
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13.5px; color: var(--text-2); font-weight: 500;
   }
 
   /* ── Footer ── */
@@ -370,18 +614,27 @@ const GLOBAL_CSS = `
 
   /* ── Responsive ── */
   @media (max-width: 900px) {
-    .features-grid { grid-template-columns: 1fr 1fr; }
-    .flow-grid { grid-template-columns: 1fr 1fr; gap: 40px; }
-    .flow-grid::before { display: none; }
+    .features-grid { grid-template-columns: 1fr 1fr; gap: 14px; }
+    .flow-grid { grid-template-columns: 1fr 1fr; gap: 32px 20px; }
+    .flow-connector { display: none; }
     .lbi-nav { padding: 0 20px; }
     .hero { padding: 120px 20px 80px; }
     .section { padding: 72px 20px; }
-    .cta-section { margin: 0 20px 72px; padding: 56px 28px; }
+    .how-it-works-section { padding: 72px 20px; }
+    .cta-section { margin: 0 20px 72px; padding: 56px 32px; }
+    .preview-wrap { padding: 0 20px 80px; }
   }
   @media (max-width: 600px) {
-    .features-grid { grid-template-columns: 1fr; }
-    .flow-grid { grid-template-columns: 1fr; }
+    .features-grid { grid-template-columns: 1fr; gap: 12px; }
+    .flow-grid { grid-template-columns: 1fr; gap: 28px; }
+    .flow-connector { display: none; }
     .lbi-footer { flex-direction: column; align-items: flex-start; }
+    .hero-actions { flex-direction: column; width: 100%; }
+    .btn-hero-primary, .btn-hero-secondary { width: 100%; justify-content: center; }
+    .preview-wrap { padding: 0 16px 60px; }
+    .cta-section { padding: 40px 24px; }
+    .flow-num { width: 70px; height: 70px; }
+    .flow-step-card { padding: 16px 14px; min-height: 120px; }
   }
 `;
 
@@ -550,25 +803,10 @@ const Home = () => {
 
       {/* ── DASHBOARD PREVIEW ── */}
       <div className="preview-wrap">
-        <div style={{ position: 'relative' }}>
+        <div className="preview-container">
           <div className="preview-glow" />
           <div className="preview-fade-top" />
           <div className="preview-inner">
-            <div className="preview-chrome">
-              <div className="chrome-dot" style={{ background: '#ff5f57' }} />
-              <div className="chrome-dot" style={{ background: '#febc2e' }} />
-              <div className="chrome-dot" style={{ background: '#28c840' }} />
-              <div style={{ flex: 1 }} />
-              <div style={{
-                height: 20, width: 180, borderRadius: 4,
-                background: 'rgba(255,255,255,.05)', border: '1px solid var(--border)',
-                display: 'flex', alignItems: 'center', paddingLeft: 8, gap: 5,
-              }}>
-                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#34d399' }} />
-                <span style={{ fontSize: 10, color: 'var(--text-3)', fontFamily: 'var(--font-mono)' }}>app.lumina.bi/dashboard</span>
-              </div>
-              <div style={{ flex: 1 }} />
-            </div>
             <DashboardPreview />
           </div>
           <div className="preview-fade-bottom" />
@@ -577,22 +815,16 @@ const Home = () => {
 
       {/* ── FEATURES ── */}
       <section id="features" className="section">
-        <div ref={addReveal(0)}>
-          <span className="section-eyebrow reveal" ref={addReveal(0)}>Capabilities</span>
-        </div>
-        <h2 className="section-title reveal" ref={addReveal(.06)}>
-          Everything your data team<br />actually needs
-        </h2>
-        <p className="section-sub reveal" ref={addReveal(.1)}>
-          Built for analysts who want answers in seconds, not dashboards that take weeks to configure.
-        </p>
+        <span className="section-eyebrow reveal" ref={addReveal(0)}>Capabilities</span>
+        <h2 className="section-title reveal" ref={addReveal(.05)}>Everything your data team<br />actually needs</h2>
+        <p className="section-sub reveal" ref={addReveal(.08)}>Built for analysts who want answers in seconds, not dashboards that take weeks to configure.</p>
 
         <div className="features-grid">
           {FEATURES.map((f, i) => (
             <div
               key={f.name}
               className="feature-cell reveal"
-              ref={addReveal(i * .07)}
+              ref={addReveal(0.12 + i * .04)}
               onMouseMove={handleFeatureMouseMove}
             >
               <div className="feature-icon" style={{ background: f.bg }}>
@@ -606,21 +838,32 @@ const Home = () => {
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section id="how-it-works" className="section" style={{ paddingTop: 0 }}>
+      <section id="how-it-works" className="how-it-works-section">
         <span className="section-eyebrow reveal" ref={addReveal(0)}>How it works</span>
-        <h2 className="section-title reveal" ref={addReveal(.06)}>From CSV to chart in under 10 seconds</h2>
-        <p className="section-sub reveal" ref={addReveal(.1)}>
+        <h2 className="section-title reveal" ref={addReveal(.05)}>From CSV to chart in under 10 seconds</h2>
+        <p className="section-sub reveal" ref={addReveal(.08)}>
           A high-accuracy pipeline built on real PostgreSQL — not in-memory lookups or flat-file hacks.
         </p>
 
         <div className="flow-grid">
+          <div className="flow-connector">
+            <div className="flow-connector-line" />
+          </div>
           {FLOW_STEPS.map((s, i) => (
-            <div key={s.num} className="flow-step reveal" ref={addReveal(i * .08)}>
-              <div className="flow-num">
-                <span style={{ color: s.color }}>{s.icon}</span>
+            <div key={s.num} className="flow-step reveal" ref={addReveal(0.12 + i * .05)}>
+              <div className="flow-num-wrapper">
+                <div className="flow-num-glow" style={{ background: s.color }} />
+                <div className="flow-num" style={{ borderColor: s.color }}>
+                  <span className="flow-num-text" style={{ color: s.color }}>{s.num}</span>
+                  <div className="flow-icon-wrapper" style={{ color: s.color }}>
+                    {s.icon}
+                  </div>
+                </div>
               </div>
-              <p className="flow-step-title">{s.title}</p>
-              <p className="flow-step-desc">{s.desc}</p>
+              <div className="flow-step-card">
+                <p className="flow-step-title">{s.title}</p>
+                <p className="flow-step-desc">{s.desc}</p>
+              </div>
             </div>
           ))}
         </div>

@@ -85,7 +85,7 @@ export default function SavedDashboards() {
         {filtered.length === 0 ? (
           <div style={emptyStateStyle}>
             <Layout size={48} style={{ opacity: 0.2, marginBottom: 16 }} />
-            <p>No dashboards found matching "{searchTerm}"</p>
+            <p>No dashboards found matching{searchTerm}</p>
           </div>
         ) : (
           filtered.map((board) => (
