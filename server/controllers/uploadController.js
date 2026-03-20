@@ -134,13 +134,26 @@ const getDatasetPreview = async (req, res) => {
     const { id } = req.params;
     const userId = req.user ? req.user.id : null;
     try {
-        let metaQuery = 'SELECT table_name FROM datasets WHERE id = $1';
-        let metaParams = [id];
+        let metaResult;
         if (userId) {
-            metaQuery = 'SELECT table_name FROM datasets WHERE id = $1 AND user_id = $2';
-            metaParams = [id, userId];
+            metaResult = await pool.query(
+                `SELECT d.table_name FROM datasets d 
+                 JOIN users u ON u.id = $2
+                 WHERE d.id = $1 
+                 AND (
+                   d.user_id = $2 
+                   OR EXISTS (
+                     SELECT 1 FROM dataset_collaborators dc 
+                     WHERE dc.dataset_id = d.id 
+                       AND dc.collaborator_email = u.email 
+                       AND dc.status = 'accepted'
+                   )
+                 )`,
+                [id, userId]
+            );
+        } else {
+            metaResult = await pool.query('SELECT table_name FROM datasets WHERE id = $1', [id]);
         }
-        const metaResult = await pool.query(metaQuery, metaParams);
         if (metaResult.rows.length === 0) return res.status(404).json({ error: 'Dataset not found.' });
 
         const tableName = metaResult.rows[0].table_name;

@@ -19,10 +19,19 @@ const handleQuery = async (req, res) => {
         // 1. Fetch Dataset Schema & User AI Preferences
         // We now fetch ai_keys and preferred_provider from the users table too
         const userAndDatasetRes = await pool.query(
-            `SELECT d.table_name, d.columns, u.ai_keys, u.preferred_provider 
+            `SELECT d.table_name, d.columns, d.user_id AS owner_id, u.ai_keys, u.preferred_provider 
              FROM datasets d 
-             JOIN users u ON d.user_id = u.id 
-             WHERE d.id = $1 AND u.id = $2`,
+             JOIN users u ON u.id = $2
+             WHERE d.id = $1 
+               AND (
+                 d.user_id = $2 
+                 OR EXISTS (
+                   SELECT 1 FROM dataset_collaborators dc 
+                   WHERE dc.dataset_id = d.id 
+                     AND dc.collaborator_email = u.email 
+                     AND dc.status = 'accepted'
+                 )
+               )`,
             [datasetId, userId]
         );
 

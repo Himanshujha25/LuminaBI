@@ -8,6 +8,14 @@ const { register, login, getMe, deleteAccount, updatePassword, updateProfile, up
 const { saveDashboard, getDashboards, deleteDashboard, updateDashboard, getDashboardById } = require('../controllers/dashboardController');
 const exportController = require('../controllers/exportController');
 const { protect } = require('../middleware/auth');
+const {
+  inviteCollaborator,
+  acceptInvite,
+  getSharedDatasets,
+  getDatasetCollaborators,
+  removeCollaborator,
+  getInviteInfo,
+} = require('../controllers/collaboratorController');
 const fs = require('fs');
 
 if (!fs.existsSync('./uploads')){
@@ -54,5 +62,13 @@ router.get('/dashboards/:id', protect,  getDashboardById);
 router.post('/exports', exportController.saveExport);
 // router.get('/exports/:id', exportController.getExportById);
 router.post('/exports/generate-pdf', exportController.generatePDF);
+
+// Collaboration Routes
+router.post('/collaborators/invite', protect, inviteCollaborator);
+router.get('/collaborators/shared', protect, getSharedDatasets);
+router.get('/collaborators/invite-info/:token', getInviteInfo);           // public — no auth needed to peek
+router.get('/collaborators/accept/:token', protect, acceptInvite);        // must be logged-in to accept
+router.get('/collaborators/dataset/:datasetId', protect, getDatasetCollaborators);
+router.delete('/collaborators/:collaboratorId', protect, removeCollaborator);
 
 module.exports = router;

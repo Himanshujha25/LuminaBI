@@ -65,10 +65,36 @@ const useStore = create((set, get) => ({
     if (!token) return;
     
     try {
-      const res = await axios.get(`${API_URL}/datasets`);
-      set({ datasets: res.data });
-      if (res.data.length > 0 && !activeDataset) {
-        set({ activeDataset: res.data[0] });
+      // Fetch owned datasets
+      const [ownedRes, sharedRes] = await Promise.allSettled([
+        axios.get(`${API_URL}/datasets`),
+        axios.get(`${API_URL}/collaborators/shared`),
+      ]);
+
+      const owned = ownedRes.status === 'fulfilled' ? ownedRes.value.data : [];
+      const sharedRaw = sharedRes.status === 'fulfilled' ? sharedRes.value.data : [];
+
+      // Map shared datasets into the same shape as owned datasets
+      const shared = sharedRaw.map(s => ({
+        id: s.dataset_id,
+        name: s.dataset_name,
+        columns: s.columns,
+        user_id: null,
+        created_at: s.dataset_created_at,
+        role: s.role,
+        isShared: true,
+        ownerName: s.owner_name,
+        ownerEmail: s.owner_email,
+      }));
+
+      // De-duplicate: owned takes precedence
+      const ownedIds = new Set(owned.map(d => d.id));
+      const uniqueShared = shared.filter(s => !ownedIds.has(s.id));
+
+      const allDatasets = [...owned, ...uniqueShared];
+      set({ datasets: allDatasets });
+      if (allDatasets.length > 0 && !activeDataset) {
+        set({ activeDataset: allDatasets[0] });
       }
     } catch (err) {
       console.error('Failed to load datasets', err);

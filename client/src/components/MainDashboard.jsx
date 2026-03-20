@@ -7,8 +7,11 @@ import {
   LayoutDashboard, PieChart, Zap, Eye, FileText, ChevronRight,
   Database, ChevronDown, BarChart3, LineChart,
   TrendingUp, Hash, Sigma, ArrowUpRight,
-  BarChart2, Layers, Check, Maximize2, Minimize2, Pin, Target, Bot
+  BarChart2, Layers, Check, Maximize2, Minimize2, Pin, Target, Bot,
+  UserPlus
 } from 'lucide-react';
+import InviteModal from './InviteModal';
+import SharedDatasets from './SharedDatasets';
 import html2canvas from 'html2canvas';
 import axios from 'axios';
 import { API_URL } from '../config';
@@ -232,7 +235,12 @@ const MainDashboard = () => {
   const [pinState, setPinState]                     = useState('idle');
   const [isExportingPDF, setIsExportingPDF]         = useState(false);
   const [dataSlicerLimit, setDataSlicerLimit]       = useState('All');
+  const [isInviteOpen, setIsInviteOpen]             = useState(false);
   const isChartFullscreen = false;
+
+  // true if the active dataset belongs to this user (not a shared one)
+  const isDatasetOwner = activeDataset && !activeDataset.isShared &&
+    (activeDataset.user_id === storeUser?.id || storeUser?.id != null);
 
   const userId          = storeUser?.id || 'guest';
   const PIN_STORAGE_KEY = `lumina_pinned_charts_${userId}`;
@@ -272,13 +280,13 @@ const MainDashboard = () => {
       setIsSideLoading(true);
       const tkn = localStorage.getItem('token');
       axios.get(`${API_URL}/datasets/${activeDataset.id}/chats`, {
-        signal: ctrl.signal, timeout: 10000, headers: { Authorization: `Bearer ${tkn}` }
+        signal: ctrl.signal, timeout: 30000, headers: { Authorization: `Bearer ${tkn}` }
       })
         .then(res => setChatHistories(prev => ({
           ...prev,
           [activeDataset.id]: res.data.map(r => ({ id: r.id, role: r.role, text: r.text, data: r.data || null }))
         })))
-        .catch(err => { if (err.name !== 'CanceledError') console.error(err); })
+        .catch(err => { if (err.name !== 'CanceledError' && err.code !== 'ECONNABORTED') console.error(err); })
         .finally(() => setIsSideLoading(false));
     }
     return () => ctrl.abort();
@@ -508,6 +516,18 @@ const MainDashboard = () => {
 
           <div className="lm-topbar-right">
 
+            {/* Invite collaborator button — only shown to dataset owner */}
+            {activeDataset && !activeDataset.isShared && (
+              <button
+                className="lm-ai-toggle"
+                onClick={() => setIsInviteOpen(true)}
+                title="Invite collaborators"
+                style={{ gap: 6 }}
+              >
+                <UserPlus size={14}/><span className="action-btn-text">Invite</span>
+              </button>
+            )}
+
             <button className={`lm-ai-toggle ${isSidebarOpen ? 'active' : ''}`} onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
               {isSidebarOpen
                 ? <><ChevronRight size={14}/><span>Close AI</span></>
@@ -724,6 +744,11 @@ const MainDashboard = () => {
               </div>
             )}
 
+            {/* ── Shared with me section ── */}
+            <div style={{ borderTop: '1px solid var(--border-color, rgba(0,0,0,.08))', marginTop: 8 }}>
+              <SharedDatasets onOpenDataset={() => {}} />
+            </div>
+
             <div style={{ height: 80 }} />
           </div>
 
@@ -847,6 +872,11 @@ const MainDashboard = () => {
       )}
 
       {showPreview && <DatasetPreview key={activeDataset?.id} dataset={activeDataset} onClose={() => setShowPreview(false)} />}
+
+      {/* Invite Collaborator Modal */}
+      {isInviteOpen && activeDataset && (
+        <InviteModal dataset={activeDataset} onClose={() => setIsInviteOpen(false)} />
+      )}
     </div>
   );
 };

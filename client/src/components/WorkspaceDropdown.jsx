@@ -554,7 +554,7 @@ const WorkspaceDropdown = () => {
                   const isActive = activeDataset?.id === d.id;
                   return (
                     <button
-                      key={d.id}
+                      key={d.id + (d.isShared ? '-shared' : '')}
                       type="button"
                       className={`ws-item${isActive ? ' ws-item--active' : ''}`}
                       onClick={() => select(d)}
@@ -564,9 +564,20 @@ const WorkspaceDropdown = () => {
                         <span className="ws-name">{d.name}</span>
                         <span className="ws-meta">
                           {isActive && <span className="ws-dot" />}
-                          {isActive ? 'Active · ' : ''}ID: {String(d.id).slice(0, 8)}
+                          {isActive ? 'Active · ' : ''}
+                          {d.isShared
+                            ? <>Shared · {d.role}</>
+                            : <>ID: {String(d.id).slice(0, 8)}</>
+                          }
                         </span>
                       </div>
+                      {d.isShared && (
+                        <span style={{
+                          padding: '2px 7px', borderRadius: 999, fontSize: 9, fontWeight: 700,
+                          textTransform: 'uppercase', letterSpacing: '.06em',
+                          background: 'rgba(99,102,241,.12)', color: '#818cf8', flexShrink: 0,
+                        }}>Shared</span>
+                      )}
                       {isActive && (
                         <div className="ws-check">
                           <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
