@@ -16,13 +16,22 @@ const handleQuery = async (req, res) => {
         let tableName = 'videos';
         let columnsInfo = [];
 
-        // 1. Fetch Dataset Schema & User AI Preferences
-        // We now fetch ai_keys and preferred_provider from the users table too
+        // 1. Fetch Dataset Schema — allow owner OR accepted collaborator
+        // We join left to collaborators so shared datasets are also accessible
         const userAndDatasetRes = await pool.query(
-            `SELECT d.table_name, d.columns, u.ai_keys, u.preferred_provider 
-             FROM datasets d 
-             JOIN users u ON d.user_id = u.id 
-             WHERE d.id = $1 AND u.id = $2`,
+            `SELECT d.table_name, d.columns, u.ai_keys, u.preferred_provider
+             FROM   datasets d
+             JOIN   users    u ON u.id = d.user_id
+             WHERE  d.id = $1
+               AND (
+                     d.user_id = $2
+                  OR EXISTS (
+                       SELECT 1 FROM dataset_collaborators dc
+                       WHERE  dc.dataset_id = d.id
+                         AND  dc.user_id    = $2
+                         AND  dc.status     = 'accepted'
+                     )
+                   )`,
             [datasetId, userId]
         );
 

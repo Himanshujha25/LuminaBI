@@ -218,6 +218,8 @@ const MainDashboard = () => {
     user: storeUser,
     showPreview,
     setShowPreview,
+    isAiSidebarOpen: isSidebarOpen,
+    setIsAiSidebarOpen: setIsSidebarOpen,
   } = useStore();
 
   /* Reliable dark detection — store value OR DOM attribute */
@@ -233,7 +235,6 @@ const MainDashboard = () => {
   const [viewMode, setViewMode]                     = useState('chart');
   const [sidePrompt, setSidePrompt]                 = useState('');
   const [pinState, setPinState]                     = useState('idle');
-  const [isSidebarOpen, setIsSidebarOpen]           = useState(true);
   const [showDatasetDropdown, setShowDatasetDropdown] = useState(false);
   const [datasetSearch, setDatasetSearch]           = useState('');
   const [isExportingPDF, setIsExportingPDF]         = useState(false);
@@ -493,11 +494,6 @@ const MainDashboard = () => {
 
   return (
     <div className="dashboard-wrapper">
-
-      <button className="mobile-assistant-toggle" onClick={() => setIsSidebarOpen(true)}>
-        <Sparkles size={18} />
-      </button>
-
       <main className="dashboard-main flex flex-col min-h-0">
 
         {/* ── Topbar ── */}

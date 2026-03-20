@@ -102,20 +102,40 @@ const uploadCSV = async (req, res) => {
 const getDatasets = async (req, res) => {
     try {
         const userId = req.user ? req.user.id : null;
-        let query = 'SELECT id, name, table_name, columns, created_at FROM datasets ORDER BY created_at DESC';
-        let params = [];
-        
-        if (userId) {
-            query = 'SELECT id, name, table_name, columns, created_at FROM datasets WHERE user_id = $1 ORDER BY created_at DESC';
-            params = [userId];
+
+        if (!userId) {
+            // Unauthenticated: return nothing
+            return res.json([]);
         }
 
-        const result = await pool.query(query, params);
-        res.json(result.rows);
+        // All datasets owned by this user
+        const ownedRes = await pool.query(
+            `SELECT d.id, d.name, d.table_name, d.columns, d.created_at,
+                    false AS is_shared, NULL AS owner_name, NULL AS collab_role
+             FROM   datasets d
+             WHERE  d.user_id = $1
+             ORDER  BY d.created_at DESC`,
+            [userId]
+        );
+
+        // Datasets shared with this user (accepted invites)
+        const sharedRes = await pool.query(
+            `SELECT d.id, d.name, d.table_name, d.columns, d.created_at,
+                    true AS is_shared, u.name AS owner_name, dc.role AS collab_role
+             FROM   dataset_collaborators dc
+             JOIN   datasets d ON d.id = dc.dataset_id
+             JOIN   users    u ON u.id = d.user_id
+             WHERE  dc.user_id = $1 AND dc.status = 'accepted'
+             ORDER  BY dc.created_at DESC`,
+            [userId]
+        );
+
+        res.json([...ownedRes.rows, ...sharedRes.rows]);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 }
+
 
 const getDatasetPreview = async (req, res) => {
     const { id } = req.params;

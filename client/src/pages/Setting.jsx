@@ -269,11 +269,46 @@ const STYLES = `
   }
 
   .sw-hr { border:none; border-top:1px solid var(--border); margin:16px 0; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
 
   @keyframes fadeUp { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
-  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
   .sw-fadein { animation:fadeIn .16s ease; }
   .sw-fadeup { animation:fadeUp .18s ease; }
+
+  /* Responsive Settings Layout */
+  .sw-layout {
+    display: grid;
+    grid-template-columns: 192px 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+  .sw-wrapper { padding: 32px 24px; }
+  
+  .sw-sidebar-nav {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r-xl); padding: 8px;
+    position: sticky; top: 16px; box-shadow: var(--shadow-sm);
+  }
+
+  @media (max-width: 768px) {
+    .sw-wrapper { padding: 12px 10px; }
+    .sw-layout {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    .sw-sidebar-nav {
+      position: relative; top: 0;
+      display: flex; gap: 4px; overflow-x: auto;
+      padding: 6px; border-radius: var(--r-md);
+      -webkit-overflow-scrolling: touch;
+    }
+    .sw-nav-btn {
+      white-space: nowrap; flex: 0 0 auto; width: auto;
+      padding: 6px 12px; font-size: 12px;
+    }
+    .sw-hr { display: none; }
+    .sw-card { padding: 16px; border-radius: var(--r-lg); }
+  }
 `;
 
 /* ─────────────────────────────────────────────
@@ -1096,7 +1131,7 @@ const Settings = ({ isDark, toggleTheme, onLogout }) => {
   return (
     <div className="sw">
       <style>{STYLES}</style>
-      <div style={{ padding: '28px 24px 64px' }}>
+      <div className="sw-wrapper">
         <div style={{ maxWidth: 880, margin: '0 auto' }}>
 
           {/* Header */}
@@ -1114,14 +1149,10 @@ const Settings = ({ isDark, toggleTheme, onLogout }) => {
             )}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '192px 1fr', gap: 20, alignItems: 'start' }}>
+          <div className="sw-layout">
 
             {/* Sidebar nav */}
-            <nav style={{
-              background: 'var(--surface)', border: '1px solid var(--border)',
-              borderRadius: 'var(--r-xl)', padding: 8,
-              position: 'sticky', top: 16, boxShadow: 'var(--shadow-sm)',
-            }}>
+            <nav className="sw-sidebar-nav no-scrollbar">
               {NAV.map(({ id, label, Icon }) => (
                 <button key={id} type="button" className={`sw-nav-btn${active === id ? ' active' : ''}`} onClick={() => setActive(id)}>
                   <Icon size={14} style={{ flexShrink: 0 }} />{label}

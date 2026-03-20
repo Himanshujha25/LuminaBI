@@ -17,7 +17,7 @@
  */
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Database, ChevronDown, Search, Plus, Table } from 'lucide-react';
+import { Database, ChevronDown, Search, Plus, Table, Users } from 'lucide-react';
 
 /* ─── Theme tokens ─────────────────────────────────────────────────────────── */
 const STYLES = `
@@ -356,6 +356,18 @@ const STYLES = `
     background: var(--ws-trig-bdr);
     flex-shrink: 0;
   }
+  /* Shared-badge style */
+  .ws-shared-badge {
+    font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 4px;
+    background: rgba(16,185,129,.12); color: #059669;
+    text-transform: uppercase; letter-spacing: .05em; flex-shrink: 0;
+  }
+  [data-theme="dark"] .ws-shared-badge { background: rgba(52,211,153,.12); color: #34d399; }
+  .ws-section-label {
+    font-size: 9px; font-weight: 800; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ws-hdr-lbl);
+    padding: 6px 4px 3px;
+  }
 `;
 
 import useStore from '../store/useStore';
@@ -405,6 +417,40 @@ const WorkspaceDropdown = () => {
     setActiveDataset(d);
     setOpen(false);
     setSearch('');
+  };
+
+  const ownedDatasets  = useMemo(() => filtered.filter(d => !d.is_shared), [filtered]);
+  const sharedDatasets = useMemo(() => filtered.filter(d =>  d.is_shared), [filtered]);
+
+  const renderDatasetItem = (d) => {
+    const isActive = activeDataset?.id === d.id;
+    return (
+      <button
+        key={d.id}
+        type="button"
+        className={`ws-item${isActive ? ' ws-item--active' : ''}`}
+        onClick={() => select(d)}
+      >
+        <div className="ws-av">{initials(d.name)}</div>
+        <div className="ws-info">
+          <span className="ws-name">{d.name}</span>
+          <span className="ws-meta">
+            {isActive && <span className="ws-dot" />}
+            {d.is_shared ? `by ${d.owner_name}` : (isActive ? 'Active · ' : '') + `ID: ${String(d.id).slice(0,8)}`}
+          </span>
+        </div>
+        {d.is_shared && !isActive && (
+          <span className="ws-shared-badge">{d.collab_role || 'viewer'}</span>
+        )}
+        {isActive && (
+          <div className="ws-check">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 6L9 17l-5-5" />
+            </svg>
+          </div>
+        )}
+      </button>
+    );
   };
 
   const initials = name =>
@@ -468,33 +514,27 @@ const WorkspaceDropdown = () => {
               {filtered.length === 0 ? (
                 <div className="ws-empty">No workspaces found.</div>
               ) : (
-                filtered.map(d => {
-                  const isActive = activeDataset?.id === d.id;
-                  return (
-                    <button
-                      key={d.id}
-                      type="button"
-                      className={`ws-item${isActive ? ' ws-item--active' : ''}`}
-                      onClick={() => select(d)}
-                    >
-                      <div className="ws-av">{initials(d.name)}</div>
-                      <div className="ws-info">
-                        <span className="ws-name">{d.name}</span>
-                        <span className="ws-meta">
-                          {isActive && <span className="ws-dot" />}
-                          {isActive ? 'Active · ' : ''}ID: {String(d.id).slice(0, 8)}
-                        </span>
-                      </div>
-                      {isActive && (
-                        <div className="ws-check">
-                          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M20 6L9 17l-5-5" />
-                          </svg>
-                        </div>
+                <>
+                  {/* ── My Workspaces ── */}
+                  {ownedDatasets.length > 0 && (
+                    <>
+                      {sharedDatasets.length > 0 && (
+                        <div className="ws-section-label">My Workspaces</div>
                       )}
-                    </button>
-                  );
-                })
+                      {ownedDatasets.map(d => renderDatasetItem(d))}
+                    </>
+                  )}
+
+                  {/* ── Shared with me ── */}
+                  {sharedDatasets.length > 0 && (
+                    <>
+                      <div className="ws-section-label" style={{ display:'flex', alignItems:'center', gap:5 }}>
+                        <Users size={9} /> Shared with me
+                      </div>
+                      {sharedDatasets.map(d => renderDatasetItem(d))}
+                    </>
+                  )}
+                </>
               )}
             </div>  
           </div>

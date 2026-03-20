@@ -291,7 +291,7 @@
 .chart-panel-title    { display: flex; align-items: center; gap: 8px; }
 .chart-panel-title h2 { margin: 0; font-size: 14px; font-weight: 700; color: var(--text-primary); }
 .title-icon           { color: var(--accent-blue); }
-.chart-panel-actions  { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; }
+.chart-panel-actions  { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
 
 /* Chart type badge */
@@ -338,12 +338,14 @@
   /* Clamp to 2 lines with expand on hover */
   display:        -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp:     2;
   -webkit-box-orient: vertical;
   overflow:    hidden;
   transition:  all .2s ease;
 }
 .lm-summary-bar:hover .lm-summary-text {
   -webkit-line-clamp: unset;
+  line-clamp:     unset;
   overflow:    visible;
 }
 
@@ -750,27 +752,48 @@ body.dark .lm-dropdown-fixed {
 }
 
 @media (max-width: 768px) {
-  .lm-kpi-row      { grid-template-columns: repeat(2,1fr); padding: 12px 0; }
-  .lm-content-col  { padding: 0 14px 60px; }
-  .topbar-shell    { padding: 8px 12px; gap: 8px; }
-  .chart-panel-header { padding: 10px 14px; }
-  .chart-panel-actions { gap: 6px; }
-  .action-btn-text { display: none; }
-  .mobile-assistant-toggle {
-    display: flex; position: fixed; bottom: 24px; right: 20px; z-index: 100;
-    width: 52px; height: 52px; border-radius: 50%;
-    background: linear-gradient(135deg,#4f52e8,#7c5cf6); color: #fff;
-    border: none; cursor: pointer; align-items: center; justify-content: center;
-    box-shadow: 0 4px 16px rgba(79,82,232,.35);
+  .lm-kpi-row { 
+    display: flex; 
+    flex-wrap: nowrap; 
+    overflow-x: auto; 
+    scroll-snap-type: x mandatory;
+    gap: 10px; 
+    padding: 12px 0 16px; 
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
   }
+  .lm-kpi-row::-webkit-scrollbar { display: none; }
+  /* Show ~2 cards at a time with a peek of the next */
+  .lm-kpi-card {
+    flex: 0 0 calc(50% - 8px);
+    scroll-snap-align: start;
+    padding: 16px 14px;
+  }
+  .lm-kpi-icon { width: 42px; height: 42px; border-radius: 10px; }
+  .lm-kpi-value { font-size: 22px; }
+  .lm-kpi-label { font-size: 8.5px; }
+  .lm-content-col  { padding: 0 14px 120px; }
+  .topbar-shell    { padding: 8px 12px; gap: 8px; }
+  .chart-panel-header { padding: 10px 14px; gap: 10px; }
+  .chart-panel-actions { gap: 6px; }
+  /* Hide labels on mobile to save space */
+  .action-btn-text,
+  .seg-btn span,
+  .lm-dropdown-btn span { display: none !important; }
+  .lm-ai-toggle span { display: none !important; }
 }
 
 @media (max-width: 480px) {
-  .lm-kpi-row { grid-template-columns: 1fr 1fr; }
-  .lm-kpi-value { font-size: 18px; }
+  .lm-kpi-row { gap: 8px; padding: 10px 0 14px; }
+  .lm-kpi-card {
+    flex: 0 0 calc(55% - 6px);
+    padding: 14px 12px;
+  }
+  .lm-kpi-value { font-size: 20px; }
+  .lm-kpi-icon { width: 38px; height: 38px; }
   .searchbar__btn span, .lm-ai-toggle span { display: none; }
   .searchbar__btn, .lm-ai-toggle { padding: 0 10px; }
-  .lm-content-col { padding: 0 10px 60px; }
+  .lm-content-col { padding: 0 10px 120px; }
 }
 
 /* ─── 15. PREMIUM KPI / LEGACY ───────────────────────────── */

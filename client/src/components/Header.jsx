@@ -2,7 +2,7 @@ import React from 'react';
 import {
   UploadCloud, Moon, Sun, LogOut,
   PanelLeftClose, PanelLeftOpen, Loader2,
-  CheckCircle2, XCircle,
+  CheckCircle2, XCircle, Sparkles, Menu
 } from 'lucide-react';
 import './Header.css';
 import useStore from '../store/useStore';
@@ -59,10 +59,12 @@ const Header = () => {
   const { 
     isDark, 
     toggleTheme, 
-    logout, 
+    logout,
     globalUploadState, 
     isSidebarVisible, 
     setIsSidebarVisible, 
+    isAiSidebarOpen,
+    setIsAiSidebarOpen,
     setIsUploadOpen,
     user 
   } = useStore();
@@ -81,9 +83,10 @@ const Header = () => {
             onClick={() => setIsSidebarVisible(!isSidebarVisible)}
             title={isSidebarVisible ? 'Hide sidebar' : 'Show sidebar'}
           >
-            {isSidebarVisible
-              ? <PanelLeftClose size={16} />
-              : <PanelLeftOpen  size={16} />}
+            <Menu size={18} className="hdr-mobile-only" />
+            <div className="hdr-desktop-only" style={{ display: 'flex' }}>
+              {isSidebarVisible ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
+            </div>
           </button>
           <span className="hdr-crumb">Workspace / Analytics</span>
         </div>
@@ -130,6 +133,11 @@ const Header = () => {
 
       {/* ── Mobile bottom nav ─────────────────────────────────────────────── */}
       <nav className="hdr-mobile-nav">
+        <button className="hdr-mob-item" onClick={() => setIsAiSidebarOpen(true)} style={{ color: isAiSidebarOpen ? 'var(--hdr-text-primary)' : '' }}>
+          <Sparkles size={20} />
+          <span>AI Chat</span>
+        </button>
+
         <button className="hdr-mob-item" onClick={() => setIsUploadOpen(true)}>
           <div className="hdr-mob-upload">
             <UploadCloud size={22} />
@@ -139,11 +147,6 @@ const Header = () => {
         <button className="hdr-mob-item" onClick={toggleTheme}>
           {isDark ? <Sun size={20} /> : <Moon size={20} />}
           <span>Theme</span>
-        </button>
-
-        <button className="hdr-mob-item danger" onClick={logout}>
-          <LogOut size={20} />
-          <span>Logout</span>
         </button>
       </nav>
     </>

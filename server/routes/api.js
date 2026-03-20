@@ -7,6 +7,7 @@ const { getChats, clearChats, deleteMessage } = require('../controllers/chatCont
 const { register, login, getMe, deleteAccount } = require('../controllers/authController');
 const { saveDashboard, getDashboards, deleteDashboard, updateDashboard, getDashboardById } = require('../controllers/dashboardController');
 const exportController = require('../controllers/exportController');
+const { inviteCollaborator, acceptInvite, getCollaborators, removeCollaborator } = require('../controllers/collaboratorController');
 const { protect } = require('../middleware/auth');
 const fs = require('fs');
 
@@ -43,11 +44,16 @@ router.post('/dashboards', protect, saveDashboard);
 router.get('/dashboards', protect, getDashboards);
 router.delete('/dashboards/:id', protect, deleteDashboard);
 router.put('/dashboards/:id', protect, updateDashboard);
-router.get('/dashboards/:id', protect,  getDashboardById);
+router.get('/dashboards/:id', protect, getDashboardById);
 
 // Export & PDF Routes
 router.post('/exports', exportController.saveExport);
-// router.get('/exports/:id', exportController.getExportById);
 router.post('/exports/generate-pdf', exportController.generatePDF);
+
+// ── Collaboration Routes ──────────────────────────────────────────────────────
+router.post('/datasets/:id/invite',                    protect, inviteCollaborator);
+router.get('/invite/accept/:token',                    protect, acceptInvite);
+router.get('/datasets/:id/collaborators',              protect, getCollaborators);
+router.delete('/datasets/:id/collaborators/:collabId', protect, removeCollaborator);
 
 module.exports = router;

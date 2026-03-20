@@ -13,8 +13,7 @@ import {
   PieChart, Table as TableIcon, Send, Cpu,
   Zap, Database, CheckCircle2, Eye, Activity, TrendingUp, FileText, Edit2, Save,
   Maximize2, Minimize2, RefreshCw, Settings, Palette, RotateCcw, 
-  SlidersHorizontal, Layers, Lock, Unlock, Search, Bell, HelpCircle,
-  BarChart2, Pin, PinOff, EyeOff, Copy, Move
+  BarChart2, Pin, PinOff, EyeOff, Copy, Move, Menu, Search, Lock, Unlock, SlidersHorizontal
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -62,7 +61,7 @@ function Toast({ msg, type = 'success', onDone }) {
 }
 
 export default function DynamicDashboard({ charts, onClose, initialLayout, dashboardName }) {
-  const { isDark, toggleTheme, token, activeDataset } = useStore();
+  const { isDark, toggleTheme, token, activeDataset, setIsSidebarVisible } = useStore();
   const navigate = useNavigate();
 
   const handleBack = () => (typeof onClose === 'function' ? onClose() : navigate(-1));
@@ -359,8 +358,11 @@ export default function DynamicDashboard({ charts, onClose, initialLayout, dashb
 
       {/* ── HEADER ── */}
       <header className="dd-header">
-        {/* Left: Back + title */}
+        {/* Left: Hamburger + Back + title */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flexShrink: 0 }}>
+          <button type="button" onClick={() => setIsSidebarVisible(true)} className="dd-hamburger-btn">
+            <Menu size={16} />
+          </button>
           <button type="button" onClick={handleBack} className="dd-back-btn">
             <ArrowLeft size={13} />
             <span>Back</span>

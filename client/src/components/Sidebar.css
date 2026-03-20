@@ -11,8 +11,9 @@
 }
 
 @media (min-width: 1025px) {
-  .saas-sidebar.hidden-desktop {
+  .saas-sidebar.closed {
     width: 0;
+    min-width: 0;
     opacity: 0;
     pointer-events: none;
     border-right-width: 0;
@@ -255,6 +256,20 @@
   
   .saas-sidebar.open {
     transform: translateX(0);
+  }
+}
+
+.sidebar-mobile-backdrop {
+  display: none;
+}
+@media (max-width: 1024px) {
+  .sidebar-mobile-backdrop.active {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(2px);
+    z-index: 40;
   }
 }
 

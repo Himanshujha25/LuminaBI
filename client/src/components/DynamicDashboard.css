@@ -73,8 +73,7 @@
     linear-gradient(90deg, rgba(79,82,232,.04) 1px, transparent 1px);
 }
 
-/* Legacy dark class compatibility */
-.dd-root.dark { /* already the default, no overrides needed */ }
+/* Legacy dark class compatibility - already the default, no overrides needed */
 
 /* ── Header ─────────────────────────────────────────────────────────────── */
 .dd-header {
@@ -129,6 +128,22 @@
 }
 .dd-root.light .dd-back-btn { background: rgba(79,82,232,.06); }
 .dd-root.light .dd-back-btn:hover { background: rgba(79,82,232,.12); }
+
+.dd-hamburger-btn { display: none; }
+@media (max-width: 1024px) {
+  .dd-hamburger-btn {
+    display: flex;
+    align-items: center; justify-content: center;
+    width: 30px; height: 30px;
+    background: rgba(255,255,255,.05);
+    border: 1px solid var(--dd-border);
+    border-radius: var(--dd-radius-sm);
+    color: var(--dd-text-2);
+    cursor: pointer;
+    transition: all .15s;
+    margin-right: 2px;
+  }
+}
 
 /* ── Filter bar ──────────────────────────────────────────────────────────── */
 .dd-filter-bar {
@@ -871,14 +886,20 @@
 }
 
 @media (max-width: 768px) {
-  .dd-header { padding: 0 12px; gap: 6px; }
+  .dd-header { padding: 0 12px; gap: 8px; }
   .dd-canvas-area { padding: 10px; }
   .dd-filter-bar { display: none; }
-  .dd-header-center { display: none; }
+  .dd-header-center { 
+    flex: 1;
+    justify-content: flex-end;
+  }
+  .dd-back-btn span { display: none; }
+  .dd-back-btn { padding: 6px; }
 }
 
 @media (max-width: 480px) {
   .dd-header { padding: 0 10px; }
   .dd-btn-outline, .dd-btn-primary { height: 28px; }
   .dd-modal { padding: 22px 18px; }
+  .dd-sidebar { width: 100%; max-width: 100%; border-left: none; }
 }

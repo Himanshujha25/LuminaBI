@@ -241,6 +241,9 @@
   display: none;
 }
 
+.hdr-mobile-only { display: none !important; }
+.hdr-desktop-only { display: inherit; }
+
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .app-header {
@@ -250,6 +253,9 @@
   .hdr-desktop {
     display: none !important;
   }
+
+  .hdr-mobile-only { display: inherit !important; }
+  .hdr-desktop-only { display: none !important; }
 
   .hdr-mobile-nav {
     display: flex;

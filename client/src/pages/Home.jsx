@@ -165,7 +165,7 @@ const GLOBAL_CSS = `
     animation: pulse-dot 2s ease infinite;
   }
   .hero-title {
-    font-family: var(--font-head); font-size: clamp(44px, 7vw, 80px);
+    font-family: var(--font-head); font-size: clamp(34px, 10vw, 84px);
     font-weight: 800; line-height: 1.05; letter-spacing: -.03em;
     color: var(--text-1); margin-bottom: 22px;
   }
@@ -381,7 +381,13 @@ const GLOBAL_CSS = `
   @media (max-width: 600px) {
     .features-grid { grid-template-columns: 1fr; }
     .flow-grid { grid-template-columns: 1fr; }
-    .lbi-footer { flex-direction: column; align-items: flex-start; }
+    .lbi-footer { flex-direction: column; align-items: center; text-align: center; gap: 20px; }
+    .hide-mobile { display: none !important; }
+    .lbi-nav-links { gap: 4px; }
+    .btn-ghost { padding: 6px 8px; font-size: 13px; }
+    .btn-cta { padding: 8px 12px; font-size: 12.5px; }
+    .hero-disclaimer { margin-top: 10px; opacity: .7; }
+    .lbi-logo-text { font-size: 15px; }
   }
 `;
 
@@ -494,8 +500,8 @@ const Home = () => {
           <span className="lbi-logo-text">Lumina<span className="gradient-text">BI</span></span>
         </Link>
         <div className="lbi-nav-links">
-          <a href="#features" className="btn-ghost">Features</a>
-          <a href="#how-it-works" className="btn-ghost">How it works</a>
+          <a href="#features" className="btn-ghost hide-mobile">Features</a>
+          <a href="#how-it-works" className="btn-ghost hide-mobile">How it works</a>
           <Link to="/login" className="btn-ghost">Log in</Link>
           <Link to="/signup" className="btn-cta">Start free <ChevronRight size={13} /></Link>
         </div>

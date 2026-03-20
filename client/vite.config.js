@@ -51,7 +51,7 @@ export default defineConfig({
         // Network-first for API calls so data stays fresh
         runtimeCaching: [
           {
-            urlPattern: /^(https:\/\/luminabi\.onrender\.com|http:\/\/localhost:5000)\/api\/.*/i,
+            urlPattern: /^(https:\/\/luminabi\.onrender\.com|http:\/\/localhost:5001)\/api\/.*/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'lumina-api-cache',

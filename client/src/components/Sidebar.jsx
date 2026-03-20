@@ -2,9 +2,10 @@
   import { useNavigate } from 'react-router-dom';
   import {
     LayoutDashboard, Database, BarChart3,
-    Settings, Zap, Sparkles, LifeBuoy, Layers
+    Settings, Zap, Sparkles, LifeBuoy, Layers, LogOut
   } from 'lucide-react';
   import useStore from '../store/useStore';
+  import './Sidebar.css';
 
   /* ─── All tokens in one place ─────────────────────────────────────────────── */
   const SIDEBAR_STYLES = `
@@ -127,7 +128,7 @@
     .sb-upgrade:hover { opacity: 0.87; }
   `;
 
-  const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
+  const Sidebar = () => {
     const navigate = useNavigate();
     const {
       activeDataset,
@@ -136,6 +137,8 @@
       setCurrentView,
       setIsUploadOpen,
       setIsManageOpen,
+      logout,
+      setIsSidebarVisible,
     } = useStore();
 
     const handleAnalyticsClick = () => {
@@ -160,6 +163,7 @@
       items: [
         { id: 'support',  label: 'Support',  Icon: LifeBuoy, action: () => setCurrentView('support') },
         { id: 'settings', label: 'Settings', Icon: Settings, action: () => setCurrentView('settings') },
+        { id: 'logout',   label: 'Logout',   Icon: LogOut, action: () => logout() }
       ],
     },
   ];
@@ -168,26 +172,17 @@
       <>
         <style>{SIDEBAR_STYLES}</style>
 
-        {isSidebarOpen && (
-          <div
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 30 }}
-            onClick={() => setIsSidebarOpen?.(false)}
-          />
-        )}
+        <div 
+          className={`sidebar-mobile-backdrop ${isVisible ? 'active' : ''}`}
+          onClick={() => setIsSidebarVisible(false)}
+        />
 
-        <aside style={{
-          width: isVisible ? '240px' : '0',
-          minWidth: isVisible ? '240px' : '0',
-          overflow: 'hidden',
-          transition: 'width 0.25s ease, min-width 0.25s ease',
+        <aside className={`saas-sidebar ${isVisible ? 'open' : 'closed'}`} style={{
           height: '100vh',
           display: 'flex',
           flexDirection: 'column',
           background: 'var(--sb-bg)',
           borderRight: '1px solid var(--sb-border)',
-          position: 'relative',
-          zIndex: 20,
-          flexShrink: 0,
         }}>
           <div style={{ width: '240px', height: '100%', display: 'flex', flexDirection: 'column' }}>
 
@@ -261,7 +256,10 @@
                     return (
                       <button
                         key={id}
-                        onClick={action}
+                        onClick={() => {
+                          if (action) action();
+                          if (window.innerWidth <= 1024) setIsSidebarVisible(false);
+                        }}
                         className={`sb-btn${isActive ? ' active' : ''}`}
                       >
                         {isActive && (
