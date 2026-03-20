@@ -100,7 +100,7 @@ const STYLES = `
     --shadow-lg:   0 16px 40px rgba(0,0,0,.45);
   }
 
-  .sw { font-family:'DM Sans',sans-serif; background:var(--page); color:var(--text-1); min-height:100vh; display:flex; align-items:flex-start; justify-content:center; overflow:hidden; padding-top:0px; padding-bottom:160px; }
+  .sw { font-family:'DM Sans',sans-serif; background:var(--page); color:var(--text-1); min-height:100vh; display:flex; align-items:flex-start; justify-content:center; overflow:visible; padding-top:0px; padding-bottom:160px; }
   .sw-mono { font-family:'DM Mono',monospace; }
 
   .sw-field {
