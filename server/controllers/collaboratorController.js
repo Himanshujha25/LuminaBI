@@ -75,6 +75,17 @@ const inviteCollaborator = async (req, res) => {
       [dataset_id, owner_id, collaborator_email, role, invite_token]
     );
 
+    // --- Real-time Notification ---
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`email_${collaborator_email}`).emit('invite-received', {
+        datasetName: dataset.name,
+        from: req.user.email,
+        invite_token: result.rows[0].invite_token
+      });
+      console.log(`⚡ [Socket] Emit invite-received to email_${collaborator_email}`);
+    }
+
     return res.status(201).json({
       message: `Invitation sent to ${collaborator_email}.`,
       invite_token: result.rows[0].invite_token,
@@ -135,6 +146,15 @@ const acceptInvite = async (req, res) => {
       `UPDATE dataset_collaborators SET status = 'accepted' WHERE invite_token = $1`,
       [token]
     );
+
+    // Notify owner
+    const io = req.app.get('io');
+    if (io) {
+       io.to(`user_${invite.owner_id}`).emit('collaborator-accepted', {
+         datasetId: invite.dataset_id,
+         collaboratorEmail: invite.collaborator_email
+       });
+    }
 
     return res.status(200).json({
       message: `You now have ${invite.role} access to "${invite.dataset_name}".`,

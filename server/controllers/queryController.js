@@ -16,10 +16,13 @@ const handleQuery = async (req, res) => {
         let tableName = 'videos';
         let columnsInfo = [];
 
-        // 1. Fetch Dataset Schema & User AI Preferences
-        // We now fetch ai_keys and preferred_provider from the users table too
+        // 1. Fetch Dataset Schema & User AI Preferences & Role
         const userAndDatasetRes = await pool.query(
-            `SELECT d.table_name, d.columns, d.user_id AS owner_id, u.ai_keys, u.preferred_provider 
+            `SELECT d.table_name, d.columns, d.user_id AS owner_id, u.ai_keys, u.preferred_provider,
+               CASE 
+                 WHEN d.user_id = $2 THEN 'owner'
+                 ELSE (SELECT role FROM dataset_collaborators WHERE dataset_id = d.id AND collaborator_email = u.email AND status = 'accepted' LIMIT 1)
+               END as user_role
              FROM datasets d 
              JOIN users u ON u.id = $2
              WHERE d.id = $1 
@@ -39,9 +42,14 @@ const handleQuery = async (req, res) => {
             return res.status(403).json({ error: "Dataset not found or unauthorized" });
         }
 
-        const { table_name, columns, ai_keys, preferred_provider } = userAndDatasetRes.rows[0];
+        const { table_name, columns, ai_keys, preferred_provider, user_role } = userAndDatasetRes.rows[0];
         tableName = table_name;
         columnsInfo = columns;
+
+        // Block viewers from querying
+        if (user_role?.toLowerCase() === 'viewer') {
+            return res.status(403).json({ error: "View-only access. You cannot perform new AI queries on this dataset." });
+        }
 
         console.log('[QueryController] Preferred provider:', preferred_provider);
         console.log('[QueryController] AI keys available:', Object.keys(ai_keys || {}));
@@ -161,6 +169,12 @@ const handleQuery = async (req, res) => {
             suggested_follow_ups: aiResponse.suggested_follow_ups || [],
             provider_used: preferred_provider // Show the user which AI did the work
         });
+
+        // Emit real-time chat update to all collaborators
+        const io = req.app.get('io');
+        if (io && datasetId) {
+            io.to(`dataset_${datasetId}`).emit('chat-updated', { datasetId, senderId: userId });
+        }
 
         console.log('[QueryController] Response sent successfully');
 

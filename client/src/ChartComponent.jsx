@@ -62,17 +62,21 @@ function CustomTooltip({ active, payload, label, isDark }) {
 }
 
 /* ── Custom legend ───────────────────────────────────────────────────────── */
-function CustomLegend({ payload, isDark }) {
-  if (!payload?.length) return null;
+function CustomLegend({ payload, isDark, manualPayload }) {
+  const items = manualPayload || payload || [];
+  if (!items.length) return null;
   const tx = isDark ? '#9ca3af' : '#64748b';
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 16px', justifyContent: 'center', paddingTop: 10 }}>
-      {payload.map((p, i) => (
-        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <div style={{ width: 8, height: 8, borderRadius: '50%', background: p.color }} />
-          <span style={{ fontSize: 11, fontWeight: 600, color: tx }}>{p.value}</span>
-        </div>
-      ))}
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 20px', justifyContent: 'center', paddingTop: 14 }}>
+      {items.map((p, i) => {
+        const color = p.color || (p.payload && p.payload.color) || '#ccc';
+        return (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', padding: '4px 10px', borderRadius: 6 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: tx }}>{p.value}</span>
+            <div style={{ width: 10, height: 10, borderRadius: '50%', background: color, border: `2px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`, flexShrink: 0 }} />
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -298,7 +302,15 @@ function DynamicChartComponent({ config, overrideChartType, compact = false, exp
           <PieChart width={W} height={H} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
             <Defs/>
             <Tooltip {...tooltipProps} cursor={false}/>
-            <Legend {...legendProps}/>
+            <Legend 
+              content={<CustomLegend 
+                isDark={isDark} 
+                manualPayload={chartData.map((d, i) => ({
+                  value: d[safeXKey], 
+                  color: PALETTE[i % PALETTE.length][0] 
+                }))} 
+              />}
+            />
             <Pie
               isAnimationActive={false}
               data={chartData}

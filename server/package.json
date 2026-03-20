@@ -30,6 +30,7 @@
     "pg-copy-streams": "^7.0.0",
     "pptxgenjs": "^4.0.1",
     "puppeteer": "^24.39.1",
-    "resend": "^6.9.4"
+    "resend": "^6.9.4",
+    "socket.io": "^4.8.3"
   }
 }

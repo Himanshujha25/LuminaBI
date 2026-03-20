@@ -67,7 +67,7 @@ function Toast({ msg, type = 'success', onDone }) {
   );
 }
 
-export default function DynamicDashboard({ charts, initialLayout, dashboardName }) {
+export default function DynamicDashboard({ charts, initialLayout, dashboardName, onToggleSidebar, isSidebarVisible }) {
   const { isDark, toggleTheme, token, activeDataset, setCurrentView, setIsManageOpen, logout, user } = useStore();
   const navigate = useNavigate();
 
@@ -104,6 +104,8 @@ export default function DynamicDashboard({ charts, initialLayout, dashboardName 
   const [sidebarTab,        setSidebarTab]        = useState('ai'); // 'ai' | 'panels'
   const [compactMode,       setCompactMode]       = useState(false);
   const [isMobileMenuOpen,  setIsMobileMenuOpen]  = useState(false);
+
+  const isViewer = activeDataset?.isShared && activeDataset.role?.toLowerCase() === 'viewer';
 
   /* ── Theme: use light/dark class, default dark ── */
   const themeClass = isDark ? '' : 'light';
@@ -158,10 +160,25 @@ export default function DynamicDashboard({ charts, initialLayout, dashboardName 
       return true;
     }), [localCharts, removedPanels, chartFilter, searchQuery]);
 
+  // Update layouts WITHOUT resetting positions from scratch when searching/filtering
   useEffect(() => {
-    setLayouts({ lg: generateLayout(activePreset, visibleCharts) });
+    // Only re-generate from scratch if we don't have enough plots or preset changed
+    // Otherwise, we just want to keep what RGL already calculated
+    const existingIds = new Set((layouts.lg || []).map(l => l.i));
+    const hasMissing = visibleCharts.some(c => !existingIds.has(String(c.id)));
+    
+    if (hasMissing) {
+      setLayouts({ lg: generateLayout(activePreset, visibleCharts) });
+    }
+  }, [visibleCharts.length, activePreset]);
+
+  // Keep search/filter from triggering a full re-layout calculation
+  // (the grid already hides what's not in its children)
+
+  // Only remount when preset fundamentally changes (to force new grid-layout calculations)
+  useEffect(() => {
     setLayoutKey(k => k + 1);
-  }, [activePreset, visibleCharts.length, chartFilter, searchQuery]);
+  }, [activePreset]);
 
   const onLayoutChange = (_, allLayouts) => setLayouts(allLayouts);
 
@@ -299,10 +316,11 @@ export default function DynamicDashboard({ charts, initialLayout, dashboardName 
   };
 
   /* ── Title editing ── */
-  const saveChartTitle = async (targetIndex) => {
-    if (!tempTitle.trim() || targetIndex === null) { setEditingIndex(null); return; }
-    const updatedCharts = [...localCharts];
-    updatedCharts[targetIndex] = { ...updatedCharts[targetIndex], title: tempTitle };
+  const saveChartTitle = async (targetId) => {
+    if (!tempTitle.trim() || !targetId) { setEditingIndex(null); return; }
+    const updatedCharts = localCharts.map(c => 
+      String(c.id) === String(targetId) ? { ...c, title: tempTitle } : c
+    );
     setLocalCharts(updatedCharts);
     setEditingIndex(null);
     const dashboardId = updatedCharts[0]?.dashboard_id;
@@ -349,6 +367,38 @@ export default function DynamicDashboard({ charts, initialLayout, dashboardName 
     setFullscreenPanel(fullscreenPanel === chartId ? null : chartId);
   };
 
+  const handlePermanentDelete = async (panelId) => {
+    if (isViewer) {
+      showToast("Viewers cannot delete charts.", "error");
+      return;
+    }
+    
+    if (!window.confirm("Delete this chart permanently from the shared history?")) return;
+    
+    try {
+      await axios.delete(`${API_URL}/chats/${panelId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      // Update local state
+      setLocalCharts(prev => prev.filter(c => String(c.id) !== String(panelId)));
+      // Also update removedPanels just in case
+      setRemovedPanels(prev => [...prev, String(panelId)]);
+      
+      showToast("Chart deleted permanently");
+      
+      // Notify others via socket
+      const socket = useStore.getState().socket;
+      if (socket && activeDataset?.id) {
+          socket.emit('chat-updated', activeDataset.id);
+      }
+      
+    } catch (err) {
+      showToast("Failed to delete chart", "error");
+      console.error(err);
+    }
+  };
+
   const chartTypeLabels = {
     bar:   <BarChart3 size={12} />,
     line:  <LineChart size={12} />,
@@ -393,6 +443,17 @@ export default function DynamicDashboard({ charts, initialLayout, dashboardName 
       <header className="dd-header">
         {/* Left: title */}
         <div className="dd-header-left">
+          {onToggleSidebar && (
+            <button 
+              type="button" 
+              onClick={onToggleSidebar} 
+              className={`dd-btn-icon ${!isSidebarVisible ? 'dd-active-sidebar-btn' : ''}`}
+              title={isSidebarVisible ? 'Hide Sidebar' : 'Show Sidebar'}
+              style={{ marginRight: 8 }}
+            >
+              <Menu size={16} />
+            </button>
+          )}
           <div className="dd-logo-mark"><BarChart2 size={14} color="#fff" /></div>
           <div className="dd-title-block">
             <div className="dd-title">
@@ -609,9 +670,8 @@ export default function DynamicDashboard({ charts, initialLayout, dashboardName 
             margin={compactMode ? [8, 8] : [14, 14]}
             compactType="vertical"
           >
-            {visibleCharts.map((c) => {
-              const trueIndex = localCharts.indexOf(c);
-              const panelId = String(c.id || trueIndex);
+            {visibleCharts.map((c, i) => {
+              const panelId = String(c.id || i);
               const isPinned = pinnedInsights.includes(panelId);
 
               return (
@@ -621,15 +681,15 @@ export default function DynamicDashboard({ charts, initialLayout, dashboardName 
                       <span className="dd-panel-title">
                         <span className="dd-panel-title-icon">{chartTypeLabels[c.chart_type]}</span>
 
-                        {editingIndex === trueIndex ? (
+                        {editingIndex === panelId ? (
                           <input
                             autoFocus type="text" value={tempTitle}
                             onChange={e => setTempTitle(e.target.value)}
-                            onBlur={() => saveChartTitle(trueIndex)}
+                            onBlur={() => saveChartTitle(panelId)}
                             onMouseDown={e => e.stopPropagation()}
                             onKeyDown={e => {
                               e.stopPropagation();
-                              if (e.key === 'Enter') { e.preventDefault(); saveChartTitle(trueIndex); }
+                              if (e.key === 'Enter') { e.preventDefault(); saveChartTitle(panelId); }
                               if (e.key === 'Escape') setEditingIndex(null);
                             }}
                             style={{
@@ -641,7 +701,7 @@ export default function DynamicDashboard({ charts, initialLayout, dashboardName 
                           />
                         ) : (
                           <div
-                            onClick={() => { setEditingIndex(trueIndex); setTempTitle(c.title || 'Untitled'); }}
+                            onClick={() => { setEditingIndex(panelId); setTempTitle(c.title || 'Untitled'); }}
                             title="Click to rename"
                             style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer', maxWidth: 160 }}
                           >
@@ -667,9 +727,11 @@ export default function DynamicDashboard({ charts, initialLayout, dashboardName 
                       <button type="button" onClick={() => handleExportImage(panelId)} className="dd-panel-action" title="Export PNG">
                         <ImageIcon size={11} />
                       </button>
-                      <button type="button" onClick={() => { setRemovedPanels(p => [...p, panelId]); showToast('Panel hidden'); }} className="dd-panel-action" title="Hide panel">
-                        <Trash2 size={11} />
-                      </button>
+                      {!isViewer && (
+                        <button type="button" onClick={() => handlePermanentDelete(panelId)} className="dd-panel-action" title="Delete permanently">
+                          <Trash2 size={11} />
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -688,9 +750,38 @@ export default function DynamicDashboard({ charts, initialLayout, dashboardName 
                         </button>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--dd-text-3)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 3 }}>AI Summary</div>
-                          <p style={{ margin: 0, fontSize: 11.5, lineHeight: 1.5, color: 'var(--dd-text-2)', maxHeight: '80px', overflowY: 'auto' }}>
+                          <p style={{ margin: 0, fontSize: 11.5, lineHeight: 1.5, color: 'var(--dd-text-2)', maxHeight: '120px', overflowY: 'auto', marginBottom: 6 }}>
                             {c.explanation}
                           </p>
+
+                          {/* Predictions */}
+                          {Array.isArray(c.predictions) && c.predictions.length > 0 && (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
+                              {c.predictions.map((p, i) => (
+                                <div key={i} style={{ flex: 1, minWidth: '100px', padding: '6px 10px', borderRadius: 8, background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)' }}>
+                                  <div style={{ fontSize: 9, fontWeight: 800, color: '#818cf8', display: 'flex', alignItems: 'center', gap: 4, textTransform: 'uppercase', marginBottom: 2 }}>
+                                    <TrendingUp size={9}/> Prediction
+                                  </div>
+                                  <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--dd-text-1)' }}>{p.value?.toLocaleString() || p.label}</div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Anomalies */}
+                          {Array.isArray(c.anomalies) && c.anomalies.length > 0 && (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                              {c.anomalies.map((a, i) => (
+                                <div key={i} style={{ flex: 1, minWidth: '100px', padding: '6px 10px', borderRadius: 8, background: 'rgba(249,115,22,0.1)', border: '1px solid rgba(249,115,22,0.2)' }}>
+                                  <div style={{ fontSize: 9, fontWeight: 800, color: '#fb923c', display: 'flex', alignItems: 'center', gap: 4, textTransform: 'uppercase', marginBottom: 2 }}>
+                                    <Activity size={9}/> Anomaly & Note
+                                  </div>
+                                  <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--dd-text-1)' }}>{a.label}</div>
+                                  { (a.reason || a.note) && <div style={{ fontSize: 10, color: 'var(--dd-text-3)', fontStyle: 'italic', marginTop: 2 }}>{a.reason || a.note}</div> }
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

@@ -85,6 +85,8 @@ async function setup() {
         // Handle existing tables by adding columns safely
         try { await pool.query(`ALTER TABLE exports ADD COLUMN metadata JSONB DEFAULT '{}'`); } catch(e) {}
         try { await pool.query(`ALTER TABLE exports ADD COLUMN is_public BOOLEAN DEFAULT TRUE`); } catch(e) {}
+        try { await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS otp_code VARCHAR(10)`); } catch(e) {}
+        try { await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS otp_expires_at TIMESTAMP`); } catch(e) {}
 
         // Speed up lookups
         await pool.query('CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)');

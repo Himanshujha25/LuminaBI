@@ -110,7 +110,10 @@ app.post('/api/support', upload.any(), async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 5050;
+const http = require('http');
+const { Server } = require("socket.io");
+
+const PORT = process.env.PORT || 5050; // Changed from 5001 to 5050
 
 async function startServer() {
   const dbReady = await setupDb();
@@ -120,8 +123,80 @@ async function startServer() {
     process.exit(1);
   }
 
-  app.listen(PORT, () => {
+  const server = http.createServer(app);
+  
+  // Real-time Socket.io initialization
+  const io = new Server(server, {
+    cors: {
+      origin: (origin, callback) => {
+        if (!origin || allowedOrigins.has(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error(`Origin not allowed by Socket.io: ${origin}`));
+        }
+      },
+      credentials: true
+    }
+  });
+
+  const jwt = require('jsonwebtoken');
+  const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_lumina_key';
+
+  // Socket Auth Middleware
+  io.use((socket, next) => {
+    const token = socket.handshake.auth.token;
+    if (!token) return next(); // Allow guest for now or return next(new Error('Auth error'))
+
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET);
+      socket.user = decoded;
+      next();
+    } catch (err) {
+      console.error('Socket auth failed:', err.message);
+      next(); // Still let them connect, but without socket.user
+    }
+  });
+
+  // Export io to be used in controllers if needed
+  app.set('io', io);
+
+  io.on('connection', (socket) => {
+    console.log('⚡ [Socket] New client connected:', socket.id, socket.user ? `(User: ${socket.user.id})` : '(Guest)');
+
+    if (socket.user) {
+      // Join a personal room for this user
+      socket.join(`user_${socket.user.id}`);
+      
+      // Also join by email for easier targeting by email (invites)
+      if (socket.user.email) {
+        socket.join(`email_${socket.user.email}`);
+      }
+    }
+
+    socket.on('join-dataset', (datasetId) => {
+      if (!datasetId) return;
+      // Ensure we join a sanitized room name
+      const room = `dataset_${String(datasetId)}`;
+      socket.join(room);
+      console.log(`⚡ [Socket] Client ${socket.id} joined ${room}`);
+    });
+
+    socket.on('pin-chart', (data) => {
+      const { datasetId, userId } = data;
+      // Broadcast to specific dataset room (collaborators) AND user room (cross-tab)
+      if (datasetId) io.to(`dataset_${String(datasetId)}`).emit('pins-updated', { datasetId, userId });
+      if (userId) io.to(`user_${userId}`).emit('pins-updated', { userId });
+      console.log(`⚡ [Socket] Pins updated for dataset ${datasetId} / user ${userId}`);
+    });
+
+    socket.on('disconnect', () => {
+      console.log('⚡ [Socket] Client disconnected:', socket.id);
+    });
+  });
+
+  server.listen(PORT, '127.0.0.1', () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
+    console.log(`⚡ Real-time Socket.io enabled`);
   });
 }
 

@@ -42,6 +42,7 @@ import SettingsPage from './pages/Setting';
 import SavedDashboards from './pages/SavedDashboards';
 import DashboardViewer from './components/DashboardViewer'; 
 import AcceptInvitePage from './pages/AcceptInvitePage';
+import ForgotPassword from './pages/ForgotPassword';
 
 const DashboardWrapper = () => {
   const { 
@@ -102,6 +103,7 @@ function App() {
     if (token) {
       fetchDatasets();
       fetchUser();
+      useStore.getState().initSocket();
     }
   }, [token, fetchDatasets, fetchUser]);
 
@@ -112,6 +114,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/dashboard" element={<DashboardWrapper />} />
         <Route path="/analytics/:datasetName/:datasetId/:slug" element={<DynamicBoardPage />} />
         <Route path="/view-report/:id" element={<SharedReport />} />

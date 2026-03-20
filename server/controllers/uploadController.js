@@ -84,7 +84,16 @@ const uploadCSV = async (req, res) => {
             client.release();
         }
 
-        // 4. Cleanup and Metadata
+        // 4. Create Indices for Speed
+        try {
+            for (const col of columns) {
+                await pool.query(`CREATE INDEX IF NOT EXISTS "idx_${dbTableName}_${col.name}" ON "${dbTableName}" ("${col.name}")`);
+            }
+        } catch (idxErr) {
+            console.warn("Failed to create indices:", idxErr.message);
+        }
+
+        // 5. Cleanup and Metadata
         if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
 
         const userId = req.user ? req.user.id : null;
@@ -92,6 +101,12 @@ const uploadCSV = async (req, res) => {
             'INSERT INTO datasets (name, table_name, columns, user_id) VALUES ($1, $2, $3, $4) RETURNING id',
             [tablename, dbTableName, JSON.stringify(columns), userId]
         );
+
+        // Real-time Notify
+        const io = req.app.get('io');
+        if (io && userId) {
+            io.to(`user_${userId}`).emit('dataset-updated', { type: 'upload', datasetId: metaRes.rows[0].id });
+        }
 
         res.json({ 
             message: "Batch processing complete. Dataset ingested at maximum speed.",
@@ -187,6 +202,12 @@ const deleteDataset = async (req, res) => {
         await pool.query(`DROP TABLE IF EXISTS "${tableName}"`);
         await pool.query('DELETE FROM datasets WHERE id = $1', [id]);
         schemaCache.del(`schema_${id}`);
+
+        // Real-time Notify
+        const io = req.app.get('io');
+        if (io && userId) {
+            io.to(`user_${userId}`).emit('dataset-updated', { type: 'delete', datasetId: id });
+        }
 
         return res.json({ message: 'Dataset permanently deleted and dropped from db.' });
     } catch (err) {

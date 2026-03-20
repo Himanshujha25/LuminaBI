@@ -217,6 +217,7 @@ const MainDashboard = () => {
     isAiPanelOpen: isSidebarOpen,
     setIsAiPanelOpen: setIsSidebarOpen,
     user: storeUser,
+    socket,
     showPreview,
     setShowPreview,
   } = useStore();
@@ -236,11 +237,12 @@ const MainDashboard = () => {
   const [isExportingPDF, setIsExportingPDF]         = useState(false);
   const [dataSlicerLimit, setDataSlicerLimit]       = useState('All');
   const [isInviteOpen, setIsInviteOpen]             = useState(false);
-  const isChartFullscreen = false;
+  const [isChartFullscreen, setIsChartFullscreen] = useState(false);
 
   // true if the active dataset belongs to this user (not a shared one)
   const isDatasetOwner = activeDataset && !activeDataset.isShared &&
     (activeDataset.user_id === storeUser?.id || storeUser?.id != null);
+  const isViewer = activeDataset?.isShared && activeDataset.role?.toLowerCase() === 'viewer';
 
   const userId          = storeUser?.id || 'guest';
   const PIN_STORAGE_KEY = `lumina_pinned_charts_${userId}`;
@@ -272,6 +274,12 @@ const MainDashboard = () => {
 
   const history = activeDataset ? (chatHistories[activeDataset.id] || []) : [];
 
+  useEffect(() => {
+    if (socket && activeDataset?.id) {
+      socket.emit('join-dataset', activeDataset.id);
+    }
+  }, [socket, activeDataset?.id]);
+
   useEffect(() => { localStorage.setItem(PIN_STORAGE_KEY, JSON.stringify(pinnedCharts)); }, [pinnedCharts, PIN_STORAGE_KEY]);
 
   useEffect(() => {
@@ -290,6 +298,21 @@ const MainDashboard = () => {
         .finally(() => setIsSideLoading(false));
     }
     return () => ctrl.abort();
+  }, [activeDataset?.id]);
+
+  useEffect(() => {
+    const handleSync = (e) => {
+      if (activeDataset?.id && e.detail?.datasetId === activeDataset.id) {
+        const tkn = localStorage.getItem('token');
+        axios.get(`${API_URL}/datasets/${activeDataset.id}/chats`, { headers: { Authorization: `Bearer ${tkn}` } })
+          .then(res => setChatHistories(prev => ({
+            ...prev,
+            [activeDataset.id]: res.data.map(r => ({ id: r.id, role: r.role, text: r.text, data: r.data || null }))
+          })));
+      }
+    };
+    window.addEventListener('lumina-chat-updated', handleSync);
+    return () => window.removeEventListener('lumina-chat-updated', handleSync);
   }, [activeDataset?.id]);
 
   useEffect(() => {
@@ -320,7 +343,7 @@ const MainDashboard = () => {
 
   const handleSubmit = async (overridePrompt, isSideSearch = false) => {
     const q = (overridePrompt || prompt).trim();
-    if (!q || !activeDataset) return;
+    if (!q || !activeDataset || isViewer) return;
     isSideSearch ? setIsSideLoading(true) : setIsLoading(true);
     setChartTypeOverride(null); setDataSlicerLimit('All');
     setChatHistories(prev => ({ ...prev, [activeDataset.id]: [...(prev[activeDataset.id] || []), { role: 'user', text: q }] }));
@@ -350,6 +373,9 @@ const MainDashboard = () => {
     }
     setPinnedCharts(prev => [...prev, { ...configToPin, id: Date.now() }]);
     setPinState('success'); setTimeout(() => setPinState('idle'), 2000);
+    // Emit real-time sync event
+    const { socket, user } = useStore.getState();
+    if (socket && user) socket.emit('pin-chart', { userId: user.id, datasetId: activeDataset.id });
   };
 
   const handleUnpinChart = id => setPinnedCharts(prev => prev.filter(c => c.id !== id));
@@ -499,8 +525,8 @@ const MainDashboard = () => {
                 ref={searchInputRef} type="text"
                 className="searchbar__input w-full pr-8"
                 value={prompt} onChange={e => setPrompt(e.target.value)} onKeyDown={handleKeyPress}
-                placeholder={activeDataset ? 'Ask anything about your data… (Ctrl+K)' : 'Select a dataset to begin...'}
-                disabled={isLoading || !activeDataset}
+                placeholder={isViewer ? 'Read-only access: Chat disabled' : (activeDataset ? 'Ask anything about your data… (Ctrl+K)' : 'Select a dataset to begin...')}
+                disabled={isLoading || !activeDataset || isViewer}
               />
               {prompt.trim() && (
                 <button type="button" onClick={() => { setPrompt(''); searchInputRef.current?.focus(); }}
@@ -509,7 +535,7 @@ const MainDashboard = () => {
                 </button>
               )}
             </div>
-            <button className="searchbar__btn" onClick={() => handleSubmit()} disabled={isLoading || !prompt.trim() || !activeDataset}>
+            <button className="searchbar__btn" onClick={() => handleSubmit()} disabled={isLoading || !prompt.trim() || !activeDataset || isViewer}>
               <Sparkles size={14} /><span>Ask</span>
             </button>
           </div>
@@ -533,6 +559,14 @@ const MainDashboard = () => {
                 ? <><ChevronRight size={14}/><span>Close AI</span></>
                 : <><Sparkles size={14}/><span>AI Chat</span></>
               }
+            </button>
+            
+            <button 
+              className="lm-ai-toggle" 
+              onClick={handleAnalyticsClick}
+              style={{ background: 'linear-gradient(135deg, #1e293b, #0f172a)', border: '1px solid rgba(255,255,255,.1)' }}
+            >
+              <LayoutDashboard size={14}/><span>Professional Board</span>
             </button>
           </div>
         </header>
@@ -606,6 +640,9 @@ const MainDashboard = () => {
                       <button className="action-btn icon-only" onClick={() => exportAsPNG('main-chart-export', 'lumina_insight')} title="Export PNG">
                         <ImageIcon size={14}/>
                       </button>
+                      <button className={`action-btn icon-only ${isChartFullscreen ? 'active' : ''}`} onClick={() => setIsChartFullscreen(!isChartFullscreen)} title="Fullscreen">
+                        {isChartFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                      </button>
 
                       <div className="divider-vert" />
 
@@ -630,9 +667,41 @@ const MainDashboard = () => {
                     <div className="lm-summary-bar animate-fade-in">
                       <div className="lm-summary-accent" />
                       <div className="lm-summary-content">
-                        <span className="lm-summary-tag">AI Summary</span>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="lm-summary-tag">AI Summary</span>
+                        </div>
                         <p className="lm-summary-text">{currentData.explanation}</p>
                       </div>
+                    </div>
+                  )}
+
+                  {/* AI Prediction & Anomaly Section */}
+                  {((Array.isArray(currentData.predictions) && currentData.predictions.length > 0) || (Array.isArray(currentData.anomalies) && currentData.anomalies.length > 0)) && (
+                    <div className="flex flex-wrap gap-4 p-4 -mt-2 animate-fade-in">
+                      {Array.isArray(currentData.predictions) && currentData.predictions.map((p, i) => (
+                        <div key={i} className="flex-1 min-w-[200px] p-3 rounded-lg border border-purple-500/20 bg-purple-500/5 relative overflow-hidden group">
+                           <div className="absolute top-0 right-0 p-1 opacity-10 group-hover:opacity-30 transition-opacity">
+                             <TrendingUp size={40} />
+                           </div>
+                           <div className="flex items-center gap-2 text-purple-400 font-bold text-[10px] uppercase tracking-wider mb-1">
+                             <TrendingUp size={12}/> Prediction
+                           </div>
+                           <div className="text-xl font-black mb-1">{p.value?.toLocaleString() || p.label}</div>
+                           <p className="text-[11px] text-[var(--text-secondary)] leading-tight">{p.insight || `Forecasted value for ${p.label}`}</p>
+                        </div>
+                      ))}
+                      {Array.isArray(currentData.anomalies) && currentData.anomalies.map((a, i) => (
+                        <div key={i} className="flex-1 min-w-[200px] p-3 rounded-lg border border-orange-500/20 bg-orange-500/5 relative overflow-hidden group">
+                           <div className="absolute top-0 right-0 p-1 opacity-10 group-hover:opacity-30 transition-opacity">
+                             <Activity size={40} />
+                           </div>
+                           <div className="flex items-center gap-2 text-orange-400 font-bold text-[10px] uppercase tracking-wider mb-1">
+                             <Activity size={12}/> Anomaly & Note
+                           </div>
+                           <div className="text-xl font-black mb-1">{a.label}</div>
+                           <p className="text-[11px] text-[var(--text-secondary)] leading-tight">{a.reason || a.note || "Point of interest"}</p>
+                        </div>
+                      ))}
                     </div>
                   )}
 

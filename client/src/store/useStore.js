@@ -1,8 +1,76 @@
 import { create } from 'zustand';
 import axios from 'axios';
+import { io } from 'socket.io-client';
 import { API_URL } from '../config';
 
 const useStore = create((set, get) => ({
+  // Real-time Socket State
+  socket: null,
+  initSocket: () => {
+    const { socket, token } = get();
+    if (socket || !token) return;
+
+    // In development, Vite proxies /socket.io to the backend
+    const newSocket = io(window.location.origin, {
+      auth: { token },
+      transports: ['websocket', 'polling']
+    });
+
+    newSocket.on('connect', () => {
+      console.log('⚡ [Socket] Connected to server:', newSocket.id);
+    });
+
+    newSocket.on('connect_error', (err) => {
+      console.error('❌ [Socket] Connection error:', err.message);
+    });
+
+    // Example real-time event
+    newSocket.on('dataset-updated', (data) => {
+      const { activeDataset, fetchDatasets, setToast } = get();
+      if (activeDataset?.id === data.datasetId) {
+        setToast({
+          title: 'Remote Update',
+          message: data.type === 'delete' ? 'This dataset was deleted. Returning home...' : 'This dataset was modified. Refreshing...',
+          type: 'success'
+        });
+      }
+      fetchDatasets();
+    });
+
+    newSocket.on('invite-received', (data) => {
+      const { setToast, fetchDatasets } = get();
+      setToast({
+        title: 'New Invitation',
+        message: `${data.from} invited you to collaborate on "${data.datasetName}".`,
+        type: 'success'
+      });
+      fetchDatasets();
+    });
+
+    newSocket.on('pins-updated', (data) => {
+      const { user } = get();
+      if (data.userId === user?.id) {
+         // This will trigger local storage listeners or we can manually refresh pinned state if we had it in store
+         // For now, let's just dispatch a storage event to alert other tabs of this the same way
+         window.dispatchEvent(new Event('storage'));
+      }
+    });
+
+    newSocket.on('chat-updated', (data) => {
+      window.dispatchEvent(new CustomEvent('lumina-chat-updated', { detail: data }));
+    });
+
+    set({ socket: newSocket });
+  },
+
+  disconnectSocket: () => {
+    const { socket } = get();
+    if (socket) {
+      socket.disconnect();
+      set({ socket: null });
+    }
+  },
+
   // Auth State
   token: localStorage.getItem('token') || null,
   user: null,
@@ -10,14 +78,17 @@ const useStore = create((set, get) => ({
     localStorage.setItem('token', token);
     if (token) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      get().initSocket();
     } else {
       delete axios.defaults.headers.common['Authorization'];
+      get().disconnectSocket();
     }
     set({ token });
   },
   logout: () => {
     localStorage.removeItem('token');
     delete axios.defaults.headers.common['Authorization'];
+    get().disconnectSocket();
     set({
       token: null,
       user: null,

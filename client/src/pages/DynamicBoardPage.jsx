@@ -14,6 +14,7 @@ export default function DynamicBoardPage() {
     const navigate = useNavigate();
     const [charts, setCharts] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [isSidebarVisible, setIsSidebarVisible] = useState(true);
 
     useEffect(() => {
         setCurrentView('analytics');
@@ -99,9 +100,13 @@ export default function DynamicBoardPage() {
 
     return (
         <div className="layout-container" style={{ display: 'flex', flexDirection: 'row', height: '100vh', overflow: 'hidden' }}>
-            <Sidebar />
+            {isSidebarVisible && <Sidebar />}
             <main style={{ flex: 1, minWidth: 0, display: 'flex', overflow: 'hidden' }}>
-                <DynamicDashboard charts={charts} />
+                <DynamicDashboard 
+                    charts={charts} 
+                    onToggleSidebar={() => setIsSidebarVisible(!isSidebarVisible)}
+                    isSidebarVisible={isSidebarVisible}
+                />
             </main>
         </div>
     );

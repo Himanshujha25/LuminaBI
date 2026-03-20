@@ -62,8 +62,13 @@ RESPONSE FORMAT (JSON ONLY):
   "x_axis_column": "string (use the ALIAS)",
   "y_axis_column": "string (use the ALIAS)",
   "explanation": "professional insight",
-  "suggested_follow_ups": ["q1", "q2", "q3"]
+  "suggested_follow_ups": ["q1", "q2", "q3"],
+  "predictions": [ { "label": "future_label", "value": number, "insight": "short prediction text" } ],
+  "anomalies": [ { "label": "point_label", "reason": "why this is an anomaly" } ]
 }
+
+FORECASTING RULE: If the data is time-based, always provide 2-3 short-term future predictions based on current trends in the "predictions" array.
+ANOMALY RULE: If you detect sharp spikes, sudden drops, or outliers in the data, list them in the "anomalies" array.
 
 USER QUESTION: ${prompt}`;
 }
