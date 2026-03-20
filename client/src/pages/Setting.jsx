@@ -100,7 +100,7 @@ const STYLES = `
     --shadow-lg:   0 16px 40px rgba(0,0,0,.45);
   }
 
-  .sw { font-family:'DM Sans',sans-serif; background:var(--page); color:var(--text-1); min-height:100vh; }
+  .sw { font-family:'DM Sans',sans-serif; background:var(--page); color:var(--text-1); min-height:100vh; display:flex; align-items:flex-start; justify-content:center; overflow:visible; padding-top:0px; padding-bottom:160px; }
   .sw-mono { font-family:'DM Mono',monospace; }
 
   .sw-field {
@@ -136,11 +136,12 @@ const STYLES = `
   .sw-btn.link:hover { opacity:.72; }
 
   .sw-nav-btn {
-    display:flex; align-items:center; gap:9px; padding:8px 10px;
+    display:flex; align-items:center; gap:9px; padding:10px 12px;
     border-radius:var(--r-md); border:none; background:transparent;
-    color:var(--nav-clr); font-size:12.5px; font-weight:500;
+    color:var(--nav-clr); font-size:13px; font-weight:500;
     font-family:'DM Sans',sans-serif; cursor:pointer;
     transition:all .12s; width:100%; text-align:left;
+    margin-bottom:4px;
   }
   .sw-nav-btn:hover { background:var(--hover); color:var(--text-1); }
   .sw-nav-btn.active { background:var(--nav-active); color:var(--accent-txt); font-weight:600; }
@@ -162,14 +163,14 @@ const STYLES = `
 
   .sw-row {
     display:flex; align-items:center; justify-content:space-between;
-    padding:13px 0; border-bottom:1px solid var(--border);
+    padding:8px 0; border-bottom:1px solid var(--border);
   }
   .sw-row:last-child { border-bottom:none; padding-bottom:0; }
   .sw-row:first-child { padding-top:0; }
 
   .sw-card {
     background:var(--surface); border:1px solid var(--border);
-    border-radius:var(--r-xl); padding:20px 22px; margin-bottom:12px;
+    border-radius:var(--r-xl); padding:12px 14px; margin-bottom:8px;
     box-shadow:var(--shadow-sm);
   }
 
@@ -180,7 +181,7 @@ const STYLES = `
   }
   .sw-sec-title {
     font-size:10.5px; font-weight:700; letter-spacing:.08em;
-    text-transform:uppercase; color:var(--text-3); margin-bottom:16px;
+    text-transform:uppercase; color:var(--text-3); margin-bottom:10px;
   }
 
   .sw-alert {
@@ -286,7 +287,7 @@ const NAV = [
   { id: 'notifications', label: 'Notifications',   Icon: Bell       },
   { id: 'ai',            label: 'AI Engine',       Icon: Sparkles   },
   { id: 'billing',       label: 'Billing',         Icon: CreditCard },
-  { id: 'danger',        label: 'Danger Zone',     Icon: Shield     },
+  { id: 'danger',        label: 'Delete Account',  Icon: Shield     },
 ];
 
 /* ─────────────────────────────────────────────
@@ -335,6 +336,18 @@ const PROVIDERS = [
     tag: 'Online search AI',       bg: '#d1fae5', fg: '#064e3b', initials: 'PP',
     keyUrl: 'https://www.perplexity.ai/settings/api',
     keyDomain: 'perplexity.ai',
+  },
+  {
+    id: 'openrouter',  name: 'OpenRouter',       model: 'GPT-4o via OpenRouter',
+    tag: 'Access 200+ models',     bg: '#f3e8ff', fg: '#6b21a8', initials: 'OR',
+    keyUrl: 'https://openrouter.ai/keys',
+    keyDomain: 'openrouter.ai',
+  },
+  {
+    id: 'groq',        name: 'Groq Cloud',       model: 'Llama 3.3 70B',
+    tag: 'Ultra-fast inference',   bg: '#fef3c7', fg: '#92400e', initials: 'GQ',
+    keyUrl: 'https://console.groq.com/keys',
+    keyDomain: 'console.groq.com',
   },
 ];
 
@@ -434,20 +447,20 @@ const ProfileSection = ({ user, loading, onSave }) => {
   return (
     <>
       <Toast toast={toast} />
-      <div className="sw-card" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-        <div className="sw-avatar" style={{ width: 54, height: 54, fontSize: 17 }}>
+      <div className="sw-card" style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '18px' }}>
+        <div className="sw-avatar" style={{ width: 58, height: 58, fontSize: 19 }}>
           {loading ? '?' : initials}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           {loading
-            ? <><Skel w={150} h={15} mb={7} /><Skel w={210} h={11} /></>
+            ? <><Skel w={150} h={16} mb={6} /><Skel w={210} h={12} /></>
             : <>
-                <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-1)' }}>{name || 'Your name'}</p>
-                <p style={{ marginTop: 2, fontSize: 12, color: 'var(--text-3)' }}>{user?.email}</p>
+                <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-1)', marginBottom: 5, lineHeight: 1.1 }}>{name || 'Your name'}</p>
+                <p style={{ fontSize: 13, color: 'var(--text-3)', lineHeight: 1.2 }}>{user?.email}</p>
               </>
           }
         </div>
-        <span className="sw-badge accent">Free plan</span>
+        <span className="sw-badge accent" style={{ padding: '4px 11px', fontSize: '11.5px' }}>Free plan</span>
       </div>
 
       <div className="sw-card">
@@ -459,7 +472,7 @@ const ProfileSection = ({ user, loading, onSave }) => {
           {loading ? <Skel h={38} /> : <input className="sw-field" value={user?.email || ''} disabled />}
         </Field>
         <Field label="Bio" hint="A brief description shown to your teammates.">
-          {loading ? <Skel h={78} /> : <textarea className="sw-field" rows={3} value={bio} onChange={e => setBio(e.target.value)} placeholder="Tell your team about yourself…" />}
+          {loading ? <Skel h={70} /> : <textarea className="sw-field" rows={2} value={bio} onChange={e => setBio(e.target.value)} placeholder="Tell your team about yourself…" />}
         </Field>
         <button className="sw-btn primary" onClick={save} disabled={saving || loading}>
           {saving ? <><span className="sw-spin" /> Saving…</> : <><Save size={13} /> Save changes</>}
@@ -482,16 +495,24 @@ const SecuritySection = () => {
   const { toast, show } = useToast();
 
   const changePw = async () => {
+    if (!cur)           return show('danger', 'Current password is required.');
     if (nw !== cnf)     return show('danger', 'Passwords do not match.');
     if (nw.length < 8)  return show('danger', 'Minimum 8 characters required.');
     setSaving(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.patch(`${API_URL}/auth/password`, { currentPassword: cur, newPassword: nw }, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.patch(
+        `${API_URL}/auth/password`,
+        { currentPassword: cur, newPassword: nw },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       show('success', 'Password updated successfully');
       setCur(''); setNw(''); setCnf('');
-    } catch (e) { show('danger', e.response?.data?.error || 'Failed to update password.'); }
-    finally { setSaving(false); }
+    } catch (e) {
+      show('danger', e.response?.data?.error || 'Failed to update password.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const t = vis ? 'text' : 'password';
@@ -540,9 +561,21 @@ const SecuritySection = () => {
 /* ─────────────────────────────────────────────
    APPEARANCE
 ───────────────────────────────────────────── */
-const AppearanceSection = ({ isDark, toggleTheme }) => {
-  const [mode, setMode] = useState(isDark ? 'dark' : 'light');
+const AppearanceSection = () => {
+  const { isDark, toggleTheme } = useStore();
+  const [mode, setMode] = useState(() => localStorage.getItem('theme') || 'light');
+
+  useEffect(() => {
+    setMode(isDark ? 'dark' : 'light');
+  }, [isDark]);
+
   const apply = m => {
+    if (m === 'system') {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      setMode('system');
+      if (prefersDark !== isDark) toggleTheme?.();
+      return;
+    }
     setMode(m);
     if (m === 'dark'  && !isDark) toggleTheme?.();
     if (m === 'light' && isDark)  toggleTheme?.();
@@ -565,16 +598,27 @@ const AppearanceSection = ({ isDark, toggleTheme }) => {
 /* ─────────────────────────────────────────────
    NOTIFICATIONS
 ───────────────────────────────────────────── */
-const NotificationsSection = () => {
-  const [p, setP] = useState({ eu:true, eb:true, eu2:false, au:true, aa:true, ae:true });
+const NotificationsSection = ({ user }) => {
+  const defaultPrefs = { eu:true, eb:true, eu2:false, au:true, aa:true, ae:true };
+  const [p, setP] = useState(defaultPrefs);
+  const [saving, setSaving] = useState(false);
   const s = k => v => setP(x => ({ ...x, [k]: v }));
   const { toast, show } = useToast();
+
+  useEffect(() => {
+    if (user?.notification_prefs && Object.keys(user.notification_prefs).length > 0) {
+      setP({ ...defaultPrefs, ...user.notification_prefs });
+    }
+  }, [user]);
+
   const save = async () => {
+    setSaving(true);
     try {
       const token = localStorage.getItem('token');
       await axios.patch(`${API_URL}/auth/notifications`, p, { headers: { Authorization: `Bearer ${token}` } });
       show('success', 'Preferences saved');
     } catch { show('danger', 'Failed to save preferences'); }
+    finally { setSaving(false); }
   };
   return (
     <>
@@ -590,8 +634,12 @@ const NotificationsSection = () => {
         <ToggleRow label="Upload alerts"  desc="Toast notification when a dataset loads."     checked={p.au} onChange={s('au')} />
         <ToggleRow label="AI query done"  desc="Notify when a long-running query completes."  checked={p.aa} onChange={s('aa')} />
         <ToggleRow label="Error alerts"   desc="Show errors from failed queries or exports."  checked={p.ae} onChange={s('ae')} />
+        <div style={{ marginTop: 12 }}>
+          <button className="sw-btn primary" onClick={save} disabled={saving}>
+            {saving ? <><span className="sw-spin" /> Saving…</> : <><Save size={13} /> Save preferences</>}
+          </button>
+        </div>
       </div>
-      <button className="sw-btn primary" onClick={save}><Save size={13} /> Save preferences</button>
     </>
   );
 };
@@ -600,8 +648,8 @@ const NotificationsSection = () => {
    AI ENGINE  — fully redesigned + real links
 ───────────────────────────────────────────── */
 const AiSection = ({ user, onSave }) => {
-  const [keys, setKeys]         = useState(user?.ai_keys || {});
-  const [provider, setProvider] = useState(user?.preferred_provider || 'gemini');
+  const [keys, setKeys]         = useState({});
+  const [provider, setProvider] = useState('gemini');
   const [search, setSearch]     = useState('');
   const [open, setOpen]         = useState(false);
   const [showKey, setShowKey]   = useState(false);
@@ -609,6 +657,13 @@ const AiSection = ({ user, onSave }) => {
   const [saved, setSaved]       = useState(false);
   const dropRef = useRef(null);
   const { toast, show } = useToast();
+
+  useEffect(() => {
+    if (user) {
+      if (user.ai_keys) setKeys(user.ai_keys);
+      if (user.preferred_provider) setProvider(user.preferred_provider);
+    }
+  }, [user]);
 
   const active   = PROVIDERS.find(p => p.id === provider) || PROVIDERS[0];
   const filtered = PROVIDERS.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
@@ -822,14 +877,37 @@ const AiSection = ({ user, onSave }) => {
    BILLING
 ───────────────────────────────────────────── */
 const BillingSection = ({ user }) => {
+  const [stats, setStats] = useState({ datasets: 0, storage: 0, queries: 0 });
+  const [loading, setLoading] = useState(true);
+  const { toast, show } = useToast();
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await axios.get(`${API_URL}/auth/billing-stats`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setStats(res.data);
+      } catch (err) {
+        console.error('Failed to fetch billing stats:', err);
+        show('danger', 'Failed to load usage statistics');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
+
   const isPro = user?.plan === 'pro';
   const usage = [
-    { label: 'Datasets uploaded', used: 8,   limit: isPro ? 100 : 20,   unit: '' },
-    { label: 'Storage',           used: 234, limit: isPro ? 5000 : 500,  unit: ' MB' },
-    { label: 'AI queries',        used: 142, limit: isPro ? 2000 : 500,  unit: '' },
+    { label: 'Datasets uploaded', used: stats.datasets, limit: isPro ? 100 : 20, unit: '' },
+    { label: 'Storage', used: stats.storage, limit: isPro ? 5000 : 500, unit: ' MB' },
+    { label: 'AI queries', used: stats.queries, limit: isPro ? 2000 : 500, unit: '' },
   ];
   return (
-    <div>
+    <>
+      <Toast toast={toast} />
       <div className="sw-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div>
           <div style={{ display: 'flex', gap: 8, marginBottom: 7 }}>
@@ -848,22 +926,30 @@ const BillingSection = ({ user }) => {
 
       <div className="sw-card">
         <p className="sw-sec-title">Usage this month</p>
-        {usage.map(item => {
-          const pct = Math.min(100, (item.used / item.limit) * 100);
-          return (
-            <div key={item.label} style={{ marginBottom: 15 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                <span style={{ fontSize: 12.5, color: 'var(--text-2)' }}>{item.label}</span>
-                <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text-1)' }}>
-                  {item.used}{item.unit}<span style={{ color: 'var(--text-3)', fontWeight: 400 }}> / {item.limit}{item.unit}</span>
-                </span>
+        {loading ? (
+          <>
+            <Skel h={40} mb={15} />
+            <Skel h={40} mb={15} />
+            <Skel h={40} />
+          </>
+        ) : (
+          usage.map(item => {
+            const pct = Math.min(100, (item.used / item.limit) * 100);
+            return (
+              <div key={item.label} style={{ marginBottom: 15 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <span style={{ fontSize: 12.5, color: 'var(--text-2)' }}>{item.label}</span>
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text-1)' }}>
+                    {item.used}{item.unit}<span style={{ color: 'var(--text-3)', fontWeight: 400 }}> / {item.limit}{item.unit}</span>
+                  </span>
+                </div>
+                <div className="sw-prog-track">
+                  <div className="sw-prog-fill" style={{ width: `${pct}%`, background: pct > 80 ? '#d97706' : 'var(--accent)' }} />
+                </div>
               </div>
-              <div className="sw-prog-track">
-                <div className="sw-prog-fill" style={{ width: `${pct}%`, background: pct > 80 ? '#d97706' : 'var(--accent)' }} />
-              </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
 
       {isPro && (
@@ -883,185 +969,190 @@ const BillingSection = ({ user }) => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 
 /* ─────────────────────────────────────────────
-   DANGER ZONE
+   DELETE ACCOUNT
 ───────────────────────────────────────────── */
 const DangerSection = () => {
-  const [confirm, setConfirm] = useState('');
+  const [password, setPassword] = useState('');
   const [deleting, setDeleting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const { toast, show } = useToast();
 
   const navigate = useNavigate();
-  const { setToken, setUser, token } = useStore();
+  const { logout, token } = useStore();
 
   const handleDeleteAccount = async () => {
-    if (confirm !== 'DELETE') return;
+    if (!password || password.trim() === '') {
+      show('danger', 'Please enter your password to confirm deletion.');
+      return;
+    }
+
     setDeleting(true);
     try {
       await axios.delete(`${API_URL}/auth/delete-account`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
+        data: { password }
       });
-      localStorage.clear();
-      setToken(null);
-      setUser(null);
-      navigate('/login');
+      show('success', 'Account deleted successfully. Redirecting...');
+      setTimeout(() => {
+        logout();
+        navigate('/login');
+      }, 1500);
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.error || 'Account deletion failed.');
+      show('danger', err.response?.data?.error || 'Account deletion failed.');
       setDeleting(false);
     }
   };
 
   const handleSignOutEverywhere = () => {
-    localStorage.clear();
-    setToken(null);
-    setUser(null);
+    logout();
     navigate('/login');
   };
 
-  const isReady = confirm === 'DELETE';
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <>
+      <Toast toast={toast} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-      {/* Sign out */}
-      <div className="sw-card">
-        <p className="sw-sec-title">Session management</p>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--text-1)', marginBottom: 3 }}>
+        {/* Sign out */}
+        <div className="sw-card">
+          <p className="sw-sec-title">Session management</p>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--text-1)', marginBottom: 3 }}>
+                Sign out everywhere
+              </p>
+              <p style={{ fontSize: 12.5, color: 'var(--text-3)', lineHeight: 1.6 }}>
+                Immediately invalidates all active sessions across every device. You'll be redirected to the login page.
+              </p>
+            </div>
+            <button
+              className="sw-btn"
+              onClick={handleSignOutEverywhere}
+              style={{ flexShrink: 0, marginTop: 2 }}
+            >
+              <LogOut size={13} />
               Sign out everywhere
-            </p>
-            <p style={{ fontSize: 12.5, color: 'var(--text-3)', lineHeight: 1.6 }}>
-              Immediately invalidates all active sessions across every device. You'll be redirected to the login page.
-            </p>
-          </div>
-          <button
-            className="sw-btn"
-            onClick={handleSignOutEverywhere}
-            style={{ flexShrink: 0, marginTop: 2 }}
-          >
-            <LogOut size={13} />
-            Sign out everywhere
-          </button>
-        </div>
-      </div>
-
-      {/* Delete account */}
-      <div
-        className="sw-card"
-        style={{ borderColor: 'var(--danger-bdr)' }}
-      >
-        {/* Section label */}
-        <p className="sw-sec-title" style={{ color: 'var(--danger)', opacity: 0.75 }}>
-          Danger zone
-        </p>
-
-        {/* Warning block */}
-        <div style={{
-          display: 'flex', alignItems: 'flex-start', gap: 12,
-          padding: '13px 15px', borderRadius: 'var(--r-md)',
-          background: 'var(--danger-dim)', border: '1px solid var(--danger-bdr)',
-          marginBottom: 18,
-        }}>
-          <AlertCircle size={15} color="var(--danger)" style={{ flexShrink: 0, marginTop: 1 }} />
-          <div>
-            <p style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--danger)', marginBottom: 3 }}>
-              Permanently delete this account
-            </p>
-            <p style={{ fontSize: 12.5, color: 'var(--danger)', opacity: 0.75, lineHeight: 1.55 }}>
-              All SQL tables, saved queries, charts, and account history will be permanently erased.
-              This action cannot be undone and cannot be recovered.
-            </p>
+            </button>
           </div>
         </div>
 
-        {/* Confirm input */}
-        <div style={{ marginBottom: 14 }}>
-          <label className="sw-lbl">
-            Type <span style={{
-              fontFamily: "'DM Mono', monospace",
-              fontWeight: 500, color: 'var(--text-1)',
-              background: 'var(--field)', padding: '0px 6px',
-              borderRadius: 4, border: '1px solid var(--border-md)',
-              fontSize: 11,
-            }}>DELETE</span> to confirm
-          </label>
-          <input
-            className="sw-field"
-            value={confirm}
-            onChange={e => setConfirm(e.target.value.toUpperCase())}
-            placeholder="Type here…"
-            style={{
-              borderColor: isReady ? 'var(--danger-bdr)' : undefined,
-              boxShadow: isReady ? '0 0 0 3px var(--danger-dim)' : undefined,
-              fontFamily: "'DM Mono', monospace",
-              letterSpacing: confirm ? '.06em' : 0,
-              transition: 'border-color .15s, box-shadow .15s',
-            }}
-          />
-          {confirm && !isReady && (
-            <p style={{ marginTop: 5, fontSize: 11.5, color: 'var(--text-3)' }}>
-              Keep typing — type the full word DELETE
-            </p>
-          )}
-        </div>
-
-        {/* Delete button */}
-        <button
-          onClick={handleDeleteAccount}
-          disabled={!isReady || deleting}
-          style={{
-            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            padding: '9px 16px', borderRadius: 'var(--r-md)',
-            border: `1px solid ${isReady ? 'var(--danger)' : 'var(--danger-bdr)'}`,
-            background: isReady ? 'var(--danger)' : 'var(--danger-dim)',
-            color: isReady ? '#fff' : 'var(--danger)',
-            fontSize: 13, fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
-            cursor: isReady && !deleting ? 'pointer' : 'not-allowed',
-            opacity: !isReady || deleting ? 0.55 : 1,
-            transition: 'all .15s',
-          }}
+        {/* Delete account */}
+        <div
+          className="sw-card"
+          style={{ borderColor: 'var(--danger-bdr)' }}
         >
-          {deleting ? (
-            <>
-              <span style={{
-                width: 13, height: 13, borderRadius: '50%', display: 'inline-block', flexShrink: 0,
-                border: '2px solid rgba(255,255,255,.3)', borderTopColor: '#fff',
-                animation: 'sw-spin .6s linear infinite',
-              }} />
-              Wiping data…
-            </>
-          ) : (
-            <>
-              <Trash2 size={13} />
-              Permanently delete my account
-            </>
-          )}
-        </button>
-
-        {/* Fine print */}
-        {isReady && !deleting && (
-          <p style={{
-            marginTop: 10, fontSize: 11.5, color: 'var(--danger)', opacity: 0.6,
-            textAlign: 'center', lineHeight: 1.5,
-          }}>
-            Clicking the button above will immediately begin deletion. There is no confirmation step.
+          {/* Section label */}
+          <p className="sw-sec-title" style={{ color: 'var(--danger)', opacity: 0.75 }}>
+            Delete Account
           </p>
-        )}
-      </div>
 
-    </div>
+          {/* Warning block */}
+          <div style={{
+            display: 'flex', alignItems: 'flex-start', gap: 12,
+            padding: '13px 15px', borderRadius: 'var(--r-md)',
+            background: 'var(--danger-dim)', border: '1px solid var(--danger-bdr)',
+            marginBottom: 18,
+          }}>
+            <AlertCircle size={15} color="var(--danger)" style={{ flexShrink: 0, marginTop: 1 }} />
+            <div>
+              <p style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--danger)', marginBottom: 3 }}>
+                Permanently delete this account
+              </p>
+              <p style={{ fontSize: 12.5, color: 'var(--danger)', opacity: 0.75, lineHeight: 1.55 }}>
+                All SQL tables, saved queries, charts, and account history will be permanently erased.
+                This action cannot be undone and cannot be recovered.
+              </p>
+            </div>
+          </div>
+
+          {/* Password input */}
+          <div style={{ marginBottom: 14 }}>
+            <label className="sw-lbl">Enter your password to confirm</label>
+            <div className="sw-fwrap">
+              <input
+                className="sw-field"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                style={{
+                  paddingRight: 38,
+                  borderColor: password ? 'var(--danger-bdr)' : undefined,
+                  transition: 'border-color .15s',
+                }}
+                disabled={deleting}
+              />
+              <button type="button" className="sw-ficon" onClick={() => setShowPassword(p => !p)}>
+                {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+              </button>
+            </div>
+            <p style={{ marginTop: 5, fontSize: 11.5, color: 'var(--text-3)', lineHeight: 1.5 }}>
+              We need to verify your identity before deleting your account.
+            </p>
+          </div>
+
+          {/* Delete button */}
+          <button
+            onClick={handleDeleteAccount}
+            disabled={!password || deleting}
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              padding: '9px 16px', borderRadius: 'var(--r-md)',
+              border: `1px solid ${password && !deleting ? 'var(--danger)' : 'var(--danger-bdr)'}`,
+              background: password && !deleting ? 'var(--danger)' : 'var(--danger-dim)',
+              color: password && !deleting ? '#fff' : 'var(--danger)',
+              fontSize: 13, fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
+              cursor: password && !deleting ? 'pointer' : 'not-allowed',
+              opacity: !password || deleting ? 0.55 : 1,
+              transition: 'all .15s',
+            }}
+          >
+            {deleting ? (
+              <>
+                <span style={{
+                  width: 13, height: 13, borderRadius: '50%', display: 'inline-block', flexShrink: 0,
+                  border: '2px solid rgba(255,255,255,.3)', borderTopColor: '#fff',
+                  animation: 'sw-spin .6s linear infinite',
+                }} />
+                Deleting account…
+              </>
+            ) : (
+              <>
+                <Trash2 size={13} />
+                Permanently delete my account
+              </>
+            )}
+          </button>
+
+          {/* Fine print */}
+          {password && !deleting && (
+            <p style={{
+              marginTop: 10, fontSize: 11.5, color: 'var(--danger)', opacity: 0.6,
+              textAlign: 'center', lineHeight: 1.5,
+            }}>
+              Clicking the button above will immediately begin deletion. There is no confirmation step.
+            </p>
+          )}
+        </div>
+
+      </div>
+    </>
   );
 };
 
 /* ─────────────────────────────────────────────
    MAIN SETTINGS
 ───────────────────────────────────────────── */
-const Settings = ({ isDark, toggleTheme, onLogout }) => {
+const Settings = () => {
+  const { isDark, toggleTheme, logout } = useStore();
+  const navigate = useNavigate();
+  const onLogout = () => { logout(); navigate('/login'); };
   const [active, setActive]     = useState('profile');
   const [user, setUser]         = useState(null);
   const [loading, setLoading]   = useState(true);
@@ -1084,8 +1175,8 @@ const Settings = ({ isDark, toggleTheme, onLogout }) => {
   const sections = {
     profile:       <ProfileSection user={user} loading={loading} onSave={u => setUser(p => ({ ...p, ...u }))} />,
     security:      <SecuritySection />,
-    appearance:    <AppearanceSection isDark={isDark} toggleTheme={toggleTheme} />,
-    notifications: <NotificationsSection />,
+    appearance:    <AppearanceSection />,
+    notifications: <NotificationsSection user={user} />,
     ai:            <AiSection user={user} onSave={u => setUser(p => ({ ...p, ...u }))} />,
     billing:       <BillingSection user={user} />,
     danger:        <DangerSection onLogout={onLogout} />,
@@ -1096,11 +1187,11 @@ const Settings = ({ isDark, toggleTheme, onLogout }) => {
   return (
     <div className="sw">
       <style>{STYLES}</style>
-      <div style={{ padding: '28px 24px 64px' }}>
+      <div style={{ padding: '20px', width: '100%', maxHeight: '100vh', overflow: 'hidden' }}>
         <div style={{ maxWidth: 880, margin: '0 auto' }}>
 
           {/* Header */}
-          <div style={{ marginBottom: 24, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <div style={{ marginBottom: 12, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
             <div>
               <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-1)', letterSpacing: '-.4px' }}>Settings</h1>
               <p style={{ fontSize: 12.5, color: 'var(--text-3)', marginTop: 3 }}>
@@ -1114,12 +1205,12 @@ const Settings = ({ isDark, toggleTheme, onLogout }) => {
             )}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '192px 1fr', gap: 20, alignItems: 'start' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', gap: 16, alignItems: 'start' }}>
 
             {/* Sidebar nav */}
             <nav style={{
               background: 'var(--surface)', border: '1px solid var(--border)',
-              borderRadius: 'var(--r-xl)', padding: 8,
+              borderRadius: 'var(--r-xl)', padding: 6,
               position: 'sticky', top: 16, boxShadow: 'var(--shadow-sm)',
             }}>
               {NAV.map(({ id, label, Icon }) => (
@@ -1134,8 +1225,8 @@ const Settings = ({ isDark, toggleTheme, onLogout }) => {
             </nav>
 
             {/* Main content */}
-            <div>
-              <h2 style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--text-1)', marginBottom: 16, letterSpacing: '-.2px' }}>
+            <div style={{ maxHeight: 'calc(100vh - 100px)', overflow: 'hidden' }}>
+              <h2 style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--text-1)', marginBottom: 12, letterSpacing: '-.2px' }}>
                 {nav?.label}
               </h2>
               <div key={active} className="sw-fadein">
