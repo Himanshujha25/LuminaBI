@@ -87,6 +87,11 @@ exports.updateDashboard = async (req, res) => {
             return res.status(404).json({ error: "Dashboard not found or unauthorized" });
         }
 
+        const io = req.app.get('io');
+        if (io && result.rows[0].dataset_id) {
+            io.to(`dataset_${result.rows[0].dataset_id}`).emit('chat-updated', { datasetId: result.rows[0].dataset_id });
+        }
+
         res.json(result.rows[0]);
     } catch (err) {
         console.error("Error updating dashboard:", err);

@@ -189,6 +189,12 @@ async function startServer() {
       console.log(`⚡ [Socket] Pins updated for dataset ${datasetId} / user ${userId}`);
     });
 
+    socket.on('chat-updated', (datasetId) => {
+        if (!datasetId) return;
+        io.to(`dataset_${String(datasetId)}`).emit('chat-updated', { datasetId });
+        console.log(`⚡ [Socket] Chat system re-sync for dataset ${datasetId}`);
+    });
+
     socket.on('disconnect', () => {
       console.log('⚡ [Socket] Client disconnected:', socket.id);
     });

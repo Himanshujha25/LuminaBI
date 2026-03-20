@@ -205,8 +205,9 @@ const deleteDataset = async (req, res) => {
 
         // Real-time Notify
         const io = req.app.get('io');
-        if (io && userId) {
-            io.to(`user_${userId}`).emit('dataset-updated', { type: 'delete', datasetId: id });
+        if (io) {
+            io.to(`dataset_${id}`).emit('dataset-updated', { type: 'delete', datasetId: id });
+            if (userId) io.to(`user_${userId}`).emit('dataset-updated', { type: 'delete', datasetId: id });
         }
 
         return res.json({ message: 'Dataset permanently deleted and dropped from db.' });

@@ -20,6 +20,17 @@ export default function DynamicBoardPage() {
         setCurrentView('analytics');
     }, [setCurrentView]);
 
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
+    useEffect(() => {
+        const handleSync = (e) => {
+            if (String(e.detail?.datasetId) === String(datasetId)) {
+                setRefreshTrigger(prev => prev + 1);
+            }
+        };
+        window.addEventListener('lumina-chat-updated', handleSync);
+        return () => window.removeEventListener('lumina-chat-updated', handleSync);
+    }, [datasetId]);
+
     useEffect(() => {
         const loadPageData = async () => {
             setLoading(true);
@@ -87,7 +98,7 @@ export default function DynamicBoardPage() {
         };
 
         loadPageData();
-    }, [datasetId, slug, navigate, token, datasets]);
+    }, [datasetId, slug, navigate, token, datasets, refreshTrigger]);
 
     if (loading) {
         return (

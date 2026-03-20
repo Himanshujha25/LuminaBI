@@ -113,6 +113,13 @@ export default function DynamicDashboard({ charts, initialLayout, dashboardName,
   /* ── Sync charts prop ── */
   useEffect(() => { setLocalCharts(charts); }, [charts]);
 
+  const socket = useStore.getState().socket;
+  useEffect(() => {
+    if (activeDataset?.id && socket) {
+      socket.emit('join-dataset', activeDataset.id);
+    }
+  }, [activeDataset?.id, socket]);
+
   /* ── Close dropdown on outside click ── */
   const dropdownRef = useRef(null);
   useEffect(() => {
@@ -328,6 +335,9 @@ export default function DynamicDashboard({ charts, initialLayout, dashboardName,
     try {
       await axios.put(`${API_URL}/dashboards/${dashboardId}`, { charts: updatedCharts }, { headers: { Authorization: `Bearer ${token}` } });
       showToast('Title saved');
+      if (socket && activeDataset?.id) {
+          socket.emit('chat-updated', activeDataset.id);
+      }
     } catch { showToast('Failed to save title', 'error'); }
   };
 
