@@ -1,12 +1,12 @@
-const { generateWithGemini } = require('./providers/gemini');
-const { generateWithOpenAI } = require('./providers/openai');
-const { generateWithClaude } = require('./providers/claude');
-const { generateWithDeepSeek } = require('./providers/deepseek');
-const { generateWithGrok } = require('./providers/grok');
-const { generateWithMistral } = require('./providers/mistral');
-const { generateWithPerplexity } = require('./providers/perplexity');
-const { generateWithOpenRouter } = require('./providers/openrouter');
-const { generateWithGroq } = require('./providers/groq');
+const { generateWithGemini } = require('./Providers/gemini');
+const { generateWithOpenAI } = require('./Providers/openai');
+const { generateWithClaude } = require('./Providers/claude');
+const { generateWithDeepSeek } = require('./Providers/deepseek');
+const { generateWithGrok } = require('./Providers/grok');
+const { generateWithMistral } = require('./Providers/mistral');
+const { generateWithPerplexity } = require('./Providers/perplexity');
+const { generateWithOpenRouter } = require('./Providers/openrouter');
+const { generateWithGroq } = require('./Providers/groq');
 
 // ── IMPORT YOUR CORE RULES ──
 const CHART_RULES = `
