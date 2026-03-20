@@ -1,6 +1,10 @@
 const pool = require('../db/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const { Resend } = require('resend');
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_lumina_key';
 
@@ -252,4 +256,92 @@ const getBillingStats = async (req, res) => {
     }
 };
 
-module.exports = { register, login, getMe, deleteAccount, updatePassword, updateProfile, updateKeys, updateNotifications, getBillingStats };
+const forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) return res.status(400).json({ error: 'Email is required.' });
+
+        const userResult = await pool.query('SELECT id, name FROM users WHERE email = $1', [email]);
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ error: 'No account found with this email address.' });
+        }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpiry = new Date(Date.now() + 600000); // 10 minutes
+
+        await pool.query(
+            'UPDATE users SET reset_otp = $1, reset_otp_expiry = $2 WHERE email = $3',
+            [otp, otpExpiry, email]
+        );
+        
+        await resend.emails.send({
+            from: 'LuminaBI <onboarding@resend.dev>',
+            to: email,
+            subject: 'Your LuminaBI Password Reset OTP',
+            html: `
+                <h2>Password Reset OTP</h2>
+                <p>Hi ${userResult.rows[0].name},</p>
+                <p>Your OTP to reset your password is:</p>
+                <h1 style="font-size: 32px; letter-spacing: 8px; color: #6366f1; margin: 24px 0;">${otp}</h1>
+                <p>This OTP will expire in 10 minutes.</p>
+                <p>If you didn't request this, please ignore this email.</p>
+            `
+        });
+        
+        res.json({ message: 'OTP sent to your email.' });
+    } catch (err) {
+        console.error('Forgot password error:', err);
+        res.status(500).json({ error: 'Failed to send reset email. Please try again.' });
+    }
+};
+
+const verifyOtp = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+        if (!email || !otp) return res.status(400).json({ error: 'Email and OTP are required.' });
+
+        const userResult = await pool.query(
+            'SELECT id FROM users WHERE email = $1 AND reset_otp = $2 AND reset_otp_expiry > NOW()',
+            [email, otp]
+        );
+
+        if (userResult.rows.length === 0) {
+            return res.status(400).json({ error: 'Invalid or expired OTP.' });
+        }
+
+        res.json({ message: 'OTP verified successfully.' });
+    } catch (err) {
+        console.error('Verify OTP error:', err);
+        res.status(500).json({ error: 'Server error verifying OTP.' });
+    }
+};
+
+const resetPassword = async (req, res) => {
+    try {
+        const { email, otp, password } = req.body;
+        if (!email || !otp || !password) return res.status(400).json({ error: 'Email, OTP and password are required.' });
+        if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters.' });
+
+        const userResult = await pool.query(
+            'SELECT id FROM users WHERE email = $1 AND reset_otp = $2 AND reset_otp_expiry > NOW()',
+            [email, otp]
+        );
+
+        if (userResult.rows.length === 0) {
+            return res.status(400).json({ error: 'Invalid or expired OTP.' });
+        }
+
+        const hashed = await bcrypt.hash(password, 8);
+        await pool.query(
+            'UPDATE users SET password = $1, reset_otp = NULL, reset_otp_expiry = NULL WHERE id = $2',
+            [hashed, userResult.rows[0].id]
+        );
+
+        res.json({ message: 'Password reset successfully.' });
+    } catch (err) {
+        console.error('Reset password error:', err);
+        res.status(500).json({ error: 'Server error resetting password.' });
+    }
+};
+
+module.exports = { register, login, getMe, deleteAccount, updatePassword, updateProfile, updateKeys, updateNotifications, getBillingStats, forgotPassword, verifyOtp, resetPassword };

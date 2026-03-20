@@ -33,6 +33,8 @@ import MainDashboard from './components/MainDashboard';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import ForgotPassword from './pages/ForgetPassword';
+import ResetPassword from './pages/ResetPassword';
 import DynamicBoardPage from './pages/DynamicBoardPage';
 import SharedReport from './pages/SharedReport.jsx';
 import Sidebar from './components/Sidebar';
@@ -111,6 +113,8 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/dashboard" element={<DashboardWrapper />} />
         <Route path="/analytics/:datasetName/:datasetId/:slug" element={<DynamicBoardPage />} />
         <Route path="/view-report/:id" element={<SharedReport />} />
