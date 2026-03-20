@@ -24,7 +24,7 @@
 //   onAnalyticsClick={() => { handleAnalyticsClick(); setCurrentView('analytics'); }}
 
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import useStore from './store/useStore';
 import Header from './components/Header';
 import UploadModal from './components/UploadModal';

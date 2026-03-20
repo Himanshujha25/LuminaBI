@@ -1,5 +1,5 @@
   import React from 'react';
-  import { useNavigate } from 'react-router-dom';
+  import { useLocation, useNavigate } from 'react-router-dom';
   import {
     LayoutDashboard, Database, BarChart3,
     Settings, Zap, Sparkles, LifeBuoy, Layers
@@ -125,16 +125,22 @@
       transition: opacity 0.13s;
     }
     .sb-upgrade:hover { opacity: 0.87; }
+
+    @media (max-width: 900px) {
+      .sb-shell {
+        display: none !important;
+      }
+    }
   `;
 
   const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
     const navigate = useNavigate();
+    const location = useLocation();
     const {
       activeDataset,
       currentView: activeTab,
       isSidebarVisible: isVisible,
       setCurrentView,
-      setIsUploadOpen,
       setIsManageOpen,
     } = useStore();
 
@@ -145,21 +151,31 @@
       setCurrentView('analytics');
     };
 
+    const openDashboardView = (view, options = {}) => {
+      if (location.pathname !== '/dashboard') {
+        navigate('/dashboard');
+      }
+      if (options.openManage) {
+        setIsManageOpen(true);
+      }
+      setCurrentView(view);
+    };
+
     const navGroups = [
     {
       group: 'Workspace',
       items: [
-        { id: 'overview',  label: 'Overview',         Icon: LayoutDashboard, action: () => setCurrentView('overview')  },
+        { id: 'overview',  label: 'Overview',         Icon: LayoutDashboard, action: () => openDashboardView('overview')  },
         { id: 'analytics', label: 'Dashboard',        Icon: BarChart3,       action: handleAnalyticsClick }, 
-        { id: 'dashboards',label: 'Saved Dashboards', Icon: Layers,          action: () => setCurrentView('dashboards') },
-        { id: 'datasets',  label: 'Datasets',         Icon: Database,        action: () => { setIsManageOpen(true); setCurrentView('datasets'); }   },
+        { id: 'dashboards',label: 'Saved Dashboards', Icon: Layers,          action: () => openDashboardView('dashboards') },
+        { id: 'datasets',  label: 'Datasets',         Icon: Database,        action: () => openDashboardView('datasets', { openManage: true })   },
       ],
     },
     {
       group: 'Account',
       items: [
-        { id: 'support',  label: 'Support',  Icon: LifeBuoy, action: () => setCurrentView('support') },
-        { id: 'settings', label: 'Settings', Icon: Settings, action: () => setCurrentView('settings') },
+        { id: 'support',  label: 'Support',  Icon: LifeBuoy, action: () => openDashboardView('support') },
+        { id: 'settings', label: 'Settings', Icon: Settings, action: () => openDashboardView('settings') },
       ],
     },
   ];
@@ -175,7 +191,7 @@
           />
         )}
 
-        <aside style={{
+        <aside className="sb-shell" style={{
           width: isVisible ? '240px' : '0',
           minWidth: isVisible ? '240px' : '0',
           overflow: 'hidden',
@@ -256,12 +272,13 @@
                   }}>
                     {group.group}
                   </p>
-                  {group.items.map(({ id, label, Icon, action }) => {
-                    const isActive = activeTab === id;
+                  {group.items.map(item => {
+                    const isActive = activeTab === item.id;
+                    const ItemIcon = item.Icon;
                     return (
                       <button
-                        key={id}
-                        onClick={action}
+                        key={item.id}
+                        onClick={item.action}
                         className={`sb-btn${isActive ? ' active' : ''}`}
                       >
                         {isActive && (
@@ -273,8 +290,8 @@
                             background: 'var(--sb-item-active-bar)',
                           }} />
                         )}
-                        <Icon size={16} />
-                        <span style={{ whiteSpace: 'nowrap' }}>{label}</span>
+                        <ItemIcon size={16} />
+                        <span style={{ whiteSpace: 'nowrap' }}>{item.label}</span>
                       </button>
                     );
                   })}

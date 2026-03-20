@@ -18,7 +18,14 @@ const useStore = create((set, get) => ({
   logout: () => {
     localStorage.removeItem('token');
     delete axios.defaults.headers.common['Authorization'];
-    set({ token: null, user: null, datasets: [], activeDataset: null });
+    set({
+      token: null,
+      user: null,
+      datasets: [],
+      activeDataset: null,
+      currentView: 'overview',
+      isAiPanelOpen: false,
+    });
   },
 
   fetchUser: async () => {
@@ -104,6 +111,8 @@ const useStore = create((set, get) => ({
   setIsSidebarVisible: (isVisible) => set({ isSidebarVisible: isVisible }),
   currentView: 'overview',
   setCurrentView: (view) => set({ currentView: view }),
+  isAiPanelOpen: false,
+  setIsAiPanelOpen: (isOpen) => set({ isAiPanelOpen: isOpen }),
   showPreview: false,
   setShowPreview: (show) => set({ showPreview: show }),
 

@@ -42,6 +42,7 @@ const uploadCSV = async (req, res) => {
     const dbTableName = 'dt_' + Date.now() + '_' + sanitizeIdentifier(tablename);
     let columns = [];
     let headers = [];
+    let tableCreated = false;
 
     try {
         // 1. First Pass: Detect structure
@@ -56,6 +57,10 @@ const uploadCSV = async (req, res) => {
         });
 
         const firstRow = await firstRowPromise;
+        if (!firstRow || headers.length === 0) {
+            throw new Error('CSV appears to be empty or missing headers');
+        }
+
         const colDefs = [];
         headers.forEach(h => {
              const colName = sanitizeIdentifier(h);
@@ -66,6 +71,7 @@ const uploadCSV = async (req, res) => {
 
         // 2. Create Table
         await pool.query(`CREATE TABLE "${dbTableName}" (${colDefs.join(', ')})`);
+        tableCreated = true;
 
         // 3. Second Pass: High-Speed Streaming COPY
         const client = await pool.connect();
@@ -94,6 +100,13 @@ const uploadCSV = async (req, res) => {
 
     } catch (err) {
         if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        if (tableCreated) {
+            try {
+                await pool.query(`DROP TABLE IF EXISTS "${dbTableName}"`);
+            } catch (dropErr) {
+                console.error("Upload cleanup failed:", dropErr);
+            }
+        }
         console.error("Batch Upload Error:", err);
         res.status(500).json({ error: "High-speed batch processing failed: " + err.message });
     }

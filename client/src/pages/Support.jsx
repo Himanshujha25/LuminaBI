@@ -323,12 +323,12 @@ const Support = () => {
   const isErr = status.type === 'error';
 
   return (
-    <div style={{ flex: 1, overflowY: 'auto', background: 'var(--sp-page-bg)', padding: '3px 28px 48px' }}>
+    <div style={{ flex: 1, overflowY: 'auto', background: 'var(--sp-page-bg)', padding: '8px 24px 48px' }}>
       <style>{THEME_CSS}</style>
-      <div style={{ maxWidth: 660, margin: '0 auto' }}>
+      <div style={{ maxWidth: 760, margin: '0 auto' }}>
 
         {/* ── Page header ── */}
-        <div style={{ marginBottom: 28 }}>
+        <div style={{ marginBottom: 28, paddingTop: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
   
   <div style={{
@@ -365,7 +365,8 @@ const Support = () => {
         <div style={{
           background: 'var(--sp-card-bg)',
           border: '.5px solid var(--sp-card-border)',
-          borderRadius: 14, overflow: 'visible',
+          borderRadius: 18, overflow: 'visible',
+          boxShadow: '0 10px 30px rgba(0,0,0,.08)',
         }}>
           {/* Top bar */}
           <div style={{
@@ -405,7 +406,7 @@ const Support = () => {
               )}
 
               {/* Email + type */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+              <div className="sp-fields-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
                 <div>
                   <label style={labelStyle}>Email <span style={{ color: 'var(--sp-danger-text)' }}>*</span></label>
                   <input
@@ -493,7 +494,7 @@ const Support = () => {
 
                 {/* Previews */}
                 {previewUrls.length > 0 && (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginTop: 10 }}>
+                  <div className="sp-preview-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginTop: 10 }}>
                     {previewUrls.map((url, i) => (
                       <div
                         key={i}
@@ -541,7 +542,7 @@ const Support = () => {
             </div>
 
             {/* Footer / submit */}
-            <div style={{
+            <div className="sp-footer-row" style={{
               padding: '13px 20px',
               borderTop: '.5px solid var(--sp-footer-border)',
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -584,6 +585,31 @@ const Support = () => {
           Typical response time: &lt; 24 hours
         </p>
       </div>
+      <style>{`
+        @media (max-width: 720px) {
+          .sp-fields-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .sp-preview-grid {
+            grid-template-columns: 1fr 1fr !important;
+          }
+          .sp-footer-row {
+            flex-direction: column;
+            align-items: stretch !important;
+            gap: 12px;
+          }
+          .sp-footer-row button {
+            width: 100%;
+            min-height: 44px;
+            justify-content: center;
+          }
+        }
+        @media (max-width: 560px) {
+          .sp-preview-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
     </div>
   );
 };

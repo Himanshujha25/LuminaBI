@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { AUTH_URL, BASE_URL } from '../config';
+import { AUTH_URL, HEALTH_URL } from '../config';
 import { BarChart2, Eye, EyeOff, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 import useStore from '../store/useStore';
 
 const Login = () => {
-  const { setToken } = useStore();
+  const { setToken, setCurrentView, setIsAiPanelOpen } = useStore();
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw]     = useState(false);
@@ -15,7 +15,7 @@ const Login = () => {
   const navigate = useNavigate();
 
   React.useEffect(() => {
-    axios.get(`${BASE_URL}/health`).catch(() => {});
+    axios.get(HEALTH_URL).catch(() => {});
   }, []);
 
   const handleLogin = async (e) => {
@@ -25,6 +25,8 @@ const Login = () => {
     try {
       const res = await axios.post(`${AUTH_URL}/login`, { email, password });
       setToken(res.data.token);
+      setCurrentView('overview');
+      setIsAiPanelOpen(false);
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.error || 'Incorrect email or password.');

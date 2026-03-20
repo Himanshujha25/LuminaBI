@@ -11,7 +11,7 @@ import useStore from '../store/useStore';
 
 export default function SavedDashboards() {
   const navigate = useNavigate();
-  const { token, isDark } = useStore();
+  const { token } = useStore();
   const [dashboards, setDashboards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -48,19 +48,19 @@ export default function SavedDashboards() {
   );
 
   return (
-    <div style={{ padding: '40px 0', minHeight: '100%', background: 'transparent', transition: 'all 0.3s' }}>
+    <div className="saved-page" style={{ padding: '40px 0', minHeight: '100%', background: 'transparent', transition: 'all 0.3s' }}>
       
       {/* ── PROFESSIONAL HEADER ── */}
-      <div style={{ padding: '0 60px', marginBottom: 40 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+      <div className="saved-header-shell" style={{ padding: '0 60px', marginBottom: 40 }}>
+        <div className="saved-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <div>
-            <h1 style={{ fontSize: 32, fontWeight: 900, color: 'var(--st-text-1)', margin: 0, letterSpacing: '-1px' }}>
+            <h1 className="saved-page-title" style={{ fontSize: 32, fontWeight: 900, color: 'var(--st-text-1)', margin: 0, letterSpacing: '-1px' }}>
              Saved Dashboards
             </h1>
             <p style={{ color: 'var(--st-text-3)', fontSize: 15, marginTop: 4 }}>Manage and revisit your AI-generated insights.</p>
           </div>
           
-          <div style={{ display: 'flex', gap: 12 }}>
+          <div className="saved-toolbar" style={{ display: 'flex', gap: 12 }}>
             <div style={searchContainerStyle}>
               <Search size={18} style={{ opacity: 0.4 }} />
               <input 
@@ -80,20 +80,39 @@ export default function SavedDashboards() {
       <div 
         ref={scrollRef}
         style={sliderWrapperStyle}
-        className="no-scrollbar"
+        className="no-scrollbar saved-slider"
       >
         {filtered.length === 0 ? (
           <div style={emptyStateStyle}>
             <Layout size={48} style={{ opacity: 0.2, marginBottom: 16 }} />
-            <p>No dashboards found matching{searchTerm}</p>
+            <h3 style={{ margin: '0 0 10px', fontSize: 24, color: 'var(--st-text-1)', fontWeight: 800 }}>No dashboards yet</h3>
+            <p style={{ maxWidth: 420, margin: '0 auto 18px', lineHeight: 1.6 }}>
+              {searchTerm ? `No dashboards found matching "${searchTerm}".` : 'Create and pin insights from the dashboard to build your first saved workspace.'}
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate('/dashboard')}
+              style={{
+                border: '1px solid var(--st-nav-active-brd)',
+                background: 'var(--st-nav-active-bg)',
+                color: 'var(--st-nav-active-clr)',
+                borderRadius: 14,
+                padding: '12px 18px',
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              Create Dashboard
+            </button>
           </div>
         ) : (
           filtered.map((board) => (
-            <div 
+            <div
               key={board.id} 
               style={cardStyle}
               onClick={() => navigate(`/dashboard/view/${board.id}`)}
-              className="gallery-card"
+              className="gallery-card saved-card"
             >
               
               {/* ── DYNAMIC PREVIEW IMAGE ── */}
@@ -192,6 +211,58 @@ export default function SavedDashboards() {
           border-color: var(--st-nav-active-clr);
         }
         .gallery-card:hover .explore-link { color: var(--st-nav-active-clr); transform: translateX(4px); }
+        @media (max-width: 900px) {
+          .saved-page {
+            padding: 24px 0 90px !important;
+          }
+          .saved-header-shell {
+            padding: 0 18px !important;
+            margin-bottom: 24px !important;
+          }
+          .saved-header-row {
+            flex-direction: column;
+            align-items: stretch !important;
+            gap: 16px;
+            margin-bottom: 12px !important;
+          }
+          .saved-toolbar {
+            width: 100%;
+            flex-wrap: wrap;
+          }
+          .saved-toolbar > * {
+            flex: 1 1 auto;
+          }
+          .saved-page-title {
+            font-size: 28px !important;
+          }
+          .saved-slider {
+            padding: 0 18px 100px !important;
+            flex-direction: column;
+            overflow-x: visible !important;
+            gap: 16px !important;
+            scroll-snap-type: none !important;
+          }
+          .saved-card {
+            width: 100% !important;
+            min-width: 100% !important;
+            height: auto !important;
+            min-height: 360px;
+          }
+        }
+        @media (max-width: 560px) {
+          .saved-page-title {
+            font-size: 24px !important;
+          }
+          .saved-toolbar {
+            gap: 10px !important;
+          }
+          .saved-toolbar button {
+            flex: 0 0 44px;
+          }
+          .saved-slider {
+            padding: 0 12px 100px !important;
+          }
+        }
       `}</style>
     </div>
   );
@@ -222,33 +293,6 @@ const cardStyle = {
   transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
   overflow: 'hidden',
   position: 'relative'
-};
-
-const previewContainerStyle = {
-  height: '50%',
-  width: '100%',
-  background: 'var(--st-page)',
-  position: 'relative',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  borderBottom: '1px solid var(--st-border)'
-};
-
-const abstractGridStyle = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(4, 1fr)',
-  gap: 12,
-  width: '70%',
-  height: '50%',
-  alignItems: 'end'
-};
-
-const overlayGradientStyle = {
-  position: 'absolute',
-  inset: 0,
-  background: 'linear-gradient(to bottom, transparent, var(--st-card))',
-  opacity: 0.5
 };
 
 const searchContainerStyle = {
@@ -295,8 +339,14 @@ const exploreLinkStyle = {
 };
 
 const emptyStateStyle = {
-  width: '100%', textAlign: 'center', padding: '100px 0',
-  color: 'var(--st-text-3)', fontSize: '16px'
+  width: '100%',
+  textAlign: 'center',
+  padding: '96px 24px',
+  color: 'var(--st-text-3)',
+  fontSize: '16px',
+  border: '1px dashed var(--st-border)',
+  borderRadius: '28px',
+  background: 'color-mix(in srgb, var(--st-card) 86%, transparent)'
 };
 
 const actionBtnStyle = {

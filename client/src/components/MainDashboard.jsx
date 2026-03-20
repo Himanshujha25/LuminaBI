@@ -208,37 +208,31 @@ const MainDashboard = () => {
   const navigate = useNavigate();
   const {
     activeDataset,
-    datasets,
-    setActiveDataset,
-    toggleTheme,
     isDark: isDarkStore,
     token,
-    setIsUploadOpen,
     setCurrentView,
+    isAiPanelOpen: isSidebarOpen,
+    setIsAiPanelOpen: setIsSidebarOpen,
     user: storeUser,
     showPreview,
     setShowPreview,
   } = useStore();
 
   /* Reliable dark detection — store value OR DOM attribute */
-  const isDark = isDarkStore ?? (document.documentElement.getAttribute('data-theme') === 'dark') ?? false;
+  const isDark = isDarkStore ?? document.documentElement.getAttribute('data-theme') === 'dark';
 
   const [prompt, setPrompt]                         = useState('');
   const [isLoading, setIsLoading]                   = useState(false);
   const [isSideLoading, setIsSideLoading]           = useState(false);
-  const [error, setError]                           = useState(null);
   const [chatHistories, setChatHistories]           = useState({});
   const [chartTypeOverride, setChartTypeOverride]   = useState(null);
   const [showSQL, setShowSQL]                       = useState(false);
   const [viewMode, setViewMode]                     = useState('chart');
   const [sidePrompt, setSidePrompt]                 = useState('');
   const [pinState, setPinState]                     = useState('idle');
-  const [isSidebarOpen, setIsSidebarOpen]           = useState(true);
-  const [showDatasetDropdown, setShowDatasetDropdown] = useState(false);
-  const [datasetSearch, setDatasetSearch]           = useState('');
   const [isExportingPDF, setIsExportingPDF]         = useState(false);
   const [dataSlicerLimit, setDataSlicerLimit]       = useState('All');
-  const [isChartFullscreen, setIsChartFullscreen]   = useState(false);
+  const isChartFullscreen = false;
 
   const userId          = storeUser?.id || 'guest';
   const PIN_STORAGE_KEY = `lumina_pinned_charts_${userId}`;
@@ -262,22 +256,13 @@ const MainDashboard = () => {
     setCurrentView('analytics');
   };
 
-  const onUploadClick = () => setIsUploadOpen(true);
-
   const dragItem        = useRef(null);
   const dragOverItem    = useRef(null);
   const chatScrollRef   = useRef(null);
   const chatEndRef      = useRef(null);
   const searchInputRef  = useRef(null);
-  const datasetDropRef  = useRef(null);
 
   const history = activeDataset ? (chatHistories[activeDataset.id] || []) : [];
-
-  const filteredDatasets = useMemo(() => {
-    if (!datasetSearch.trim()) return datasets;
-    const q = datasetSearch.toLowerCase();
-    return datasets.filter(d => d.name.toLowerCase().includes(q) || String(d.id).includes(q));
-  }, [datasets, datasetSearch]);
 
   useEffect(() => { localStorage.setItem(PIN_STORAGE_KEY, JSON.stringify(pinnedCharts)); }, [pinnedCharts, PIN_STORAGE_KEY]);
 
@@ -312,16 +297,6 @@ const MainDashboard = () => {
   }, []);
 
   useEffect(() => {
-    const fn = e => {
-      if (datasetDropRef.current && !datasetDropRef.current.contains(e.target)) {
-        setShowDatasetDropdown(false); setDatasetSearch('');
-      }
-    };
-    document.addEventListener('mousedown', fn);
-    return () => document.removeEventListener('mousedown', fn);
-  }, []);
-
-  useEffect(() => {
     setChartTypeOverride(null); setShowSQL(false); setViewMode('chart');
     setPrompt(''); setSidePrompt(''); setDataSlicerLimit('All');
   }, [activeDataset?.id]);
@@ -339,7 +314,7 @@ const MainDashboard = () => {
     const q = (overridePrompt || prompt).trim();
     if (!q || !activeDataset) return;
     isSideSearch ? setIsSideLoading(true) : setIsLoading(true);
-    setError(null); setChartTypeOverride(null); setDataSlicerLimit('All');
+    setChartTypeOverride(null); setDataSlicerLimit('All');
     setChatHistories(prev => ({ ...prev, [activeDataset.id]: [...(prev[activeDataset.id] || []), { role: 'user', text: q }] }));
     isSideSearch ? setSidePrompt('') : setPrompt('');
     try {
@@ -353,7 +328,6 @@ const MainDashboard = () => {
     } catch (err) {
       const msg = `❌ ${err.response?.data?.error || 'Something went wrong'}`;
       setChatHistories(prev => ({ ...prev, [activeDataset.id]: [...(prev[activeDataset.id] || []), { role: 'ai', text: msg }] }));
-      setError(msg);
     } finally { setIsLoading(false); setIsSideLoading(false); }
   };
 
@@ -393,7 +367,13 @@ const MainDashboard = () => {
   const handleRemoveMessage = async index => {
     const msg = history[index];
     const headers = { Authorization: `Bearer ${token}` };
-    if (msg.id) { try { await axios.delete(`${API_URL}/chats/${msg.id}`, { headers }); } catch {} }
+    if (msg.id) {
+      try {
+        await axios.delete(`${API_URL}/chats/${msg.id}`, { headers });
+      } catch (err) {
+        console.error('Failed to delete chat message:', err);
+      }
+    }
     const nh = [...history];
     if (nh[index].role === 'user' && nh[index + 1]?.role === 'ai') {
       if (nh[index + 1].id) axios.delete(`${API_URL}/chats/${nh[index + 1].id}`, { headers }).catch(() => {});
@@ -420,7 +400,9 @@ const MainDashboard = () => {
       const canvas = await html2canvas(el, { backgroundColor: null, scale: 2 });
       const a = document.createElement('a'); a.download = `${filename}.png`;
       a.href = canvas.toDataURL('image/png'); a.click();
-    } catch {}
+    } catch (err) {
+      console.error('Failed to export PNG:', err);
+    }
   };
 
   const currentData = useMemo(() =>
@@ -494,10 +476,6 @@ const MainDashboard = () => {
   return (
     <div className="dashboard-wrapper">
 
-      <button className="mobile-assistant-toggle" onClick={() => setIsSidebarOpen(true)}>
-        <Sparkles size={18} />
-      </button>
-
       <main className="dashboard-main flex flex-col min-h-0">
 
         {/* ── Topbar ── */}
@@ -530,7 +508,7 @@ const MainDashboard = () => {
 
           <div className="lm-topbar-right">
 
-            <button className={`lm-ai-toggle ${isSidebarOpen ? 'active' : ''}`} onClick={() => setIsSidebarOpen(o => !o)}>
+            <button className={`lm-ai-toggle ${isSidebarOpen ? 'active' : ''}`} onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
               {isSidebarOpen
                 ? <><ChevronRight size={14}/><span>Close AI</span></>
                 : <><Sparkles size={14}/><span>AI Chat</span></>
@@ -774,11 +752,13 @@ const MainDashboard = () => {
                     <Trash2 size={13}/>
                   </button>
                 )}
-                <button onClick={() => setIsSidebarOpen(false)}
-                  style={{ display:'flex', alignItems:'center', gap:4, padding:'5px 9px', borderRadius:6, background:'none', border:'none', fontFamily:'inherit', fontSize:'10.5px', fontWeight:700, textTransform:'uppercase', letterSpacing:'.05em', color:'var(--text-tertiary)', cursor:'pointer' }}
-                  onMouseEnter={e => { e.currentTarget.style.color='#f87171'; e.currentTarget.style.background='rgba(248,113,113,.1)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.color='var(--text-tertiary)'; e.currentTarget.style.background='none'; }}>
-                 
+                <button
+                  type="button"
+                  className="lm-sidebar-close-mobile"
+                  onClick={() => setIsSidebarOpen(false)}
+                  title="Close AI"
+                >
+                  <X size={14} />
                 </button>
               </div>
             </div>
@@ -866,7 +846,7 @@ const MainDashboard = () => {
           style={{ display:'none' }} />
       )}
 
-      {showPreview && <DatasetPreview dataset={activeDataset} onClose={() => setShowPreview(false)} />}
+      {showPreview && <DatasetPreview key={activeDataset?.id} dataset={activeDataset} onClose={() => setShowPreview(false)} />}
     </div>
   );
 };

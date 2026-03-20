@@ -4,16 +4,20 @@ import axios from 'axios';
 import { API_URL } from '../config';
 import DynamicDashboard from '../components/DynamicDashboard';
 import { Loader2 } from 'lucide-react';
+import Sidebar from '../components/Sidebar';
 
 import useStore from '../store/useStore';
 
 export default function DynamicBoardPage() {
-    const { isDark, toggleTheme, token, datasets } = useStore();
-    const { datasetName, datasetId, slug } = useParams();
+    const { token, datasets, setCurrentView } = useStore();
+    const { datasetId, slug } = useParams();
     const navigate = useNavigate();
     const [charts, setCharts] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [activeDataset, setActiveDataset] = useState(null);
+
+    useEffect(() => {
+        setCurrentView('analytics');
+    }, [setCurrentView]);
 
     useEffect(() => {
         const loadPageData = async () => {
@@ -33,10 +37,6 @@ export default function DynamicBoardPage() {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     currentDs = dsRes.data.find(d => String(d.id) === String(datasetId));
-                }
-
-                if (currentDs) {
-                    setActiveDataset(currentDs);
                 }
 
                 // 2. Fetch Chat History to reconstruct the "dashboard" (pinned/all viz)
@@ -98,9 +98,12 @@ export default function DynamicBoardPage() {
     }
 
     return (
-        <DynamicDashboard 
-            charts={charts} 
-        />
+        <div className="layout-container" style={{ display: 'flex', flexDirection: 'row', height: '100vh', overflow: 'hidden' }}>
+            <Sidebar />
+            <main style={{ flex: 1, minWidth: 0, display: 'flex', overflow: 'hidden' }}>
+                <DynamicDashboard charts={charts} />
+            </main>
+        </div>
     );
 
 }

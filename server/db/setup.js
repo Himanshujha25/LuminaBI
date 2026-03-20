@@ -2,6 +2,8 @@ const pool = require('./db');
 
 async function setup() {
     try {
+        await pool.verifyConnection();
+
         await pool.query(`
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
@@ -75,8 +77,10 @@ async function setup() {
         await pool.query('CREATE INDEX IF NOT EXISTS idx_chat_dataset ON chat_histories(dataset_id)');
         await pool.query('CREATE INDEX IF NOT EXISTS idx_dashboards_user ON dashboards(user_id)');
         console.log("Indices created successfully.");
+        return true;
     } catch (err) {
         console.error("Error creating datasets table:", err);
+        return false;
     }
 }
 

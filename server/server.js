@@ -28,25 +28,46 @@ const upload = multer({
 
 // Initialize Resend
 const resend = new Resend(process.env.RESEND_API_KEY);
+const allowedOrigins = new Set([
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "https://lumina-bi.vercel.app",
+  "https://luminabi.onrender.com",
+  "http://192.168.29.122:5173",
+  "http://localhost:5050",
+  "http://127.0.0.1:5050",
+]);
 
 app.use(compression());
 app.use(cors({
-  origin: [
-    "http://localhost:5173",
-    "https://lumina-bi.vercel.app",
-    "https://luminabi.onrender.com",
-    "http://192.168.29.122:5173"
-  ],
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.has(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`Origin not allowed by CORS: ${origin}`));
+  },
   credentials: true,
 }));
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb', extended: true }));
 
-setupDb();
-
 app.use('/api', apiRoutes);
 app.post("/query", handleQuery);
-app.get('/health', (_, res) => res.json({ status: 'ok' }));
+app.get('/health', (_, res) => {
+  const db = require('./db/db');
+  const dbStatus = db.dbState.ready ? 'ok' : 'error';
+  const payload = {
+    status: db.dbState.ready ? 'ok' : 'degraded',
+    database: dbStatus,
+  };
+
+  if (db.dbState.lastError) {
+    payload.databaseError = db.dbState.lastError.message || String(db.dbState.lastError);
+  }
+
+  res.status(db.dbState.ready ? 200 : 503).json(payload);
+});
 
 app.post('/api/support', upload.any(), async (req, res) => {
   try {
@@ -89,7 +110,19 @@ app.post('/api/support', upload.any(), async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`✅ Server running on http://localhost:${PORT}`);
-});
+const PORT = process.env.PORT || 5050;
+
+async function startServer() {
+  const dbReady = await setupDb();
+
+  if (!dbReady) {
+    console.error('❌ Server startup aborted: database connection failed. Check DATABASE_URL in server/.env.');
+    process.exit(1);
+  }
+
+  app.listen(PORT, () => {
+    console.log(`✅ Server running on http://localhost:${PORT}`);
+  });
+}
+
+startServer();
