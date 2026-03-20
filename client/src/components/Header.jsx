@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
-  UploadCloud, Moon, Sun, LogOut,
+  UploadCloud, Moon, Sun, LogOut, Menu, X, MessageSquareMore,
   PanelLeftClose, PanelLeftOpen, Loader2,
   CheckCircle2, XCircle,
+  LayoutDashboard, BarChart3, Layers, Settings, LifeBuoy, Database,
 } from 'lucide-react';
 import './Header.css';
 import useStore from '../store/useStore';
@@ -56,6 +58,7 @@ const UploadStatus = ({ uploadState }) => {
 
 /* ── Main component ──────────────────────────────────────────────────────── */
 const Header = () => {
+  const navigate = useNavigate();
   const { 
     isDark, 
     toggleTheme, 
@@ -64,10 +67,76 @@ const Header = () => {
     isSidebarVisible, 
     setIsSidebarVisible, 
     setIsUploadOpen,
-    user 
+    user,
+    activeDataset,
+    currentView,
+    setCurrentView,
+    setIsManageOpen,
+    isAiPanelOpen,
+    setIsAiPanelOpen,
   } = useStore();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const userName = user?.name || '';
+  const userTitle = userName || user?.email || 'Profile';
+  const mobileTitleMap = {
+    overview: 'Dashboard',
+    analytics: 'Dashboard',
+    dashboards: 'Saved Dashboards',
+    settings: 'Settings',
+    support: 'Support',
+    datasets: 'Datasets',
+  };
+  const mobileTitle = mobileTitleMap[currentView] || 'Workspace';
+
+  const handleOpenOverview = () => {
+    navigate('/dashboard');
+    setCurrentView('overview');
+    setIsAiPanelOpen(false);
+    setIsMobileMenuOpen(false);
+  };
+
+  const handleOpenChat = () => {
+    navigate('/dashboard');
+    setCurrentView('overview');
+    setIsAiPanelOpen(true);
+    setIsMobileMenuOpen(false);
+  };
+
+  const handleAnalyticsClick = () => {
+    if (!activeDataset) return;
+    const slugName = activeDataset.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    navigate(`/analytics/${slugName}/${activeDataset.id}/lumina_25`);
+    setCurrentView('analytics');
+    setIsMobileMenuOpen(false);
+  };
+
+  const mobileMenuItems = [
+    { key: 'overview', label: 'Overview', icon: LayoutDashboard, action: handleOpenOverview },
+    { key: 'analytics', label: 'Dashboard', icon: BarChart3, action: handleAnalyticsClick, disabled: !activeDataset },
+    { key: 'chat', label: 'Chat', icon: MessageSquareMore, action: handleOpenChat },
+    { key: 'dashboards', label: 'Saved Dashboards', icon: Layers, action: () => { navigate('/dashboard'); setCurrentView('dashboards'); setIsMobileMenuOpen(false); } },
+    { key: 'datasets', label: 'Datasets', icon: Database, action: () => { navigate('/dashboard'); setCurrentView('datasets'); setIsManageOpen(true); setIsMobileMenuOpen(false); } },
+    { key: 'support', label: 'Support', icon: LifeBuoy, action: () => { navigate('/dashboard'); setCurrentView('support'); setIsMobileMenuOpen(false); } },
+    { key: 'settings', label: 'Settings', icon: Settings, action: () => { navigate('/dashboard'); setCurrentView('settings'); setIsMobileMenuOpen(false); } },
+  ];
+
+  useEffect(() => {
+    const onResize = () => {
+      if (window.innerWidth > 900) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  useEffect(() => {
+    document.body.style.overflow = isMobileMenuOpen ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobileMenuOpen]);
 
   return (
     <>
@@ -76,6 +145,10 @@ const Header = () => {
 
         {/* Left: toggle + breadcrumb */}
         <div className="hdr-left">
+          <div className="hdr-mobile-title">
+            <strong>{mobileTitle}</strong>
+            <span>{activeDataset?.name || 'LuminaBI'}</span>
+          </div>
           <button
             className="hdr-icon-btn hdr-toggle"
             onClick={() => setIsSidebarVisible(!isSidebarVisible)}
@@ -112,9 +185,22 @@ const Header = () => {
           <div className="hdr-divider hdr-desktop" />
 
           {/* Avatar */}
-          <div className="hdr-avatar-wrap" title={userName || 'Profile'}>
+          <div className="hdr-avatar-wrap hdr-desktop" title={userName || 'Profile'}>
             <div className="hdr-avatar">{getInitials(userName)}</div>
           </div>
+
+          <div className="hdr-mobile-profile" title={userTitle}>
+            <div className="hdr-avatar">{getInitials(userName)}</div>
+          </div>
+
+          <button
+            className="hdr-icon-btn hdr-mobile-menu-btn"
+            onClick={() => setIsMobileMenuOpen((open) => !open)}
+            title={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+            aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+          >
+            {isMobileMenuOpen ? <X size={17} /> : <Menu size={17} />}
+          </button>
 
           {/* Logout */}
           <button
@@ -128,12 +214,61 @@ const Header = () => {
         </div>
       </header>
 
+      {isMobileMenuOpen && (
+        <>
+          <button className="hdr-mobile-overlay" onClick={() => setIsMobileMenuOpen(false)} aria-label="Close mobile menu" />
+          <div className="hdr-mobile-drawer">
+            <div className="hdr-mobile-drawer-head">
+              <div className="hdr-mobile-user">
+                <div className="hdr-avatar">{getInitials(userName)}</div>
+                <div className="hdr-mobile-user-copy">
+                  <strong>{userTitle}</strong>
+                  <span>{activeDataset?.name || 'No dataset selected'}</span>
+                </div>
+              </div>
+              <button className="hdr-icon-btn" onClick={() => setIsMobileMenuOpen(false)} aria-label="Close mobile menu">
+                <X size={17} />
+              </button>
+            </div>
+
+            <div className="hdr-mobile-menu-list">
+              {mobileMenuItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.key}
+                    className="hdr-mobile-menu-item"
+                    onClick={item.action}
+                    disabled={item.disabled}
+                  >
+                    <Icon size={16} />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              className="hdr-mobile-menu-item hdr-mobile-menu-logout"
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                logout();
+              }}
+            >
+              <LogOut size={16} />
+              <span>Logout</span>
+            </button>
+          </div>
+        </>
+      )}
+
       {/* ── Mobile bottom nav ─────────────────────────────────────────────── */}
       <nav className="hdr-mobile-nav">
         <button className="hdr-mob-item" onClick={() => setIsUploadOpen(true)}>
           <div className="hdr-mob-upload">
             <UploadCloud size={22} />
           </div>
+          <span>Upload</span>
         </button>
 
         <button className="hdr-mob-item" onClick={toggleTheme}>
@@ -141,9 +276,16 @@ const Header = () => {
           <span>Theme</span>
         </button>
 
-        <button className="hdr-mob-item danger" onClick={logout}>
-          <LogOut size={20} />
-          <span>Logout</span>
+        <button
+          className={`hdr-mob-item ${isAiPanelOpen ? 'active' : ''}`}
+          onClick={() => {
+            navigate('/dashboard');
+            setCurrentView('overview');
+            setIsAiPanelOpen(!isAiPanelOpen);
+          }}
+        >
+          <MessageSquareMore size={20} />
+          <span>AI</span>
         </button>
       </nav>
     </>

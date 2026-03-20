@@ -1,14 +1,11 @@
 /* ─────────────────────────────────────────────────────────────────
    DynamicDashboard.css  —  Dark-first redesign matching Login aesthetic
-   Deep dark bg (#0d0f1a), indigo-violet accents, DM Sans, grid bg
-   Full responsive + new features
 ───────────────────────────────────────────────────────────────── */
 
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap');
 
 /* ── Root tokens ─────────────────────────────────────────────────────────── */
 .dd-root {
-  /* DARK (default — mirrors Login page) */
   --dd-page:      #0d0f1a;
   --dd-bg:        #0d0f1a;
   --dd-surface:   #13161f;
@@ -25,13 +22,13 @@
   --dd-gradient:  linear-gradient(135deg, #4f52e8, #7c5cf6);
   --dd-radius:    10px;
   --dd-radius-sm: 7px;
-  --dd-header-h:  54px;
-
+  --dd-header-h:  48px;
   background:     var(--dd-bg);
   color:          var(--dd-text-1);
   font-family:    'DM Sans', sans-serif;
-  height:         100vh;
-  width:          100vw;
+  height:         100%;
+  width:          100%;
+  min-width:      0;
   display:        flex;
   flex-direction: column;
   overflow:       hidden;
@@ -39,13 +36,9 @@
   position:       relative;
 }
 
-/* ── Subtle grid background (same technique as Login) ─────────────────────── */
 .dd-root::before {
   content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
   background-image:
     linear-gradient(rgba(255,255,255,.022) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255,255,255,.022) 1px, transparent 1px);
@@ -53,7 +46,6 @@
   mask-image: radial-gradient(ellipse 110% 80% at 50% 0%, black 30%, transparent 100%);
 }
 
-/* ── LIGHT MODE override ──────────────────────────────────────────────────── */
 .dd-root.light {
   --dd-page:      #f0f1f8;
   --dd-bg:        #f0f1f8;
@@ -72,787 +64,305 @@
     linear-gradient(rgba(79,82,232,.04) 1px, transparent 1px),
     linear-gradient(90deg, rgba(79,82,232,.04) 1px, transparent 1px);
 }
-
-/* Legacy dark class compatibility */
-.dd-root.dark { /* already the default, no overrides needed */ }
+.dd-root.dark {}
 
 /* ── Header ─────────────────────────────────────────────────────────────── */
 .dd-header {
-  height:        var(--dd-header-h);
-  background:    rgba(13,15,26,.88);
-  border-bottom: 1px solid var(--dd-border);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  display:       flex;
-  align-items:   center;
+  height:          var(--dd-header-h);
+  position:        sticky;
+  top:             0;
+  background:      rgba(11,15,25,.92);
+  border-bottom:   1px solid var(--dd-border);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  display:         flex;
+  align-items:     center;
   justify-content: space-between;
-  padding:       0 20px;
-  flex-shrink:   0;
-  z-index:       100;
-  gap:           10px;
-  position:      relative;
+  padding:         0 14px 0 8px;
+  flex-shrink:     0;
+  z-index:         100;
+  gap:             8px;
 }
-.dd-root.light .dd-header {
-  background: rgba(240,241,248,.9);
-}
+.dd-root.light .dd-header { background: rgba(240,241,248,.9); }
 
-/* Logo mark in header */
+.dd-header-left {
+  display: flex; align-items: center; gap: 10px; min-width: 0; flex-shrink: 0;
+}
+.dd-title-block { min-width: 0; }
+.dd-title {
+  max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 13px; font-weight: 700; line-height: 1.2; color: var(--dd-text-1);
+}
+.dd-subtitle { font-size: 10px; line-height: 1.2; color: var(--dd-text-3); }
 .dd-logo-mark {
-  width: 28px; height: 28px;
-  border-radius: 7px;
-  background: var(--dd-gradient);
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
+  width: 28px; height: 28px; border-radius: 7px; background: var(--dd-gradient);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 
-/* ── Back button ─────────────────────────────────────────────────────────── */
 .dd-back-btn {
-  display:       flex;
-  align-items:   center;
-  gap:           7px;
-  background:    rgba(255,255,255,.05);
-  border:        1px solid var(--dd-border);
-  border-radius: var(--dd-radius-sm);
-  color:         var(--dd-text-2);
-  font-family:   inherit;
-  font-size:     12px;
-  font-weight:   500;
-  cursor:        pointer;
-  padding:       5px 11px;
-  transition:    background .15s, color .15s, border-color .15s;
-  white-space:   nowrap;
+  display: flex; align-items: center; gap: 7px; height: 32px;
+  background: transparent; border: none; border-radius: var(--dd-radius-sm);
+  color: var(--dd-text-2); font-family: inherit; font-size: 12px; font-weight: 500;
+  cursor: pointer; padding: 5px 11px;
+  transition: background .15s, color .15s, border-color .15s; white-space: nowrap;
 }
-.dd-back-btn:hover {
-  background:    rgba(255,255,255,.09);
-  color:         var(--dd-text-1);
-  border-color:  var(--dd-border-2);
-}
-.dd-root.light .dd-back-btn { background: rgba(79,82,232,.06); }
+.dd-back-btn:hover { background: rgba(255,255,255,.06); color: var(--dd-text-1); }
+.dd-root.light .dd-back-btn { background: transparent; }
 .dd-root.light .dd-back-btn:hover { background: rgba(79,82,232,.12); }
 
 /* ── Filter bar ──────────────────────────────────────────────────────────── */
 .dd-filter-bar {
-  display:       flex;
-  align-items:   center;
-  gap:           2px;
-  background:    rgba(255,255,255,.04);
-  border:        1px solid var(--dd-border);
-  border-radius: var(--dd-radius-sm);
-  padding:       3px;
+  display: flex; align-items: center; gap: 2px;
+  background: rgba(255,255,255,.04); border: 1px solid var(--dd-border);
+  border-radius: var(--dd-radius-sm); padding: 3px;
 }
 .dd-root.light .dd-filter-bar { background: rgba(79,82,232,.05); }
-
 .dd-tool-btn {
-  width:         28px; height: 28px;
-  display:       flex;
-  align-items:   center; justify-content: center;
-  border-radius: 5px;
-  border:        none;
-  background:    none;
-  color:         var(--dd-text-3);
-  cursor:        pointer;
-  transition:    color .12s, background .12s;
+  width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+  border-radius: 5px; border: none; background: none; color: var(--dd-text-3);
+  cursor: pointer; transition: color .12s, background .12s;
 }
 .dd-tool-btn:hover  { color: var(--dd-text-1); background: rgba(255,255,255,.07); }
-.dd-tool-btn.active {
-  color:         #818cf8;
-  background:    rgba(79,82,232,.18);
-}
+.dd-tool-btn.active { color: #818cf8; background: rgba(79,82,232,.18); }
 
 /* ── Layout dropdown ─────────────────────────────────────────────────────── */
 .dd-dropdown {
-  position:      absolute;
-  top:           calc(100% + 6px);
-  left:          0;
-  background:    var(--dd-surface);
-  border:        1px solid var(--dd-border-2);
+  position: absolute; top: calc(100% + 6px); left: 0;
+  background: var(--dd-surface); border: 1px solid var(--dd-border-2);
   border-radius: var(--dd-radius);
-  box-shadow:    0 12px 40px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.04);
-  z-index:       200;
-  min-width:     180px;
-  overflow:      hidden;
-  animation:     ddDropIn .14s ease both;
+  box-shadow: 0 12px 40px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.04);
+  z-index: 200; min-width: 180px; overflow: hidden; animation: ddDropIn .14s ease both;
 }
-.dd-root.light .dd-dropdown {
-  box-shadow: 0 8px 32px rgba(79,82,232,.12), 0 0 0 1px rgba(79,82,232,.08);
-}
-
+.dd-root.light .dd-dropdown { box-shadow: 0 8px 32px rgba(79,82,232,.12), 0 0 0 1px rgba(79,82,232,.08); }
 @keyframes ddDropIn {
   from { opacity: 0; transform: translateY(-6px) scale(.98); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
-
 .dd-dropdown button {
-  width:       100%;
-  text-align:  left;
-  padding:     9px 14px;
-  font-family: inherit;
-  font-size:   12.5px;
-  font-weight: 500;
-  color:       var(--dd-text-2);
-  background:  none;
-  border:      none;
-  cursor:      pointer;
-  display:     flex;
-  align-items: center;
-  gap:         9px;
-  transition:  background .1s, color .1s;
+  width: 100%; text-align: left; padding: 9px 14px; font-family: inherit;
+  font-size: 12.5px; font-weight: 500; color: var(--dd-text-2); background: none;
+  border: none; cursor: pointer; display: flex; align-items: center; gap: 9px;
+  transition: background .1s, color .1s;
 }
-.dd-dropdown button:hover {
-  background: rgba(79,82,232,.12);
-  color:      var(--dd-text-1);
-}
-.dd-dropdown-divider {
-  height: 1px;
-  background: var(--dd-border);
-  margin: 4px 0;
-}
+.dd-dropdown button:hover { background: rgba(79,82,232,.12); color: var(--dd-text-1); }
+.dd-dropdown-divider { height: 1px; background: var(--dd-border); margin: 4px 0; }
 .dd-dropdown-section {
-  padding: 6px 14px 4px;
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: .07em;
-  text-transform: uppercase;
-  color: var(--dd-text-3);
+  padding: 6px 14px 4px; font-size: 9.5px; font-weight: 700;
+  letter-spacing: .07em; text-transform: uppercase; color: var(--dd-text-3);
 }
 
-/* ── Header buttons ──────────────────────────────────────────────────────── */
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
 .dd-btn-primary {
-  display:       flex;
-  align-items:   center;
-  gap:           6px;
-  height:        30px;
-  padding:       0 13px;
-  border-radius: var(--dd-radius-sm);
-  border:        none;
-  background:    var(--dd-gradient);
-  color:         #fff;
-  font-family:   inherit;
-  font-size:     12px;
-  font-weight:   600;
-  cursor:        pointer;
-  transition:    opacity .12s, transform .1s, box-shadow .15s;
-  white-space:   nowrap;
-  box-shadow:    0 2px 12px var(--dd-blue-glow);
+  display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 13px;
+  border-radius: var(--dd-radius-sm); border: none; background: var(--dd-gradient);
+  color: #fff; font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: opacity .12s, transform .1s, box-shadow .15s; white-space: nowrap;
+  box-shadow: 0 2px 12px var(--dd-blue-glow);
 }
-.dd-btn-primary:hover:not(:disabled) {
-  opacity: .88;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 18px var(--dd-blue-glow);
-}
+.dd-btn-primary:hover:not(:disabled) { opacity: .88; transform: translateY(-1px); box-shadow: 0 4px 18px var(--dd-blue-glow); }
 .dd-btn-primary:active:not(:disabled) { transform: translateY(0) scale(.97); }
 .dd-btn-primary:disabled { opacity: .4; cursor: not-allowed; }
-
-/* Override colors for specific buttons */
-.dd-btn-primary.dd-btn-orange { background: linear-gradient(135deg, #ea580c, #f97316); box-shadow: 0 2px 12px rgba(234,88,12,.3); }
-.dd-btn-primary.dd-btn-save   { background: linear-gradient(135deg, #059669, #10b981); box-shadow: 0 2px 12px rgba(5,150,105,.3); }
+.dd-btn-primary.dd-btn-orange { background: linear-gradient(135deg,#ea580c,#f97316); box-shadow: 0 2px 12px rgba(234,88,12,.3); }
+.dd-btn-primary.dd-btn-save   { background: linear-gradient(135deg,#059669,#10b981); box-shadow: 0 2px 12px rgba(5,150,105,.3); }
 
 .dd-btn-outline {
-  display:       flex;
-  align-items:   center;
-  gap:           6px;
-  height:        30px;
-  padding:       0 12px;
-  border-radius: var(--dd-radius-sm);
-  border:        1px solid var(--dd-border);
-  background:    rgba(255,255,255,.04);
-  color:         var(--dd-text-2);
-  font-family:   inherit;
-  font-size:     12px;
-  font-weight:   500;
-  cursor:        pointer;
-  transition:    border-color .12s, color .12s, background .12s;
-  white-space:   nowrap;
+  display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px;
+  border-radius: var(--dd-radius-sm); border: 1px solid var(--dd-border);
+  background: rgba(255,255,255,.04); color: var(--dd-text-2); font-family: inherit;
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  transition: border-color .12s, color .12s, background .12s; white-space: nowrap;
 }
-.dd-btn-outline:hover:not(:disabled) {
-  border-color: var(--dd-border-2);
-  color:        var(--dd-text-1);
-  background:   rgba(255,255,255,.08);
-}
+.dd-btn-outline:hover:not(:disabled) { border-color: var(--dd-border-2); color: var(--dd-text-1); background: rgba(255,255,255,.08); }
 .dd-btn-outline:disabled { opacity: .4; cursor: not-allowed; }
 .dd-root.light .dd-btn-outline { background: rgba(79,82,232,.04); }
 .dd-root.light .dd-btn-outline:hover { background: rgba(79,82,232,.10); }
 
-/* Icon-only button */
 .dd-btn-icon {
   width: 30px; height: 30px; padding: 0;
   display: flex; align-items: center; justify-content: center;
-  border-radius: var(--dd-radius-sm);
-  border: 1px solid var(--dd-border);
-  background: rgba(255,255,255,.04);
-  color: var(--dd-text-2);
-  cursor: pointer;
-  transition: all .12s;
+  border-radius: var(--dd-radius-sm); border: 1px solid var(--dd-border);
+  background: rgba(255,255,255,.04); color: var(--dd-text-2); cursor: pointer; transition: all .12s;
 }
-.dd-btn-icon:hover {
-  border-color: var(--dd-border-2);
-  color: var(--dd-text-1);
-  background: rgba(255,255,255,.08);
-}
-.dd-btn-icon.dd-active {
-  color: #818cf8;
-  background: rgba(79,82,232,.18);
-  border-color: rgba(79,82,232,.35);
-}
+.dd-btn-icon:hover { border-color: var(--dd-border-2); color: var(--dd-text-1); background: rgba(255,255,255,.08); }
+.dd-btn-icon.dd-active { color: #818cf8; background: rgba(79,82,232,.18); border-color: rgba(79,82,232,.35); }
 
-/* ── Header right group ───────────────────────────────────────────────────── */
+/* ── Header right + shell ─────────────────────────────────────────────────── */
 .dd-header-right {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  flex-wrap: nowrap;
+  display: flex; align-items: center; gap: 5px; flex-wrap: nowrap;
+  min-width: 0; overflow-x: auto; scrollbar-width: none; margin-left: auto;
+}
+.dd-header-right::-webkit-scrollbar { display: none; }
+
+.dd-shell-controls {
+  display: flex; align-items: center; gap: 8px;
+  margin-left: 2px; flex-shrink: 0;
+  padding-left: 8px; border-left: 1px solid var(--dd-border);
 }
 
-/* ── Separator ────────────────────────────────────────────────────────────── */
-.dd-sep {
-  width: 1px; height: 18px;
-  background: var(--dd-border);
-  flex-shrink: 0;
+.dd-shell-menu-btn,
+.dd-mobile-overlay,
+.dd-mobile-drawer { display: none; }
+
+.dd-header-avatar-wrap {
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer;
 }
+.dd-header-avatar {
+  width: 30px; height: 30px; border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
+  color: rgba(255,255,255,.75); font-size: 12px; font-weight: 700; letter-spacing: .04em;
+  transition: background .13s, border-color .13s, color .13s, transform .15s;
+}
+.dd-header-avatar-wrap:hover .dd-header-avatar { border-color: #6366f1; background: rgba(99,102,241,.12); color: #818cf8; transform: scale(1.06); }
+.dd-root.light .dd-header-avatar { background: rgba(79,82,232,.06); border-color: rgba(79,82,232,.2); color: #4f46e5; }
+
+.dd-header-center { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.dd-sep { width: 1px; height: 18px; background: var(--dd-border); flex-shrink: 0; }
 
 /* ── KPI strip ───────────────────────────────────────────────────────────── */
 .dd-kpi-strip {
-  display:          flex;
-  gap:              1px;
-  background:       var(--dd-border);
-  border-bottom:    1px solid var(--dd-border);
-  flex-shrink:      0;
-  overflow-x:       auto;
-  scrollbar-width:  none;
-  position:         relative;
-  z-index:          1;
+  display: flex; gap: 1px; background: var(--dd-border); border-bottom: 1px solid var(--dd-border);
+  flex-shrink: 0; overflow-x: auto; scrollbar-width: none; position: relative; z-index: 1;
 }
 .dd-kpi-strip::-webkit-scrollbar { display: none; }
-
-.dd-kpi-item {
-  flex:       1;
-  min-width:  130px;
-  background: var(--dd-surface);
-  padding:    11px 18px;
-  position:   relative;
-  overflow:   hidden;
-}
-.dd-kpi-item::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0; height: 2px;
-  background: var(--dd-gradient);
-  opacity: 0;
-  transition: opacity .2s;
-}
+.dd-kpi-item { flex: 1; min-width: 130px; background: var(--dd-surface); padding: 11px 18px; position: relative; overflow: hidden; }
+.dd-kpi-item::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--dd-gradient); opacity: 0; transition: opacity .2s; }
 .dd-kpi-item:hover::before { opacity: 1; }
-.dd-kpi-label {
-  font-size: 9px; font-weight: 700; letter-spacing: .08em;
-  text-transform: uppercase; color: var(--dd-text-3);
-  display: block; margin-bottom: 4px;
-}
-.dd-kpi-value {
-  font-size: 14px; font-weight: 700;
-  color: var(--dd-text-1);
-  display: flex; align-items: center; gap: 6px;
-  font-family: 'DM Mono', monospace;
-}
-.dd-kpi-delta {
-  font-size: 10px; font-weight: 600;
-  padding: 2px 6px; border-radius: 4px;
-  font-family: 'DM Sans', sans-serif;
-}
+.dd-kpi-label { font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--dd-text-3); display: block; margin-bottom: 4px; }
+.dd-kpi-value { font-size: 14px; font-weight: 700; color: var(--dd-text-1); display: flex; align-items: center; gap: 6px; font-family: 'DM Mono', monospace; }
+.dd-kpi-delta { font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; font-family: 'DM Sans', sans-serif; }
 .dd-kpi-delta.up   { color: #34d399; background: rgba(52,211,153,.12); }
 .dd-kpi-delta.down { color: #f87171; background: rgba(248,113,113,.12); }
 
-/* ── Body layout ─────────────────────────────────────────────────────────── */
-.dd-body {
-  flex:     1;
-  display:  flex;
-  overflow: hidden;
-  position: relative;
-  z-index:  1;
-}
-
-.dd-canvas-area {
-  flex:           1;
-  overflow-y:     auto;
-  padding:        16px;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,.1) transparent;
-}
+/* ── Body ────────────────────────────────────────────────────────────────── */
+.dd-body { flex: 1; display: flex; overflow: hidden; position: relative; z-index: 1; }
+.dd-canvas-area { flex: 1; overflow-y: auto; padding: 16px; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.1) transparent; }
 .dd-canvas-area::-webkit-scrollbar { width: 5px; }
 .dd-canvas-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 3px; }
 
-/* ── Panel cards ─────────────────────────────────────────────────────────── */
-.dd-panel {
-  background:     var(--dd-surface);
-  border:         1px solid var(--dd-border);
-  border-radius:  var(--dd-radius);
-  display:        flex;
-  flex-direction: column;
-  /* overflow:visible is required so the resize handle (positioned outside)
-     is not clipped. clip-path was removed for the same reason. */
-  overflow:       visible;
-  position:       relative;
-  transition:     border-color .18s, box-shadow .18s;
-  box-shadow:     0 2px 12px rgba(0,0,0,.25);
-}
-.dd-panel:hover {
-  border-color: rgba(79,82,232,.4);
-  box-shadow:   0 6px 28px rgba(79,82,232,.14), 0 2px 8px rgba(0,0,0,.3);
-}
+/* ── Panels ──────────────────────────────────────────────────────────────── */
+.dd-panel { background: var(--dd-surface); border: 1px solid var(--dd-border); border-radius: var(--dd-radius); display: flex; flex-direction: column; overflow: visible; position: relative; transition: border-color .18s, box-shadow .18s; box-shadow: 0 2px 12px rgba(0,0,0,.25); }
+.dd-panel:hover { border-color: rgba(79,82,232,.4); box-shadow: 0 6px 28px rgba(79,82,232,.14), 0 2px 8px rgba(0,0,0,.3); }
 .dd-root.light .dd-panel { box-shadow: 0 2px 10px rgba(79,82,232,.05); }
 .dd-root.light .dd-panel:hover { box-shadow: 0 6px 24px rgba(79,82,232,.12); }
+.dd-panel .recharts-wrapper, .dd-panel canvas, .dd-panel svg { overflow: visible !important; }
 
-/* Panel chart area */
-.dd-panel .recharts-wrapper,
-.dd-panel canvas,
-.dd-panel svg { overflow: visible !important; }
-
-/* ── Panel header ────────────────────────────────────────────────────────── */
-.dd-panel-header {
-  display:          flex;
-  align-items:      center;
-  justify-content:  space-between;
-  padding:          10px 13px;
-  border-bottom:    1px solid var(--dd-border);
-  background:       var(--dd-surface);
-  cursor:           grab;
-  user-select:      none;
-  -webkit-user-select: none;
-  gap:              8px;
-}
+.dd-panel-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 13px; border-bottom: 1px solid var(--dd-border); background: var(--dd-surface); cursor: grab; user-select: none; -webkit-user-select: none; gap: 8px; }
 .dd-panel-header:active { cursor: grabbing; }
-
 .dd-panel-drag-area { flex: 1; display: flex; align-items: center; min-width: 0; }
-
-.dd-panel-title {
-  font-size: 11px; font-weight: 600;
-  letter-spacing: .04em; text-transform: uppercase;
-  color: var(--dd-text-2);
-  display: flex; align-items: center; gap: 6px;
-  overflow: hidden;
-}
+.dd-panel-title { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--dd-text-2); display: flex; align-items: center; gap: 6px; overflow: hidden; }
 .dd-panel-title-icon { color: var(--dd-text-3); flex-shrink: 0; }
-
-.dd-panel-actions {
-  display:    flex;
-  align-items: center;
-  gap:         2px;
-  flex-shrink: 0;
-  opacity:     0;
-  transition:  opacity .15s;
-}
+.dd-panel-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; opacity: 0; transition: opacity .15s; }
 .dd-panel:hover .dd-panel-actions { opacity: 1; }
-
-.dd-panel-action {
-  width: 26px; height: 26px;
-  display: flex; align-items: center; justify-content: center;
-  border: none; background: none;
-  color: var(--dd-text-3);
-  border-radius: 5px; cursor: pointer;
-  transition: color .12s, background .12s;
-  flex-shrink: 0;
-}
+.dd-panel-action { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border: none; background: none; color: var(--dd-text-3); border-radius: 5px; cursor: pointer; transition: color .12s, background .12s; flex-shrink: 0; }
 .dd-panel-action:hover { color: var(--dd-text-1); background: rgba(255,255,255,.08); }
 .dd-active-pin { color: #818cf8 !important; }
 .dd-root.light .dd-panel-action:hover { background: rgba(79,82,232,.1); }
-
-/* ── Panel type badge ─────────────────────────────────────────────────────── */
-.dd-type-badge {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 2px 7px; border-radius: 4px;
-  font-size: 9.5px; font-weight: 600; letter-spacing: .04em;
-  text-transform: uppercase;
-  background: rgba(79,82,232,.12);
-  color: #818cf8;
-  flex-shrink: 0;
-}
+.dd-type-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 4px; font-size: 9.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; background: rgba(79,82,232,.12); color: #818cf8; flex-shrink: 0; }
 
 /* ── Resize handle ───────────────────────────────────────────────────────── */
-/*
-  IMPORTANT: The handle is injected by react-resizable as a direct child of
-  the grid item (sibling of .dd-panel). Do NOT use clip-path or
-  overflow:hidden on .dd-panel — both will swallow the handle.
-*/
-.react-resizable-handle {
-  position:       absolute !important;
-  width:          20px !important;
-  height:         20px !important;
-  bottom:         0 !important;
-  right:          0 !important;
-  background-image: none !important;
-  cursor:         nwse-resize !important;
-  z-index:        20 !important;
-  pointer-events: all !important;
-  opacity:        0;
-  transition:     opacity .15s;
-}
-/* Show handle whenever the grid item wrapper is hovered (not just .dd-panel) */
+.react-resizable-handle { position: absolute !important; width: 20px !important; height: 20px !important; bottom: 0 !important; right: 0 !important; background-image: none !important; cursor: nwse-resize !important; z-index: 20 !important; pointer-events: all !important; opacity: 0; transition: opacity .15s; }
 .react-grid-item:hover .react-resizable-handle { opacity: 1; }
-.react-resizable-handle::after {
-  content: '';
-  position: absolute;
-  right:  5px;
-  bottom: 5px;
-  width:  9px;
-  height: 9px;
-  border-right:  2px solid rgba(129,140,248,.7);
-  border-bottom: 2px solid rgba(129,140,248,.7);
-  border-radius: 1px;
-}
+.react-resizable-handle::after { content: ''; position: absolute; right: 5px; bottom: 5px; width: 9px; height: 9px; border-right: 2px solid rgba(129,140,248,.7); border-bottom: 2px solid rgba(129,140,248,.7); border-radius: 1px; }
 
 /* ── AI insight overlay ──────────────────────────────────────────────────── */
-.dd-insight-overlay {
-  position: absolute; bottom: 0; left: 0; right: 0;
-  background: linear-gradient(0deg, var(--dd-surface) 70%, rgba(19,22,31,0) 100%);
-  padding: 14px 13px 11px;
-  transform: translateY(100%); opacity: 0;
-  transition: transform .2s ease, opacity .2s ease;
-  z-index: 10;
-  will-change: transform, opacity;
-}
-.dd-root.light .dd-insight-overlay {
-  background: linear-gradient(0deg, #fff 70%, rgba(255,255,255,0) 100%);
-}
-.dd-panel:hover .dd-insight-overlay,
-.dd-pinned-insight {
-  transform: translateY(0);
-  opacity: 1;
-}
+.dd-insight-overlay { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(0deg, var(--dd-surface) 70%, rgba(19,22,31,0) 100%); padding: 14px 13px 11px; transform: translateY(100%); opacity: 0; transition: transform .2s ease, opacity .2s ease; z-index: 10; will-change: transform, opacity; }
+.dd-root.light .dd-insight-overlay { background: linear-gradient(0deg, #fff 70%, rgba(255,255,255,0) 100%); }
+.dd-panel:hover .dd-insight-overlay, .dd-pinned-insight { transform: translateY(0); opacity: 1; }
 
-/* ── AI sidebar ──────────────────────────────────────────────────────────── */
-.dd-sidebar {
-  width:          340px;
-  background:     var(--dd-surface);
-  border-left:    1px solid var(--dd-border);
-  display:        flex;
-  flex-direction: column;
-  flex-shrink:    0;
-  position:       relative;
-}
-.dd-sidebar-header {
-  padding:       14px 16px;
-  border-bottom: 1px solid var(--dd-border);
-  display:       flex;
-  align-items:   center;
-  justify-content: space-between;
-}
-.dd-sidebar-tabs {
-  display: flex; gap: 4px;
-  padding: 10px 14px 0;
-  border-bottom: 1px solid var(--dd-border);
-}
-.dd-sidebar-tab {
-  padding: 6px 12px;
-  font-size: 11px; font-weight: 600;
-  color: var(--dd-text-3);
-  background: none; border: none;
-  border-bottom: 2px solid transparent;
-  cursor: pointer; font-family: inherit;
-  transition: color .12s, border-color .12s;
-  margin-bottom: -1px;
-}
-.dd-sidebar-tab.active {
-  color: #818cf8;
-  border-bottom-color: #818cf8;
-}
-.dd-chat-messages {
-  flex: 1; overflow-y: auto;
-  padding: 14px; display: flex; flex-direction: column; gap: 10px;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,.08) transparent;
-}
-.dd-bubble {
-  padding: 9px 12px;
-  border-radius: var(--dd-radius-sm);
-  font-size: 12.5px; line-height: 1.6;
-  max-width: 88%;
-}
-.dd-bubble-ai {
-  background: rgba(255,255,255,.04);
-  border: 1px solid var(--dd-border);
-  color: var(--dd-text-1);
-  align-self: flex-start;
-}
-.dd-bubble-user {
-  background: rgba(79,82,232,.2);
-  border: 1px solid rgba(79,82,232,.3);
-  color: var(--dd-text-1);
-  align-self: flex-end;
-}
-.dd-sidebar-footer {
-  padding: 12px 14px;
-  border-top: 1px solid var(--dd-border);
-}
-.dd-input-group {
-  display: flex; align-items: center; gap: 8px;
-  background: rgba(255,255,255,.04);
-  border: 1px solid var(--dd-border);
-  border-radius: var(--dd-radius-sm);
-  padding: 5px 5px 5px 11px;
-  transition: border-color .15s, box-shadow .15s;
-}
-.dd-input-group:focus-within {
-  border-color: rgba(129,140,248,.5);
-  box-shadow: 0 0 0 3px rgba(79,82,232,.15);
-}
-.dd-input-group input {
-  flex: 1; background: none; border: none; outline: none;
-  font-family: inherit; font-size: 12.5px;
-  color: var(--dd-text-1);
-}
+/* ── AI Sidebar ──────────────────────────────────────────────────────────── */
+.dd-sidebar { width: 340px; background: var(--dd-surface); border-left: 1px solid var(--dd-border); display: flex; flex-direction: column; flex-shrink: 0; position: relative; }
+.dd-sidebar-header { padding: 14px 16px; border-bottom: 1px solid var(--dd-border); display: flex; align-items: center; justify-content: space-between; }
+.dd-sidebar-tabs { display: flex; gap: 4px; padding: 10px 14px 0; border-bottom: 1px solid var(--dd-border); }
+.dd-sidebar-tab { padding: 6px 12px; font-size: 11px; font-weight: 600; color: var(--dd-text-3); background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-family: inherit; transition: color .12s, border-color .12s; margin-bottom: -1px; }
+.dd-sidebar-tab.active { color: #818cf8; border-bottom-color: #818cf8; }
+.dd-chat-messages { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.08) transparent; }
+.dd-bubble { padding: 9px 12px; border-radius: var(--dd-radius-sm); font-size: 12.5px; line-height: 1.6; max-width: 88%; }
+.dd-bubble-ai   { background: rgba(255,255,255,.04); border: 1px solid var(--dd-border); color: var(--dd-text-1); align-self: flex-start; }
+.dd-bubble-user { background: rgba(79,82,232,.2); border: 1px solid rgba(79,82,232,.3); color: var(--dd-text-1); align-self: flex-end; }
+.dd-sidebar-footer { padding: 12px 14px; border-top: 1px solid var(--dd-border); }
+.dd-input-group { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,.04); border: 1px solid var(--dd-border); border-radius: var(--dd-radius-sm); padding: 5px 5px 5px 11px; transition: border-color .15s, box-shadow .15s; }
+.dd-input-group:focus-within { border-color: rgba(129,140,248,.5); box-shadow: 0 0 0 3px rgba(79,82,232,.15); }
+.dd-input-group input { flex: 1; background: none; border: none; outline: none; font-family: inherit; font-size: 12.5px; color: var(--dd-text-1); }
 .dd-input-group input::placeholder { color: var(--dd-text-3); }
-.dd-send-btn {
-  width: 28px; height: 28px;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--dd-gradient);
-  color: #fff; border: none; border-radius: 6px;
-  cursor: pointer; transition: opacity .12s;
-  box-shadow: 0 2px 8px var(--dd-blue-glow);
-}
+.dd-send-btn { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: var(--dd-gradient); color: #fff; border: none; border-radius: 6px; cursor: pointer; transition: opacity .12s; box-shadow: 0 2px 8px var(--dd-blue-glow); }
 .dd-send-btn:hover { opacity: .8; }
 
-/* ── Sidebar slide-in ────────────────────────────────────────────────────── */
-@keyframes slideInRight {
-  from { transform: translateX(20px); opacity: 0; }
-  to   { transform: translateX(0);    opacity: 1; }
-}
+@keyframes slideInRight { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 .animate-in { animation: slideInRight .18s ease; }
 
-/* ── Present-mode exit button ────────────────────────────────────────────── */
-.dd-exit-present-btn {
-  display: flex; align-items: center; gap: 8px;
-  background: var(--dd-surface);
-  border: 1px solid var(--dd-border-2);
-  color: var(--dd-text-2);
-  font-family: inherit; font-size: 12px; font-weight: 500;
-  padding: 8px 18px; border-radius: 999px; cursor: pointer;
-  box-shadow: 0 4px 20px rgba(0,0,0,.35);
-  transition: background .12s, color .12s;
-}
-.dd-exit-present-btn:hover {
-  background: var(--dd-surface-2);
-  color: var(--dd-text-1);
-}
-.dd-exit-icon {
-  width: 20px; height: 20px;
-  display: flex; align-items: center; justify-content: center;
-  background: rgba(255,255,255,.1);
-  border-radius: 50%;
-}
+/* ── Present mode ────────────────────────────────────────────────────────── */
+.dd-exit-present-btn { display: flex; align-items: center; gap: 8px; background: var(--dd-surface); border: 1px solid var(--dd-border-2); color: var(--dd-text-2); font-family: inherit; font-size: 12px; font-weight: 500; padding: 8px 18px; border-radius: 999px; cursor: pointer; box-shadow: 0 4px 20px rgba(0,0,0,.35); transition: background .12s, color .12s; }
+.dd-exit-present-btn:hover { background: var(--dd-surface-2); color: var(--dd-text-1); }
+.dd-exit-icon { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.1); border-radius: 50%; }
 
-/* ── Modal overlay ───────────────────────────────────────────────────────── */
-.dd-modal-overlay {
-  position: fixed; inset: 0; z-index: 3000;
-  display: flex; align-items: center; justify-content: center;
-  background: rgba(7,9,18,.7);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  padding: 16px;
-  animation: ddFadeIn .15s ease;
-}
+/* ── Modal ───────────────────────────────────────────────────────────────── */
+.dd-modal-overlay { position: fixed; inset: 0; z-index: 3000; display: flex; align-items: center; justify-content: center; background: rgba(7,9,18,.7); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); padding: 16px; animation: ddFadeIn .15s ease; }
 @keyframes ddFadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-.dd-modal {
-  background:    var(--dd-surface);
-  border:        1px solid var(--dd-border-2);
-  border-radius: 14px;
-  padding:       28px;
-  max-width:     400px; width: 100%;
-  box-shadow:    0 30px 60px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.04);
-  animation:     ddModalIn .18s ease;
-}
-@keyframes ddModalIn {
-  from { opacity: 0; transform: translateY(10px) scale(.98); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-.dd-root.light .dd-modal {
-  box-shadow: 0 24px 48px rgba(79,82,232,.12), 0 0 0 1px rgba(79,82,232,.06);
-}
-
-.dd-modal-title {
-  display: flex; align-items: center; gap: 10px;
-  font-size: 15px; font-weight: 700;
-  color: var(--dd-text-1); margin-bottom: 6px;
-}
-.dd-modal-sub {
-  font-size: 12.5px; color: var(--dd-text-3);
-  margin: 0 0 22px; line-height: 1.5;
-}
-.dd-modal-label {
-  display: block; font-size: 10px; font-weight: 700;
-  color: var(--dd-text-3); margin-bottom: 7px;
-  text-transform: uppercase; letter-spacing: .07em;
-}
-.dd-modal-input {
-  width: 100%; padding: 10px 13px;
-  background: rgba(255,255,255,.05);
-  border: 1px solid var(--dd-border-2);
-  border-radius: var(--dd-radius-sm);
-  font-size: 13.5px; color: var(--dd-text-1);
-  outline: none; font-family: inherit; box-sizing: border-box;
-  transition: border-color .15s, box-shadow .15s;
-}
-.dd-modal-input:focus {
-  border-color: rgba(129,140,248,.55);
-  box-shadow: 0 0 0 3px rgba(79,82,232,.18);
-}
+.dd-modal { background: var(--dd-surface); border: 1px solid var(--dd-border-2); border-radius: 14px; padding: 28px; max-width: 400px; width: 100%; box-shadow: 0 30px 60px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.04); animation: ddModalIn .18s ease; }
+@keyframes ddModalIn { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.dd-root.light .dd-modal { box-shadow: 0 24px 48px rgba(79,82,232,.12), 0 0 0 1px rgba(79,82,232,.06); }
+.dd-modal-title { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 700; color: var(--dd-text-1); margin-bottom: 6px; }
+.dd-modal-sub { font-size: 12.5px; color: var(--dd-text-3); margin: 0 0 22px; line-height: 1.5; }
+.dd-modal-label { display: block; font-size: 10px; font-weight: 700; color: var(--dd-text-3); margin-bottom: 7px; text-transform: uppercase; letter-spacing: .07em; }
+.dd-modal-input { width: 100%; padding: 10px 13px; background: rgba(255,255,255,.05); border: 1px solid var(--dd-border-2); border-radius: var(--dd-radius-sm); font-size: 13.5px; color: var(--dd-text-1); outline: none; font-family: inherit; box-sizing: border-box; transition: border-color .15s, box-shadow .15s; }
+.dd-modal-input:focus { border-color: rgba(129,140,248,.55); box-shadow: 0 0 0 3px rgba(79,82,232,.18); }
 .dd-modal-input::placeholder { color: var(--dd-text-3); }
-.dd-root.light .dd-modal-input {
-  background: rgba(79,82,232,.04);
-  border-color: rgba(79,82,232,.15);
-}
-
+.dd-root.light .dd-modal-input { background: rgba(79,82,232,.04); border-color: rgba(79,82,232,.15); }
 .dd-modal-actions { display: flex; gap: 8px; margin-top: 20px; }
-.dd-modal-cancel {
-  flex: 1; padding: 10px; border-radius: var(--dd-radius-sm);
-  border: 1px solid var(--dd-border); background: none;
-  color: var(--dd-text-2); font-size: 12.5px; font-weight: 500;
-  cursor: pointer; font-family: inherit;
-  transition: background .12s, color .12s;
-}
+.dd-modal-cancel { flex: 1; padding: 10px; border-radius: var(--dd-radius-sm); border: 1px solid var(--dd-border); background: none; color: var(--dd-text-2); font-size: 12.5px; font-weight: 500; cursor: pointer; font-family: inherit; transition: background .12s, color .12s; }
 .dd-modal-cancel:hover { background: rgba(255,255,255,.06); color: var(--dd-text-1); }
-.dd-modal-confirm {
-  flex: 2; padding: 10px; border-radius: var(--dd-radius-sm);
-  border: none; color: #fff; font-size: 12.5px; font-weight: 600;
-  cursor: pointer; font-family: inherit;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  transition: opacity .12s, transform .1s;
-  box-shadow: 0 2px 12px var(--dd-blue-glow);
-}
+.dd-modal-confirm { flex: 2; padding: 10px; border-radius: var(--dd-radius-sm); border: none; color: #fff; font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 8px; transition: opacity .12s, transform .1s; box-shadow: 0 2px 12px var(--dd-blue-glow); }
 .dd-modal-confirm:hover:not(:disabled) { opacity: .88; transform: translateY(-1px); }
 .dd-modal-confirm:disabled { opacity: .35; cursor: not-allowed; }
 
-/* ── Theme picker in modal ────────────────────────────────────────────────── */
-.dd-theme-grid {
-  display: grid; grid-template-columns: repeat(4, 1fr);
-  gap: 8px; margin-bottom: 16px;
-}
-.dd-theme-swatch {
-  aspect-ratio: 1;
-  border-radius: 8px; border: 2px solid transparent;
-  cursor: pointer; transition: border-color .15s, transform .12s;
-  position: relative; overflow: hidden;
-}
+.dd-theme-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-bottom: 16px; }
+.dd-theme-swatch { aspect-ratio: 1; border-radius: 8px; border: 2px solid transparent; cursor: pointer; transition: border-color .15s, transform .12s; position: relative; overflow: hidden; }
 .dd-theme-swatch:hover { transform: scale(1.05); }
 .dd-theme-swatch.selected { border-color: #818cf8; }
-.dd-theme-swatch::after {
-  content: '✓';
-  position: absolute; inset: 0;
-  display: flex; align-items: center; justify-content: center;
-  color: #fff; font-size: 14px; font-weight: 700;
-  opacity: 0; transition: opacity .12s;
-  background: rgba(79,82,232,.3);
-}
+.dd-theme-swatch::after { content: '✓'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; font-weight: 700; opacity: 0; transition: opacity .12s; background: rgba(79,82,232,.3); }
 .dd-theme-swatch.selected::after { opacity: 1; }
 
-/* ── Background options panel ─────────────────────────────────────────────── */
-.dd-bg-options {
-  display: grid; grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-.dd-bg-option {
-  aspect-ratio: 16/9;
-  border-radius: 8px; border: 2px solid transparent;
-  cursor: pointer; transition: all .15s;
-  position: relative; overflow: hidden;
-}
+.dd-bg-options { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+.dd-bg-option { aspect-ratio: 16/9; border-radius: 8px; border: 2px solid transparent; cursor: pointer; transition: all .15s; position: relative; overflow: hidden; }
 .dd-bg-option:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,.3); }
 .dd-bg-option.selected { border-color: #818cf8; }
-.dd-bg-option span {
-  position: absolute; bottom: 5px; left: 0; right: 0;
-  text-align: center; font-size: 9px; font-weight: 600;
-  color: rgba(255,255,255,.8); letter-spacing: .04em;
-  text-transform: uppercase; text-shadow: 0 1px 4px rgba(0,0,0,.5);
-}
+.dd-bg-option span { position: absolute; bottom: 5px; left: 0; right: 0; text-align: center; font-size: 9px; font-weight: 600; color: rgba(255,255,255,.8); letter-spacing: .04em; text-transform: uppercase; text-shadow: 0 1px 4px rgba(0,0,0,.5); }
 
-/* ── Notify toast ─────────────────────────────────────────────────────────── */
-.dd-toast {
-  position: fixed; bottom: 24px; right: 24px; z-index: 4000;
-  background: var(--dd-surface);
-  border: 1px solid var(--dd-border-2);
-  border-radius: var(--dd-radius);
-  padding: 12px 16px;
-  display: flex; align-items: center; gap: 10px;
-  font-size: 12.5px; color: var(--dd-text-1);
-  box-shadow: 0 8px 24px rgba(0,0,0,.4);
-  animation: ddToastIn .2s ease, ddToastOut .2s ease 2.8s forwards;
-  max-width: 280px;
-}
-@keyframes ddToastIn {
-  from { opacity: 0; transform: translateY(8px) scale(.97); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-@keyframes ddToastOut {
-  to { opacity: 0; transform: translateY(6px) scale(.97); }
-}
-.dd-toast-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: #34d399; flex-shrink: 0;
-  box-shadow: 0 0 8px rgba(52,211,153,.6);
-}
+/* ── Toast ────────────────────────────────────────────────────────────────── */
+.dd-toast { position: fixed; bottom: 24px; right: 24px; z-index: 4000; background: var(--dd-surface); border: 1px solid var(--dd-border-2); border-radius: var(--dd-radius); padding: 12px 16px; display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: var(--dd-text-1); box-shadow: 0 8px 24px rgba(0,0,0,.4); animation: ddToastIn .2s ease, ddToastOut .2s ease 2.8s forwards; max-width: 280px; }
+@keyframes ddToastIn  { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes ddToastOut { to { opacity: 0; transform: translateY(6px) scale(.97); } }
+.dd-toast-dot { width: 8px; height: 8px; border-radius: 50%; background: #34d399; flex-shrink: 0; box-shadow: 0 0 8px rgba(52,211,153,.6); }
 .dd-toast-dot.error { background: #f87171; box-shadow: 0 0 8px rgba(248,113,113,.6); }
 
-/* ── Removed panels restore banner ───────────────────────────────────────── */
-.dd-restore-bar {
-  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-  z-index: 2000;
-  background: var(--dd-surface);
-  border: 1px solid var(--dd-border-2);
-  border-radius: 999px;
-  padding: 8px 16px;
-  display: flex; align-items: center; gap: 10px;
-  font-size: 12px; color: var(--dd-text-2);
-  box-shadow: 0 8px 28px rgba(0,0,0,.4);
-  animation: slideUp .2s ease;
-  white-space: nowrap;
-}
-@keyframes slideUp {
-  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
-  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
-}
-.dd-restore-bar button {
-  background: none; border: none; color: #818cf8;
-  font-size: 12px; font-weight: 600; cursor: pointer;
-  font-family: inherit; padding: 0;
-  transition: color .12s;
-}
+/* ── Restore bar ──────────────────────────────────────────────────────────── */
+.dd-restore-bar { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 2000; background: var(--dd-surface); border: 1px solid var(--dd-border-2); border-radius: 999px; padding: 8px 16px; display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--dd-text-2); box-shadow: 0 8px 28px rgba(0,0,0,.4); animation: slideUp .2s ease; white-space: nowrap; }
+@keyframes slideUp { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+.dd-restore-bar button { background: none; border: none; color: #818cf8; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; padding: 0; transition: color .12s; }
 .dd-restore-bar button:hover { color: #a5b4fc; }
 
-/* ── Fullscreen panel ─────────────────────────────────────────────────────── */
-.dd-fullscreen-panel {
-  position: fixed; inset: 0; z-index: 2500;
-  background: var(--dd-bg);
-  display: flex; flex-direction: column;
-  animation: ddFadeIn .15s ease;
-}
-.dd-fullscreen-panel .dd-panel-header {
-  border-bottom: 1px solid var(--dd-border);
-  padding: 14px 20px;
-}
+.dd-fullscreen-panel { position: fixed; inset: 0; z-index: 2500; background: var(--dd-bg); display: flex; flex-direction: column; animation: ddFadeIn .15s ease; }
+.dd-fullscreen-panel .dd-panel-header { border-bottom: 1px solid var(--dd-border); padding: 14px 20px; }
+.dd-density-bar { display: flex; align-items: center; gap: 2px; background: rgba(255,255,255,.04); border: 1px solid var(--dd-border); border-radius: var(--dd-radius-sm); padding: 3px; }
 
-/* ── Density toggle ───────────────────────────────────────────────────────── */
-.dd-density-bar {
-  display: flex; align-items: center; gap: 2px;
-  background: rgba(255,255,255,.04);
-  border: 1px solid var(--dd-border);
-  border-radius: var(--dd-radius-sm);
-  padding: 3px;
-}
-
-/* ── Custom backgrounds ───────────────────────────────────────────────────── */
+/* ── Backgrounds ──────────────────────────────────────────────────────────── */
 .dd-root.bg-aurora { background: radial-gradient(ellipse at 20% 50%, #1a0533 0%, #0d0f1a 50%, #001a33 100%); }
 .dd-root.bg-mesh   { background: radial-gradient(at 40% 20%, #1a0e2e 0%, transparent 50%), radial-gradient(at 80% 80%, #0a1628 0%, transparent 50%), radial-gradient(at 20% 80%, #0d1f0d 0%, transparent 50%), #0d0f1a; }
 .dd-root.bg-slate  { background: #0e1117; }
 .dd-root.bg-warm   { background: radial-gradient(ellipse at 70% 30%, #1c1208 0%, #0d0f1a 60%); }
 .dd-root.bg-ocean  { background: radial-gradient(ellipse at 30% 70%, #021022 0%, #0d0f1a 60%); }
 .dd-root.bg-forest { background: radial-gradient(ellipse at 60% 40%, #081a0a 0%, #0d0f1a 60%); }
-
-/* Light background variants */
 .dd-root.light.bg-aurora { background: radial-gradient(ellipse at 20% 50%, #f5effe 0%, #f0f1f8 50%, #eef5ff 100%); }
 .dd-root.light.bg-mesh   { background: radial-gradient(at 40% 20%, #f0e8ff 0%, transparent 50%), radial-gradient(at 80% 80%, #e8f0ff 0%, transparent 50%), #f0f1f8; }
 
-/* ── Animate spin utility ─────────────────────────────────────────────────── */
 @keyframes spin { to { transform: rotate(360deg); } }
 .animate-spin { animation: spin .65s linear infinite; }
 
-/* ── Responsive ──────────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════════════════════ */
+
 @media (max-width: 1200px) {
   .dd-header-right .dd-btn-outline span,
   .dd-header-right .dd-btn-primary span { display: none; }
@@ -861,24 +371,113 @@
 }
 
 @media (max-width: 1024px) {
-  .dd-sidebar {
-    position: fixed;
-    right: 0; top: var(--dd-header-h); bottom: 0;
-    width: 100%; max-width: 360px;
-    box-shadow: -6px 0 28px rgba(0,0,0,.4);
-    z-index: 300;
-  }
+  .dd-sidebar { position: fixed; right: 0; top: var(--dd-header-h); bottom: 0; width: 100%; max-width: 360px; box-shadow: -6px 0 28px rgba(0,0,0,.4); z-index: 300; }
 }
 
+/* ────────────────────────────────────────────────────────────
+   MOBILE ≤ 768px
+   Row 1:  [Logo+Title] ········ [SM][≡]
+   Row 2:  [Lock][Eye][Sun][Palette] | [Share][PDF][PPT][Save][AI]
+──────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .dd-header { padding: 0 12px; gap: 6px; }
-  .dd-canvas-area { padding: 10px; }
-  .dd-filter-bar { display: none; }
+
+  .dd-header {
+    height:          auto;
+    min-height:      var(--dd-header-h);
+    padding:         6px 10px 6px 8px;
+    gap:             6px;
+    flex-wrap:       wrap;
+    align-items:     center;
+    justify-content: flex-start;
+  }
+
+  /* Row 1 - left: title */
+  .dd-header-left {
+    flex:      1 1 auto;
+    min-width: 0;
+    order:     1;
+  }
+
+  /* Row 1 - right: avatar + hamburger */
+  .dd-shell-controls {
+    order:        1;
+    margin-left:  auto;
+    padding-left: 6px;
+    border-left:  1px solid var(--dd-border);
+    gap:          6px;
+    flex-shrink:  0;
+  }
+
+  /* Row 2 - all action buttons */
+  .dd-header-right {
+    order:        2;
+    width:        100%;
+    display:      flex;
+    align-items:  center;
+    flex-wrap:    wrap;
+    gap:          5px;
+    margin-left:  0;
+    overflow-x:   visible;
+    padding-bottom: 2px;
+  }
+
+  /* Icon-only on mobile */
+  .dd-header-right .dd-btn-outline span,
+  .dd-header-right .dd-btn-primary span { display: none; }
+
+  .dd-header-right .dd-btn-outline,
+  .dd-header-right .dd-btn-primary,
+  .dd-header-right .dd-btn-icon {
+    padding:         0 10px;
+    height:          30px;
+    min-width:       34px;
+    justify-content: center;
+  }
+
+  /* Show hamburger */
+  .dd-shell-menu-btn { display: inline-flex; flex-shrink: 0; }
+
+  /* Hide desktop extras */
+  .dd-back-btn      { display: none; }
+  .dd-filter-bar    { display: none; }
   .dd-header-center { display: none; }
+
+  .dd-canvas-area { padding: 10px; }
+
+  /* Mobile drawer */
+  .dd-mobile-overlay {
+    display: block; position: fixed; inset: 0; z-index: 398;
+    border: none; background: rgba(0,0,0,.46); backdrop-filter: blur(3px);
+  }
+  .dd-mobile-drawer {
+    display: flex; position: fixed; top: 10px; right: 10px; z-index: 399;
+    width: min(320px, calc(100vw - 20px)); max-height: calc(100vh - 20px);
+    overflow: auto; flex-direction: column; gap: 14px; padding: 16px;
+    background: var(--dd-surface); border: 1px solid var(--dd-border-2);
+    border-radius: 16px; box-shadow: 0 20px 50px rgba(0,0,0,.35);
+  }
+  .dd-mobile-drawer-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .dd-mobile-drawer-title { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .dd-mobile-drawer-title > div:last-child { min-width: 0; display: flex; flex-direction: column; }
+  .dd-mobile-drawer-title strong,
+  .dd-mobile-drawer-title span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dd-mobile-drawer-title strong { font-size: 13px; color: var(--dd-text-1); }
+  .dd-mobile-drawer-title span   { font-size: 11px; color: var(--dd-text-3); }
+  .dd-mobile-menu-list { display: flex; flex-direction: column; gap: 8px; }
+  .dd-mobile-menu-item {
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    padding: 12px 14px; border-radius: 12px; border: 1px solid var(--dd-border);
+    background: rgba(255,255,255,.04); color: var(--dd-text-1);
+    font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; text-align: left;
+  }
+  .dd-mobile-menu-item:hover { background: rgba(79,82,232,.14); border-color: rgba(129,140,248,.35); }
+  .dd-mobile-menu-logout { color: #f87171; background: rgba(239,68,68,.08); border-color: rgba(239,68,68,.22); }
 }
 
 @media (max-width: 480px) {
-  .dd-header { padding: 0 10px; }
+  .dd-header { padding: 6px 8px; }
   .dd-btn-outline, .dd-btn-primary { height: 28px; }
   .dd-modal { padding: 22px 18px; }
+  .dd-mobile-drawer { top: 8px; right: 8px; width: calc(100vw - 16px); padding: 14px; }
+  .dd-header-avatar { width: 28px; height: 28px; font-size: 11px; }
 }

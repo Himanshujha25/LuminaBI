@@ -2,6 +2,8 @@ const pool = require('./db');
 
 async function setup() {
     try {
+        await pool.verifyConnection();
+
         await pool.query(`
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
@@ -65,6 +67,21 @@ async function setup() {
         `);
         console.log("Exports table 'exports' is ready.");
 
+        // Dataset Collaborators table
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS dataset_collaborators (
+                id SERIAL PRIMARY KEY,
+                dataset_id INTEGER REFERENCES datasets(id) ON DELETE CASCADE,
+                owner_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                collaborator_email VARCHAR(255) NOT NULL,
+                role VARCHAR(10) NOT NULL CHECK (role IN ('viewer', 'editor')),
+                invite_token VARCHAR(255) UNIQUE NOT NULL,
+                status VARCHAR(10) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted')),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        console.log("Collaborators table 'dataset_collaborators' is ready.");
+
         // Handle existing tables by adding columns safely
         try { await pool.query(`ALTER TABLE exports ADD COLUMN metadata JSONB DEFAULT '{}'`); } catch(e) {}
         try { await pool.query(`ALTER TABLE exports ADD COLUMN is_public BOOLEAN DEFAULT TRUE`); } catch(e) {}
@@ -74,9 +91,14 @@ async function setup() {
         await pool.query('CREATE INDEX IF NOT EXISTS idx_datasets_user ON datasets(user_id)');
         await pool.query('CREATE INDEX IF NOT EXISTS idx_chat_dataset ON chat_histories(dataset_id)');
         await pool.query('CREATE INDEX IF NOT EXISTS idx_dashboards_user ON dashboards(user_id)');
+        await pool.query('CREATE INDEX IF NOT EXISTS idx_collab_email ON dataset_collaborators(collaborator_email)');
+        await pool.query('CREATE INDEX IF NOT EXISTS idx_collab_dataset ON dataset_collaborators(dataset_id)');
+        await pool.query('CREATE INDEX IF NOT EXISTS idx_collab_token ON dataset_collaborators(invite_token)');
         console.log("Indices created successfully.");
+        return true;
     } catch (err) {
         console.error("Error creating datasets table:", err);
+        return false;
     }
 }
 

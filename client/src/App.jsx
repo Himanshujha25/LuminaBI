@@ -24,7 +24,7 @@
 //   onAnalyticsClick={() => { handleAnalyticsClick(); setCurrentView('analytics'); }}
 
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import useStore from './store/useStore';
 import Header from './components/Header';
 import UploadModal from './components/UploadModal';
@@ -41,6 +41,7 @@ import { CheckCircle, AlertCircle, X } from 'lucide-react';
 import SettingsPage from './pages/Setting';
 import SavedDashboards from './pages/SavedDashboards';
 import DashboardViewer from './components/DashboardViewer'; 
+import AcceptInvitePage from './pages/AcceptInvitePage';
 
 const DashboardWrapper = () => {
   const { 
@@ -115,6 +116,7 @@ function App() {
         <Route path="/analytics/:datasetName/:datasetId/:slug" element={<DynamicBoardPage />} />
         <Route path="/view-report/:id" element={<SharedReport />} />
         <Route path="/dashboard/view/:id" element={<DashboardViewer />} />
+        <Route path="/invite/accept/:token" element={<AcceptInvitePage />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>

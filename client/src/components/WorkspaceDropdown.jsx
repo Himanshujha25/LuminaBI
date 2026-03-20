@@ -311,6 +311,45 @@ const STYLES = `
     font-size: 13px; color: var(--ws-meta);
   }
 
+  .ws-actions {
+    padding: 10px 12px 12px;
+    border-top: 1px solid var(--ws-hdr-bdr);
+    background: var(--ws-hdr-bg);
+    display: flex;
+    gap: 10px;
+  }
+
+  .ws-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 38px;
+    padding: 0 14px;
+    border-radius: 10px;
+    border: 1px solid var(--ws-prev-bdr);
+    background: var(--ws-prev-bg);
+    color: var(--ws-prev-txt);
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background .13s, border-color .13s, color .13s, transform .12s;
+    flex: 1 1 0;
+    white-space: nowrap;
+  }
+
+  .ws-action-btn:hover {
+    background: var(--ws-prev-hover-bg);
+    border-color: var(--ws-prev-hover-bdr);
+    color: var(--ws-prev-hover-txt);
+    transform: translateY(-1px);
+  }
+
+  .ws-action-btn:active { transform: translateY(0) scale(.98); }
+  .ws-action-btn .ws-prev-icon { color: var(--ws-prev-icon); transition: color .13s; }
+  .ws-action-btn:hover .ws-prev-icon { color: var(--ws-prev-hover-icon); }
+
   /* Footer */
   .ws-ftr {
     padding: 8px 14px;
@@ -355,6 +394,49 @@ const STYLES = `
     width: 1px; height: 22px;
     background: var(--ws-trig-bdr);
     flex-shrink: 0;
+  }
+
+  @media (max-width: 768px) {
+    .ws-shell {
+      width: 100%;
+    }
+
+    .ws-trig {
+      width: 100%;
+      min-height: 72px;
+      justify-content: flex-start;
+      padding-right: 12px;
+    }
+
+    .ws-trig > div:nth-child(2) {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .ws-trig-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .ws-dd {
+      width: 100%;
+      left: 0;
+      right: 0;
+    }
+
+    .ws-preview-btn,
+    .ws-sep {
+      display: none;
+    }
+
+    .ws-actions {
+      flex-direction: column;
+    }
+
+    .ws-action-btn {
+      width: 100%;
+      min-height: 44px;
+    }
   }
 `;
 
@@ -414,7 +496,7 @@ const WorkspaceDropdown = () => {
     <>
       <style>{STYLES}</style>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, position: 'relative' }} ref={ref}>
+      <div className="ws-shell" style={{ display: 'flex', alignItems: 'center', gap: 10, position: 'relative' }} ref={ref}>
 
         {/* ── Trigger ── */}
         <button
@@ -472,7 +554,7 @@ const WorkspaceDropdown = () => {
                   const isActive = activeDataset?.id === d.id;
                   return (
                     <button
-                      key={d.id}
+                      key={d.id + (d.isShared ? '-shared' : '')}
                       type="button"
                       className={`ws-item${isActive ? ' ws-item--active' : ''}`}
                       onClick={() => select(d)}
@@ -482,9 +564,20 @@ const WorkspaceDropdown = () => {
                         <span className="ws-name">{d.name}</span>
                         <span className="ws-meta">
                           {isActive && <span className="ws-dot" />}
-                          {isActive ? 'Active · ' : ''}ID: {String(d.id).slice(0, 8)}
+                          {isActive ? 'Active · ' : ''}
+                          {d.isShared
+                            ? <>Shared · {d.role}</>
+                            : <>ID: {String(d.id).slice(0, 8)}</>
+                          }
                         </span>
                       </div>
+                      {d.isShared && (
+                        <span style={{
+                          padding: '2px 7px', borderRadius: 999, fontSize: 9, fontWeight: 700,
+                          textTransform: 'uppercase', letterSpacing: '.06em',
+                          background: 'rgba(99,102,241,.12)', color: '#818cf8', flexShrink: 0,
+                        }}>Shared</span>
+                      )}
                       {isActive && (
                         <div className="ws-check">
                           <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
@@ -496,7 +589,20 @@ const WorkspaceDropdown = () => {
                   );
                 })
               )}
-            </div>  
+            </div>
+
+            {activeDataset && (
+              <div className="ws-actions">
+                <button
+                  type="button"
+                  className="ws-action-btn"
+                  onClick={(e) => { e.stopPropagation(); setOpen(false); setShowPreview(true); }}
+                >
+                  <Table size={14} className="ws-prev-icon" />
+                  <span>Preview Dataset</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
 

@@ -542,7 +542,7 @@ const Home = () => {
   /* ── Token-based redirect ── */
   const hasToken = Boolean(localStorage.getItem('token'));
 
-  const handleAuthNav = (e, fallbackPath) => {
+  const handleAuthNav = (e) => {
     if (hasToken) {
       e.preventDefault();
       navigate('/dashboard');
@@ -610,13 +610,13 @@ const Home = () => {
         <div className="lbi-nav-links">
           <a href="#features" className="btn-ghost">Features</a>
           <a href="#how-it-works" className="btn-ghost">How it works</a>
-          <Link to="/login" className="btn-ghost" onClick={(e) => handleAuthNav(e, '/login')}>
+          <Link to="/login" className="btn-ghost" onClick={handleAuthNav}>
             {hasToken ? 'Dashboard' : 'Log in'}
           </Link>
           <Link
             to={hasToken ? '/dashboard' : '/signup'}
             className="btn-cta"
-            onClick={(e) => handleAuthNav(e, '/signup')}
+            onClick={handleAuthNav}
           >
             {hasToken ? 'Go to Dashboard' : 'Start free'} <ChevronRight size={13} />
           </Link>
@@ -640,14 +640,14 @@ const Home = () => {
         <Link
           to="/login"
           className="drawer-link"
-          onClick={(e) => handleAuthNav(e, '/login')}
+          onClick={handleAuthNav}
         >
           {hasToken ? '→ Go to Dashboard' : 'Log in'}
         </Link>
         <Link
           to={hasToken ? '/dashboard' : '/signup'}
           className="drawer-cta"
-          onClick={(e) => handleAuthNav(e, '/signup')}
+          onClick={handleAuthNav}
         >
           {hasToken ? 'Open Dashboard' : 'Get started free'} <ChevronRight size={15} />
         </Link>
@@ -674,14 +674,14 @@ const Home = () => {
           <Link
             to={hasToken ? '/dashboard' : '/signup'}
             className="btn-hero-primary"
-            onClick={(e) => handleAuthNav(e, '/signup')}
+            onClick={handleAuthNav}
           >
             {hasToken ? 'Go to Dashboard' : 'Get started free'} <ChevronRight size={16} />
           </Link>
           <Link
             to="/login"
             className="btn-hero-secondary"
-            onClick={(e) => handleAuthNav(e, '/login')}
+            onClick={handleAuthNav}
           >
             {hasToken ? 'Open Dashboard' : 'Sign in'} <ArrowRight size={15} />
           </Link>
@@ -780,7 +780,7 @@ const Home = () => {
           <Link
             to={hasToken ? '/dashboard' : '/signup'}
             className="btn-hero-primary"
-            onClick={(e) => handleAuthNav(e, '/signup')}
+            onClick={handleAuthNav}
           >
             {hasToken ? 'Open Dashboard' : 'Start for free'} <ChevronRight size={16} />
           </Link>

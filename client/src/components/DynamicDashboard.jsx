@@ -6,7 +6,7 @@ import 'react-resizable/css/styles.css';
 import './DynamicDashboard.css';
 import DynamicChartComponent from '../ChartComponent';
 import {
-  ArrowLeft, Grid3x3, Download, Share2,
+  Grid3x3, Download, Share2, Menu,
   LayoutDashboard, Image as ImageIcon, Trash2, Sparkles,
   Sun, Moon, ChevronDown, MonitorPlay, Columns,
   X, Loader2, BarChart3, LineChart,
@@ -14,10 +14,9 @@ import {
   Zap, Database, CheckCircle2, Eye, Activity, TrendingUp, FileText, Edit2, Save,
   Maximize2, Minimize2, RefreshCw, Settings, Palette, RotateCcw, 
   SlidersHorizontal, Layers, Lock, Unlock, Search, Bell, HelpCircle,
-  BarChart2, Pin, PinOff, EyeOff, Copy, Move
+  BarChart2, Pin, PinOff, EyeOff, Copy, Move, MessageSquareMore, LifeBuoy, LogOut
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
 import axios from 'axios';
 import { API_URL } from '../config';
 import useStore from '../store/useStore';
@@ -50,6 +49,13 @@ const BG_SWATCHES = {
   forest:  'linear-gradient(135deg, #081a0a, #0d0f1a)',
 };
 
+const getInitials = (name) => {
+  if (!name) return '?';
+  const words = name.trim().split(/\s+/);
+  if (words.length === 1) return words[0].charAt(0).toUpperCase();
+  return (words[0].charAt(0) + words[words.length - 1].charAt(0)).toUpperCase();
+};
+
 /* ── Toast helper ────────────────────────────────────────────────────────── */
 function Toast({ msg, type = 'success', onDone }) {
   useEffect(() => { const t = setTimeout(onDone, 3000); return () => clearTimeout(t); }, [onDone]);
@@ -61,11 +67,9 @@ function Toast({ msg, type = 'success', onDone }) {
   );
 }
 
-export default function DynamicDashboard({ charts, onClose, initialLayout, dashboardName }) {
-  const { isDark, toggleTheme, token, activeDataset } = useStore();
+export default function DynamicDashboard({ charts, initialLayout, dashboardName }) {
+  const { isDark, toggleTheme, token, activeDataset, setCurrentView, setIsManageOpen, logout, user } = useStore();
   const navigate = useNavigate();
-
-  const handleBack = () => (typeof onClose === 'function' ? onClose() : navigate(-1));
 
   /* ── State ── */
   const [removedPanels,     setRemovedPanels]     = useState([]);
@@ -98,8 +102,8 @@ export default function DynamicDashboard({ charts, onClose, initialLayout, dashb
   const [activeBg,          setActiveBg]          = useState(localStorage.getItem('lumina_bg') || 'default');
   const [isBgModalOpen,     setIsBgModalOpen]     = useState(false);
   const [sidebarTab,        setSidebarTab]        = useState('ai'); // 'ai' | 'panels'
-  const [isSettingsOpen,    setIsSettingsOpen]    = useState(false);
   const [compactMode,       setCompactMode]       = useState(false);
+  const [isMobileMenuOpen,  setIsMobileMenuOpen]  = useState(false);
 
   /* ── Theme: use light/dark class, default dark ── */
   const themeClass = isDark ? '' : 'light';
@@ -353,24 +357,48 @@ export default function DynamicDashboard({ charts, onClose, initialLayout, dashb
   };
 
   const fullscreenChart = fullscreenPanel ? localCharts.find(c => String(c.id) === String(fullscreenPanel)) : null;
+  const userName = user?.name || '';
+  const userTitle = userName || user?.email || 'Profile';
+
+  const closeMobileMenu = () => setIsMobileMenuOpen(false);
+  const goToOverview = () => { navigate('/dashboard'); setCurrentView('overview'); closeMobileMenu(); };
+  const goToChat = () => { navigate('/dashboard'); setCurrentView('overview'); closeMobileMenu(); };
+  const goToSavedDashboards = () => { navigate('/dashboard'); setCurrentView('dashboards'); closeMobileMenu(); };
+  const goToDatasets = () => { navigate('/dashboard'); setCurrentView('datasets'); setIsManageOpen(true); closeMobileMenu(); };
+  const goToSupport = () => { navigate('/dashboard'); setCurrentView('support'); closeMobileMenu(); };
+  const goToSettings = () => { navigate('/dashboard'); setCurrentView('settings'); closeMobileMenu(); };
+  const goToCurrentDashboard = () => { closeMobileMenu(); };
+
+  useEffect(() => {
+    const onResize = () => {
+      if (window.innerWidth > 768) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  useEffect(() => {
+    document.body.style.overflow = isMobileMenuOpen ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobileMenuOpen]);
 
   return (
     <div className={`dd-root ${themeClass} ${activeBg !== 'default' ? `bg-${activeBg}` : ''}`}>
 
       {/* ── HEADER ── */}
       <header className="dd-header">
-        {/* Left: Back + title */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flexShrink: 0 }}>
-          <button type="button" onClick={handleBack} className="dd-back-btn">
-            <ArrowLeft size={13} />
-            <span>Back</span>
-          </button>
+        {/* Left: title */}
+        <div className="dd-header-left">
           <div className="dd-logo-mark"><BarChart2 size={14} color="#fff" /></div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--dd-text-1)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 180 }}>
+          <div className="dd-title-block">
+            <div className="dd-title">
               {dashboardName || activeDataset?.name || 'Analytics'}
             </div>
-            <div style={{ fontSize: 10, color: 'var(--dd-text-3)', lineHeight: 1.2 }}>
+            <div className="dd-subtitle">
               {visibleCharts.length} panels · {activePreset}
             </div>
           </div>
@@ -378,7 +406,7 @@ export default function DynamicDashboard({ charts, onClose, initialLayout, dashb
 
         {/* Center: filters + layout (hidden on mobile) */}
         {!isPresentMode && (
-          <div className="dd-header-center" style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+          <div className="dd-header-center">
             {/* Search */}
             {isSearchOpen ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,.05)', border: '1px solid var(--dd-border-2)', borderRadius: 'var(--dd-radius-sm)', padding: '0 10px', height: 30 }}>
@@ -499,7 +527,70 @@ export default function DynamicDashboard({ charts, onClose, initialLayout, dashb
             <span>AI</span>
           </button>
         </div>
+
+        <div className="dd-shell-controls">
+          <div className="dd-header-avatar-wrap" title={userTitle}>
+            <div className="dd-header-avatar">{getInitials(userName)}</div>
+          </div>
+
+          <button type="button" onClick={() => setIsMobileMenuOpen(true)} className="dd-btn-icon dd-shell-menu-btn" title="Open menu">
+            <Menu size={14} />
+          </button>
+        </div>
       </header>
+
+      {isMobileMenuOpen && (
+        <>
+          <button className="dd-mobile-overlay" onClick={closeMobileMenu} aria-label="Close dashboard menu" />
+          <div className="dd-mobile-drawer">
+            <div className="dd-mobile-drawer-head">
+              <div className="dd-mobile-drawer-title">
+                <div className="dd-logo-mark"><BarChart2 size={14} color="#fff" /></div>
+                <div>
+                  <strong>{dashboardName || activeDataset?.name || 'Analytics'}</strong>
+                  <span>{visibleCharts.length} panels</span>
+                </div>
+              </div>
+              <button type="button" onClick={closeMobileMenu} className="dd-btn-icon">
+                <X size={14} />
+              </button>
+            </div>
+
+            <div className="dd-mobile-menu-list">
+              {[
+                { key: 'overview', label: 'Overview', icon: LayoutDashboard, action: goToOverview },
+                { key: 'dashboard', label: 'Dashboard', icon: BarChart3, action: goToCurrentDashboard },
+                { key: 'chat', label: 'Chat', icon: MessageSquareMore, action: goToChat },
+                { key: 'saved', label: 'Saved Dashboards', icon: Layers, action: goToSavedDashboards },
+                { key: 'datasets', label: 'Datasets', icon: Database, action: goToDatasets },
+                { key: 'support', label: 'Support', icon: LifeBuoy, action: goToSupport },
+                { key: 'settings', label: 'Settings', icon: Settings, action: goToSettings },
+              ].map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button key={item.key} type="button" className="dd-mobile-menu-item" onClick={item.action}>
+                    <Icon size={15} />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              className="dd-mobile-menu-item dd-mobile-menu-logout"
+              onClick={() => {
+                closeMobileMenu();
+                logout();
+                navigate('/login');
+              }}
+            >
+              <LogOut size={15} />
+              <span>Logout</span>
+            </button>
+          </div>
+        </>
+      )}
 
       {/* ── BODY ── */}
       <div className="dd-body">

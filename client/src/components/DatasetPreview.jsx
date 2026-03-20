@@ -15,23 +15,21 @@ const TYPE_ICONS = {
 };
 
 const DatasetPreview = ({ dataset, onClose }) => {
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [rows, setRows] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!dataset) return;
-    setLoading(true);
     axios.get(`${API_URL}/datasets/${dataset.id}/preview`)
       .then(res => setRows(res.data || []))
-      .catch(() => setError('Could not load preview.'))
-      .finally(() => setLoading(false));
+      .catch(() => setError('Could not load preview.'));
   }, [dataset?.id]);
 
   if (!dataset) return null;
 
   const columns = dataset.columns || [];
-  const keys = rows.length > 0 ? Object.keys(rows[0]) : columns.map(c => c.original || c.name);
+  const keys = rows?.length > 0 ? Object.keys(rows[0]) : columns.map(c => c.original || c.name);
+  const loading = rows === null && !error;
 
   return (
     <div className="modal-overlay-minimal animate-fade-in" onClick={onClose}>

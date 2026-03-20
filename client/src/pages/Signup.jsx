@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { AUTH_URL, BASE_URL } from '../config';
+import { AUTH_URL, HEALTH_URL } from '../config';
 import { BarChart2, Eye, EyeOff, ArrowRight, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import useStore from '../store/useStore';
 
 const Signup = () => {
-  const { setToken } = useStore();
+  const { setToken, setCurrentView, setIsAiPanelOpen } = useStore();
   const [name, setName]           = useState('');
   const [email, setEmail]         = useState('');
   const [password, setPassword]   = useState('');
@@ -18,7 +18,7 @@ const Signup = () => {
   const navigate = useNavigate();
 
   React.useEffect(() => {
-    axios.get(`${BASE_URL}/health`).catch(() => {});
+    axios.get(HEALTH_URL).catch(() => {});
   }, []);
 
   /* ── Frontend validations ── */
@@ -41,6 +41,8 @@ const Signup = () => {
     try {
       const res = await axios.post(`${AUTH_URL}/register`, { name, email, password });
       setToken(res.data.token);
+      setCurrentView('overview');
+      setIsAiPanelOpen(false);
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.error || 'Something went wrong. Please try again.');
@@ -282,7 +284,9 @@ const S = {
     width: '100%', padding: '10px 13px', borderRadius: 9,
     fontSize: 14, fontFamily: "'DM Sans', sans-serif",
     background: 'rgba(255,255,255,.05)',
-    border: '1px solid rgba(255,255,255,.09)',
+    borderWidth: 1,
+    borderStyle: 'solid',
+    borderColor: 'rgba(255,255,255,.09)',
     color: '#e8eaf5', outline: 'none', boxSizing: 'border-box',
     transition: 'border-color .15s, box-shadow .15s',
   },

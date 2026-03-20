@@ -51,7 +51,7 @@ export default defineConfig({
         // Network-first for API calls so data stays fresh
         runtimeCaching: [
           {
-            urlPattern: /^(https:\/\/luminabi\.onrender\.com|http:\/\/localhost:5000)\/api\/.*/i,
+            urlPattern: /^(https:\/\/luminabi\.onrender\.com|http:\/\/localhost:5050|http:\/\/127\.0\.0\.1:5050)\/api\/.*/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'lumina-api-cache',
@@ -59,16 +59,39 @@ export default defineConfig({
               networkTimeoutSeconds: 10,
             },
           },
+          {
+            urlPattern: /^(https:\/\/luminabi\.onrender\.com|http:\/\/localhost:5050|http:\/\/127\.0\.0\.1:5050)\/query.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'lumina-query-cache',
+              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 }, // 1h
+              networkTimeoutSeconds: 30,
+            },
+          },
         ],
       },
 
       devOptions: {
-        enabled: true, // show SW in dev mode too
+        enabled: false, // Must be false — SW intercepts /api/* before Vite proxy in dev
       },
     }),
   ],
   server: {
     host: true,
     port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:5050',
+        changeOrigin: true,
+      },
+      '/query': {
+        target: 'http://127.0.0.1:5050',
+        changeOrigin: true,
+      },
+      '/health': {
+        target: 'http://127.0.0.1:5050',
+        changeOrigin: true,
+      },
+    },
   },
 })

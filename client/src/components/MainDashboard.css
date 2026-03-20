@@ -648,6 +648,26 @@ body.dark .lm-dropdown-fixed {
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 
+.lm-sidebar-close-mobile {
+  display: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--surface-hover);
+  color: var(--text-secondary);
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+}
+
+.lm-sidebar-close-mobile:hover {
+  background: rgba(248,113,113,.1);
+  border-color: rgba(248,113,113,.22);
+  color: #f87171;
+}
+
 /* Chat messages area */
 .lm-chat-messages {
   flex: 1; overflow-y: auto; padding: 16px;
@@ -747,14 +767,26 @@ body.dark .lm-dropdown-fixed {
   }
   .sidebar-backdrop { display: block !important; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 350; backdrop-filter: blur(2px); }
   .lm-sidebar-tab { display: none; }
+  .lm-sidebar-close-mobile { display: inline-flex; }
 }
 
 @media (max-width: 768px) {
   .lm-kpi-row      { grid-template-columns: repeat(2,1fr); padding: 12px 0; }
-  .lm-content-col  { padding: 0 14px 60px; }
-  .topbar-shell    { padding: 8px 12px; gap: 8px; }
+  .lm-content-col  { padding: 0 14px 110px; }
+  .topbar-shell    { padding: 8px 12px; gap: 8px; align-items: stretch; }
+  .topbar-shell > * { min-width: 0; }
+  .topbar-shell .ws-trig { width: 100%; }
+  .searchbar { width: 100%; order: 2; }
+  .lm-topbar-right { display: none; }
   .chart-panel-header { padding: 10px 14px; }
-  .chart-panel-actions { gap: 6px; }
+  .chart-panel-actions { gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  .chart-panel-title { flex-wrap: wrap; }
+  .divider-vert { display: none; }
+  .pro-chart-wrapper { height: 320px; min-height: 280px; }
+  .exec-dashboard-header { align-items: stretch; }
+  .exec-dashboard-title-group { align-items: flex-start; }
+  .pinned-card__actions { flex-wrap: wrap; }
+  .pca-btn { min-width: calc(50% - 3px); }
   .action-btn-text { display: none; }
   .mobile-assistant-toggle {
     display: flex; position: fixed; bottom: 24px; right: 20px; z-index: 100;
@@ -770,7 +802,15 @@ body.dark .lm-dropdown-fixed {
   .lm-kpi-value { font-size: 18px; }
   .searchbar__btn span, .lm-ai-toggle span { display: none; }
   .searchbar__btn, .lm-ai-toggle { padding: 0 10px; }
-  .lm-content-col { padding: 0 10px 60px; }
+  .lm-content-col { padding: 0 10px 108px; }
+  .searchbar { padding-left: 12px; gap: 8px; }
+  .searchbar__btn { padding-inline: 12px; }
+  .segmented-control,
+  .lm-dropdown-btn,
+  .action-btn,
+  .primary-btn { width: 100%; justify-content: center; }
+  .chart-panel-actions > * { flex: 1 1 calc(50% - 6px); }
+  .pca-btn { min-width: 100%; }
 }
 
 /* ─── 15. PREMIUM KPI / LEGACY ───────────────────────────── */

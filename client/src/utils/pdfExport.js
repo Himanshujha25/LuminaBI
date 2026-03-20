@@ -89,7 +89,7 @@ export async function generatePDFReport(pinnedCharts, datasetName = 'LuminaBI') 
         const imgH = (canvas.height / canvas.width) * imgW;
         const yOffset = 40 + lines.length * 6;
         pdf.addImage(imgData, 'PNG', margin, yOffset, imgW, Math.min(imgH, pageH - yOffset - 30));
-      } catch (e) {
+      } catch {
         pdf.setTextColor(100, 116, 139);
         pdf.setFontSize(10);
         pdf.text('[Chart could not be rendered]', margin, 55);

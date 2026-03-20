@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   UploadCloud, File, CheckCircle, AlertCircle, X, 
   Loader2, Gauge, Zap, Clock, Database, ChevronRight, 
@@ -12,7 +12,6 @@ import useStore from '../store/useStore';
 
 const UploadModal = () => {
   const { isUploadOpen: isOpen, setIsUploadOpen, handleUploadSuccess, token } = useStore();
-  const onClose = () => setIsUploadOpen(false);
 
   const [file, setFile] = useState(null);
   const [dragActive, setDragActive] = useState(false);
@@ -30,19 +29,22 @@ const UploadModal = () => {
   const uploadStartTime = useRef(null);
   const autoCloseTimer = useRef(null);
 
-  // Reset logic
-  useEffect(() => {
-    if (!isOpen) {
-      setFile(null);
-      setTableName('');
-      setStep(1);
-      setUploadProgress(0);
-      setError(null);
-      setIngestionStage(0);
-      setStats({ speed: 0, loaded: 0, total: 0, eta: 0 });
-      if (autoCloseTimer.current) clearTimeout(autoCloseTimer.current);
-    }
-  }, [isOpen]);
+  const resetModal = () => {
+    setFile(null);
+    setDragActive(false);
+    setTableName('');
+    setStep(1);
+    setUploadProgress(0);
+    setError(null);
+    setIngestionStage(0);
+    setStats({ speed: 0, loaded: 0, total: 0, eta: 0 });
+    if (autoCloseTimer.current) clearTimeout(autoCloseTimer.current);
+  };
+
+  const onClose = () => {
+    resetModal();
+    setIsUploadOpen(false);
+  };
 
   if (!isOpen) return null;
 

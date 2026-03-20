@@ -165,15 +165,18 @@ const STYLES = `
     scrollbar-width:none;
     gap:6px;
     padding:0 16px 12px;
+    scroll-snap-type:x proximity;
   }
   .sw-mobile-nav::-webkit-scrollbar { display:none; }
   .sw-mobile-nav-item {
     display:inline-flex; align-items:center; gap:6px;
-    padding:7px 14px; border-radius:999px; border:none;
+    padding:10px 14px; border-radius:999px; border:none;
     background:var(--surface); color:var(--nav-clr);
     font-size:13px; font-weight:500; font-family:'DM Sans',sans-serif;
     cursor:pointer; transition:all .14s; white-space:nowrap; flex-shrink:0;
     box-shadow:var(--shadow-sm); border:1px solid var(--border);
+    min-height:44px;
+    scroll-snap-align:start;
   }
   .sw-mobile-nav-item:hover { background:var(--hover); color:var(--text-1); }
   .sw-mobile-nav-item.active {
@@ -313,13 +316,13 @@ const STYLES = `
   /* ─── Layout ─── */
   .sw-layout {
     display:grid;
-    grid-template-columns:180px 1fr;
-    gap:16px;
+    grid-template-columns:200px minmax(0, 1fr);
+    gap:20px;
     align-items:start;
   }
   .sw-sidebar {
     background:var(--surface); border:1px solid var(--border);
-    border-radius:var(--r-xl); padding:6px;
+    border-radius:var(--r-xl); padding:8px;
     position:sticky; top:16px; box-shadow:var(--shadow-sm);
   }
 
@@ -332,6 +335,10 @@ const STYLES = `
     .sw-card {
       border-radius:var(--r-lg);
       padding:12px 12px;
+    }
+
+    .sw {
+      min-height: auto;
     }
 
     .sw-header-row {
@@ -589,8 +596,8 @@ const SecuritySection = () => {
 const AppearanceSection = () => {
   const {isDark,toggleTheme}=useStore();
   const [mode,setMode]=useState(()=>localStorage.getItem('theme')||'light');
-  useEffect(()=>{setMode(isDark?'dark':'light');},[isDark]);
   const apply=m=>{
+    localStorage.setItem('theme',m);
     if(m==='system'){const prefersDark=window.matchMedia('(prefers-color-scheme: dark)').matches;setMode('system');if(prefersDark!==isDark)toggleTheme?.();return;}
     setMode(m);if(m==='dark'&&!isDark)toggleTheme?.();if(m==='light'&&isDark)toggleTheme?.();
   };
@@ -598,12 +605,15 @@ const AppearanceSection = () => {
     <div className="sw-card">
       <p className="sw-sec-title">Interface theme</p>
       <div style={{display:'flex',gap:10}}>
-        {[{id:'light',label:'Light',Icon:Sun},{id:'dark',label:'Dark',Icon:Moon},{id:'system',label:'System',Icon:Monitor}].map(({id,label,Icon:Ic})=>(
-          <button key={id} type="button" className={`sw-theme-btn${mode===id?' active':''}`} onClick={()=>apply(id)}>
-            <Ic size={17}/>{label}
-            {mode===id&&<CheckCircle2 size={11} style={{marginTop:1}}/>}
-          </button>
-        ))}
+        {[{id:'light',label:'Light',Icon:Sun},{id:'dark',label:'Dark',Icon:Moon},{id:'system',label:'System',Icon:Monitor}].map(item=>{
+          const ThemeIcon = item.Icon;
+          return (
+            <button key={item.id} type="button" className={`sw-theme-btn${mode===item.id?' active':''}`} onClick={()=>apply(item.id)}>
+              <ThemeIcon size={17}/>{item.label}
+              {mode===item.id&&<CheckCircle2 size={11} style={{marginTop:1}}/>}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -934,17 +944,19 @@ const MobileNav = ({ active, setActive, onLogout }) => {
       className="sw-mobile-nav"
       style={{ display: 'flex' }}
     >
-      {NAV.map(({ id, label, Icon }) => (
+      {NAV.map(item => {
+        const NavIcon = item.Icon;
+        return (
         <button
-          key={id}
+          key={item.id}
           type="button"
-          className={`sw-mobile-nav-item${active === id ? ' active' : ''}`}
-          onClick={() => setActive(id)}
+          className={`sw-mobile-nav-item${active === item.id ? ' active' : ''}`}
+          onClick={() => setActive(item.id)}
         >
-          <Icon size={13} />
-          {label}
+          <NavIcon size={13} />
+          {item.label}
         </button>
-      ))}
+      )})}
       <button
         type="button"
         className="sw-mobile-nav-item dnav"
@@ -961,7 +973,7 @@ const MobileNav = ({ active, setActive, onLogout }) => {
    MAIN SETTINGS
 ───────────────────────────────────────────── */
 const Settings = () => {
-  const { isDark, toggleTheme, logout } = useStore();
+  const { logout } = useStore();
   const navigate = useNavigate();
   const onLogout = () => { logout(); navigate('/login'); };
 
@@ -975,7 +987,14 @@ const Settings = () => {
     try {
       const token = localStorage.getItem('token');
       const stored = localStorage.getItem('user');
-      if (stored) { try { setUser(JSON.parse(stored)); setLoading(false); } catch {} }
+      if (stored) {
+        try {
+          setUser(JSON.parse(stored));
+          setLoading(false);
+        } catch (err) {
+          console.error('Failed to parse stored user:', err);
+        }
+      }
       const res = await axios.get(`${API_URL}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
       if (res.data?.user) { setUser(res.data.user); localStorage.setItem('user', JSON.stringify(res.data.user)); }
     } catch { setFetchErr(true); }
@@ -1028,11 +1047,14 @@ const Settings = () => {
 
             {/* Desktop sidebar */}
             <nav className="sw-sidebar">
-              {NAV.map(({ id, label, Icon }) => (
-                <button key={id} type="button" className={`sw-nav-btn${active === id ? ' active' : ''}`} onClick={() => setActive(id)}>
-                  <Icon size={14} style={{ flexShrink: 0 }} />{label}
-                </button>
-              ))}
+              {NAV.map(item => {
+                const NavIcon = item.Icon;
+                return (
+                  <button key={item.id} type="button" className={`sw-nav-btn${active === item.id ? ' active' : ''}`} onClick={() => setActive(item.id)}>
+                    <NavIcon size={14} style={{ flexShrink: 0 }} />{item.label}
+                  </button>
+                );
+              })}
               <hr className="sw-hr" style={{ margin: '6px 0' }} />
               <button type="button" className="sw-nav-btn dnav" onClick={onLogout}>
                 <LogOut size={14} />Sign out
