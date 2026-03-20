@@ -14,7 +14,7 @@ import {
   Zap, Database, CheckCircle2, Eye, Activity, TrendingUp, FileText, Edit2, Save,
   Maximize2, Minimize2, RefreshCw, Settings, Palette, RotateCcw, 
   SlidersHorizontal, Layers, Lock, Unlock, Search, Bell, HelpCircle,
-  BarChart2, Pin, PinOff, EyeOff, Copy, Move, MessageSquareMore, LifeBuoy, LogOut
+  BarChart2, Pin, PinOff, EyeOff, Copy, Move, MessageSquareMore, LifeBuoy, LogOut, List, Trash
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import axios from 'axios';
@@ -96,7 +96,6 @@ export default function DynamicDashboard({ charts, initialLayout, dashboardName,
   const [tempTitle,         setTempTitle]         = useState('');
   const [toast,             setToast]             = useState(null);
   const [fullscreenPanel,   setFullscreenPanel]   = useState(null);
-  const [isLocked,          setIsLocked]          = useState(false);
   const [searchQuery,       setSearchQuery]       = useState('');
   const [isSearchOpen,      setIsSearchOpen]      = useState(false);
   const [activeBg,          setActiveBg]          = useState(localStorage.getItem('lumina_bg') || 'default');
@@ -104,6 +103,13 @@ export default function DynamicDashboard({ charts, initialLayout, dashboardName,
   const [sidebarTab,        setSidebarTab]        = useState('ai'); // 'ai' | 'panels'
   const [compactMode,       setCompactMode]       = useState(false);
   const [isMobileMenuOpen,  setIsMobileMenuOpen]  = useState(false);
+  const [isLocked,          setIsLocked]          = useState(localStorage.getItem(`lumina_lock_${activeDataset?.id}`) === 'true');
+  const [isBulkMode,        setIsBulkMode]        = useState(false);
+  const [selectedCharts,    setSelectedCharts]    = useState([]);
+
+  useEffect(() => {
+    localStorage.setItem(`lumina_lock_${activeDataset?.id}`, isLocked);
+  }, [isLocked, activeDataset?.id]);
 
   const isViewer = activeDataset?.isShared && activeDataset.role?.toLowerCase() === 'viewer';
 
@@ -377,6 +383,26 @@ export default function DynamicDashboard({ charts, initialLayout, dashboardName,
     setFullscreenPanel(fullscreenPanel === chartId ? null : chartId);
   };
 
+  const handleBulkDelete = async () => {
+    if (!selectedCharts.length) return;
+    if (!window.confirm(`Delete ${selectedCharts.length} selected charts permanently?`)) return;
+    
+    try {
+      await Promise.all(selectedCharts.map(id => 
+        axios.delete(`${API_URL}/chats/${id}`, { headers: { Authorization: `Bearer ${token}` } })
+      ));
+      setLocalCharts(prev => prev.filter(c => !selectedCharts.includes(String(c.id))));
+      setSelectedCharts([]);
+      setIsBulkMode(false);
+      showToast(`${selectedCharts.length} charts deleted`);
+      
+      const socket = useStore.getState().socket;
+      if (socket && activeDataset?.id) socket.emit('chat-updated', activeDataset.id);
+    } catch (err) {
+      showToast("Bulk delete failed", "error");
+    }
+  };
+
   const handlePermanentDelete = async (panelId) => {
     if (isViewer) {
       showToast("Viewers cannot delete charts.", "error");
@@ -462,6 +488,18 @@ export default function DynamicDashboard({ charts, initialLayout, dashboardName,
               style={{ marginRight: 8 }}
             >
               <Menu size={16} />
+            </button>
+          )}
+
+          {!isViewer && (
+            <button 
+              type="button" 
+              onClick={() => setIsLocked(!isLocked)} 
+              className={`dd-btn-icon ${isLocked ? 'dd-active-lock-btn' : ''}`} 
+              title={isLocked ? 'Unlock for Editing' : 'Lock for Safety'} 
+              style={{ marginRight: 8 }}
+            >
+              {isLocked ? <Lock size={15} /> : <Unlock size={15} />}
             </button>
           )}
           <div className="dd-logo-mark"><BarChart2 size={14} color="#fff" /></div>
@@ -559,9 +597,30 @@ export default function DynamicDashboard({ charts, initialLayout, dashboardName,
 
         {/* Right: actions */}
         <div className="dd-header-right">
-          <button type="button" onClick={() => setIsLocked(p => !p)} className={`dd-btn-icon ${isLocked ? 'dd-active' : ''}`} title={isLocked ? 'Unlock panels' : 'Lock panels'}>
-            {isLocked ? <Lock size={13} /> : <Unlock size={13} />}
-          </button>
+         
+          {!isViewer && (
+            <>
+              {isBulkMode ? (
+                <>
+                  <button type="button" onClick={() => setSelectedCharts(selectedCharts.length === localCharts.length ? [] : localCharts.map(ch => String(ch.id)))} 
+                    className="dd-btn-outline" style={{ marginRight: 8, height: 30 }}>
+                    {selectedCharts.length === localCharts.length ? 'Unselect All' : 'Select All'}
+                  </button>
+                  <button type="button" onClick={handleBulkDelete} disabled={!selectedCharts.length} 
+                    className="dd-btn-primary dd-btn-orange" style={{ marginRight: 8, height: 30 }}>
+                    <Trash size={13} />
+                    <span>Delete ({selectedCharts.length})</span>
+                  </button>
+                </>
+              ) : null}
+              <button type="button" onClick={() => { setIsBulkMode(!isBulkMode); setSelectedCharts([]); }} 
+                className={`dd-btn-icon ${isBulkMode ? 'dd-active-lock-btn' : ''}`} 
+                title={isBulkMode ? 'Cancel Bulk Selection' : 'Bulk Delete'} style={{ marginRight: 8 }}>
+                <List size={13} />
+              </button>
+            </>
+          )}
+
           <button type="button" onClick={() => setIsPresentMode(!isPresentMode)} className={`dd-btn-icon ${isPresentMode ? 'dd-active' : ''}`} title="Present mode">
             <Eye size={13} />
           </button>
@@ -689,7 +748,16 @@ export default function DynamicDashboard({ charts, initialLayout, dashboardName,
                   <div className="dd-panel-header drag-handle">
                     <div className="dd-panel-drag-area">
                       <span className="dd-panel-title">
+                      {isBulkMode ? (
+                        <input 
+                          type="checkbox" 
+                          checked={selectedCharts.includes(panelId)}
+                          onChange={() => setSelectedCharts(p => p.includes(panelId) ? p.filter(x => x !== panelId) : [...p, panelId])}
+                          style={{ marginRight: 8, cursor: 'pointer', accentColor: '#f59e0b', width: 14, height: 14 }}
+                        />
+                      ) : (
                         <span className="dd-panel-title-icon">{chartTypeLabels[c.chart_type]}</span>
+                      )}
 
                         {editingIndex === panelId ? (
                           <input
@@ -737,7 +805,7 @@ export default function DynamicDashboard({ charts, initialLayout, dashboardName,
                       <button type="button" onClick={() => handleExportImage(panelId)} className="dd-panel-action" title="Export PNG">
                         <ImageIcon size={11} />
                       </button>
-                      {!isViewer && (
+                      {(!isViewer && !isLocked) && (
                         <button type="button" onClick={() => handlePermanentDelete(panelId)} className="dd-panel-action" title="Delete permanently">
                           <Trash2 size={11} />
                         </button>
@@ -745,8 +813,26 @@ export default function DynamicDashboard({ charts, initialLayout, dashboardName,
                     </div>
                   </div>
 
-                  <div style={{ flex: 1, padding: compactMode ? '8px' : '12px', overflow: 'hidden' }}>
-                    <MemoizedChart config={c} compact={true} exportWidth={exportWidth} />
+                  <div style={{ flex: 1, padding: compactMode ? '8px' : '15px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ flex: 1, minHeight: 180 }}>
+                      <MemoizedChart config={c} compact={true} exportWidth={exportWidth} />
+                    </div>
+                    {c.explanation && (
+                      <div style={{ marginTop: 12, borderTop: '1px solid var(--dd-border-1)', paddingTop: 12 }}>
+                        <p style={{ fontSize: '11px', color: 'var(--dd-text-2)', lineHeight: '1.6', margin: 0 }}>
+                           <Sparkles size={10} style={{ color: '#818cf8', marginRight: 5 }} />
+                           {c.explanation}
+                        </p>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+                          {Array.isArray(c.anomalies) && c.anomalies.slice(0, 2).map((a, i) => (
+                            <span key={i} style={{ fontSize: '9px', background: 'rgba(245,158,11,0.1)', color: '#f59e0b', padding: '1px 5px', borderRadius: 4, fontWeight: 700 }}>⚠️ {a.label}: {a.reason || 'Anomaly'}</span>
+                          ))}
+                          {Array.isArray(c.predictions) && c.predictions.slice(0, 2).map((p, i) => (
+                            <span key={i} style={{ fontSize: '9px', background: 'rgba(139,92,246,0.1)', color: '#8b5cf6', padding: '1px 5px', borderRadius: 4, fontWeight: 700 }}>✨ Forecast: {typeof p.value === 'number' ? p.value.toLocaleString() : p.label}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {c.explanation && (

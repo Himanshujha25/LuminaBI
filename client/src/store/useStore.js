@@ -53,13 +53,12 @@ const useStore = create((set, get) => ({
     newSocket.on('pins-updated', (data) => {
       const { user } = get();
       if (data.userId === user?.id) {
-         // This will trigger local storage listeners or we can manually refresh pinned state if we had it in store
-         // For now, let's just dispatch a storage event to alert other tabs of this the same way
          window.dispatchEvent(new Event('storage'));
       }
     });
 
     newSocket.on('chat-updated', (data) => {
+      // Dispatch custom event to notify components like Professional Board to re-sync
       window.dispatchEvent(new CustomEvent('lumina-chat-updated', { detail: data }));
     });
 

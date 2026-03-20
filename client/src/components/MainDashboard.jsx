@@ -439,9 +439,10 @@ const MainDashboard = () => {
     }
   };
 
-  const currentData = useMemo(() =>
-    history.slice().reverse().find(h => h.role === 'ai' && h.data)?.data,
-  [history]);
+  const currentData = useMemo(() => {
+    const found = [...history].reverse().find(h => h.role === 'ai' && h.data);
+    return found ? { ...found.data, explanation: found.text } : null;
+  }, [history]);
 
   const slicedData = useMemo(() => {
     if (!currentData?.data) return null;
@@ -577,12 +578,15 @@ const MainDashboard = () => {
           {/* Content column */}
           <div className="lm-content-col">
 
-            {isLoading && (
+            {(isLoading || (isSideLoading && !currentData)) && (
               <div className="space-y-4 animate-fade-in" style={{ paddingTop: 20 }}>
                 <div className="lm-kpi-row">
                   {[...Array(5)].map((_, i) => <div key={i} className="skeleton rounded-xl" style={{ height: 82 }} />)}
                 </div>
-                <Skeleton className="h-12" />
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <Skeleton className="h-10 w-32" />
+                  <Skeleton className="h-10 w-48" />
+                </div>
                 <Skeleton className="h-80" />
               </div>
             )}
@@ -797,7 +801,15 @@ const MainDashboard = () => {
                           <GripHorizontal size={13}/>
                           <span className="pinned-card__type-badge" style={{ color:tc.accent, background:tc.glow }}>{tc.label}</span>
                         </div>
-                        <p className="pinned-card__summary">{chart.explanation}</p>
+                        <div className="pinned-card__summary-box">
+                          <p className="pinned-card__summary">{chart.explanation}</p>
+                          {(chart.anomalies?.length > 0 || chart.predictions?.length > 0) && (
+                            <div className="pinned-card__notes-bubble">
+                              <Sparkles size={10} style={{ color: '#a78bfa' }} />
+                              <span>{chart.anomalies?.length || 0} anomaly · {chart.predictions?.length || 0} prediction</span>
+                            </div>
+                          )}
+                        </div>
                         <div id={`pinned-chart-${chart.id}`} className="pinned-card__chart">
                           <MemoizedChart config={chart} compact={true}/>
                         </div>

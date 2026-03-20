@@ -185,6 +185,7 @@
 }
 .dd-btn-icon:hover { border-color: var(--dd-border-2); color: var(--dd-text-1); background: rgba(255,255,255,.08); }
 .dd-btn-icon.dd-active { color: #818cf8; background: rgba(79,82,232,.18); border-color: rgba(79,82,232,.35); }
+.dd-btn-icon.dd-active-lock-btn { color: #f59e0b; background: rgba(245,158,11,0.15); border-color: rgba(245,158,11,0.3); }
 
 /* ── Header right + shell ─────────────────────────────────────────────────── */
 .dd-header-right {
