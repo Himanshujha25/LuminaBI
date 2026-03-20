@@ -11,7 +11,10 @@ const useStore = create((set, get) => ({
     if (socket || !token) return;
 
     // In development, Vite proxies /socket.io to the backend
-    const newSocket = io(window.location.origin, {
+    const isLocal = new Set(['localhost', '127.0.0.1', '::1']).has(window.location.hostname);
+    const socketUrl = isLocal ? window.location.origin : 'https://luminabi.onrender.com';
+
+    const newSocket = io(socketUrl, {
       auth: { token },
       transports: ['websocket', 'polling']
     });
