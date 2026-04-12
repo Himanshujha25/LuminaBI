@@ -45,7 +45,7 @@ const Login = () => {
       {/* Logo */}
       <Link to="/" style={S.logo}>
         <div style={S.logoIcon}><BarChart2 size={18} color="#fff" /></div>
-        <span style={S.logoText}>Lumina<span style={S.logoBi}>BI</span></span>
+        <span style={S.logoText}>Dash<span style={S.logoBi}>Talk</span></span>
       </Link>
 
       {/* Card */}

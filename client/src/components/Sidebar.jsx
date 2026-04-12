@@ -147,7 +147,7 @@
     const handleAnalyticsClick = () => {
       if (!activeDataset) return;
       const slugName = activeDataset.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
-      navigate(`/analytics/${slugName}/${activeDataset.id}/lumina_25`);
+      navigate(`/analytics/${slugName}/${activeDataset.id}/dashtalk_25`);
       setCurrentView('analytics');
     };
 
@@ -314,7 +314,7 @@
                 <Zap size={14} color="white" />
               </div>
               <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--sb-card-title)', marginBottom: 4 }}>
-                Lumina Premium
+                DashTalk Premium
               </p>
               <p style={{ fontSize: 11, color: 'var(--sb-card-desc)', lineHeight: 1.5, marginBottom: 10 }}>
                 Unlock 500MB uploads, priority AI & advanced analytics.

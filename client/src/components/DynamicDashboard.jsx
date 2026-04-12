@@ -78,7 +78,7 @@ export default function DynamicDashboard({ charts, initialLayout, dashboardName,
   const [isExportingPDF,    setIsExportingPDF]    = useState(false);
   const [isPresentMode,     setIsPresentMode]     = useState(false);
   const [copiedShare,       setCopiedShare]       = useState(false);
-  const [activePreset,      setActivePreset]      = useState(localStorage.getItem('lumina_layout') || '3col');
+  const [activePreset,      setActivePreset]      = useState(localStorage.getItem('dashtalk_layout') || '3col');
   const [isLayoutOpen,      setIsLayoutOpen]      = useState(false);
   const [isConsultOpen,     setIsConsultOpen]     = useState(false);
   const [currentMessage,    setCurrentMessage]    = useState('');
@@ -98,17 +98,17 @@ export default function DynamicDashboard({ charts, initialLayout, dashboardName,
   const [fullscreenPanel,   setFullscreenPanel]   = useState(null);
   const [searchQuery,       setSearchQuery]       = useState('');
   const [isSearchOpen,      setIsSearchOpen]      = useState(false);
-  const [activeBg,          setActiveBg]          = useState(localStorage.getItem('lumina_bg') || 'default');
+  const [activeBg,          setActiveBg]          = useState(localStorage.getItem('dashtalk_bg') || 'default');
   const [isBgModalOpen,     setIsBgModalOpen]     = useState(false);
   const [sidebarTab,        setSidebarTab]        = useState('ai'); // 'ai' | 'panels'
   const [compactMode,       setCompactMode]       = useState(false);
   const [isMobileMenuOpen,  setIsMobileMenuOpen]  = useState(false);
-  const [isLocked,          setIsLocked]          = useState(localStorage.getItem(`lumina_lock_${activeDataset?.id}`) === 'true');
+  const [isLocked,          setIsLocked]          = useState(localStorage.getItem(`dashtalk_lock_${activeDataset?.id}`) === 'true');
   const [isBulkMode,        setIsBulkMode]        = useState(false);
   const [selectedCharts,    setSelectedCharts]    = useState([]);
 
   useEffect(() => {
-    localStorage.setItem(`lumina_lock_${activeDataset?.id}`, isLocked);
+    localStorage.setItem(`dashtalk_lock_${activeDataset?.id}`, isLocked);
   }, [isLocked, activeDataset?.id]);
 
   const isViewer = activeDataset?.isShared && activeDataset.role?.toLowerCase() === 'viewer';
@@ -137,7 +137,7 @@ export default function DynamicDashboard({ charts, initialLayout, dashboardName,
   }, []);
 
   /* ── Chat storage ── */
-  const chatStorageKey = `lumina_chat_${activeDataset?.id || 'default'}`;
+  const chatStorageKey = `dashtalk_chat_${activeDataset?.id || 'default'}`;
   const [chatMessages, setChatMessages] = useState(() => {
     try {
       const saved = localStorage.getItem(chatStorageKey);
@@ -197,14 +197,14 @@ export default function DynamicDashboard({ charts, initialLayout, dashboardName,
 
   const applyPreset = p => {
     setActivePreset(p);
-    localStorage.setItem('lumina_layout', p);
+    localStorage.setItem('dashtalk_layout', p);
     setIsLayoutOpen(false);
     setTimeout(() => window.dispatchEvent(new Event('resize')), 150);
   };
 
   const applyBg = id => {
     setActiveBg(id);
-    localStorage.setItem('lumina_bg', id);
+    localStorage.setItem('dashtalk_bg', id);
   };
 
   const showToast = (msg, type = 'success') => setToast({ msg, type });
@@ -242,13 +242,13 @@ export default function DynamicDashboard({ charts, initialLayout, dashboardName,
       const currentUrl = window.location.href;
       const userData = localStorage.getItem('user') || '{}';
       const userId = JSON.parse(userData)?.id || 'guest';
-      const pinKey = `lumina_pinned_charts_${userId}`;
+      const pinKey = `dashtalk_pinned_charts_${userId}`;
       const pinnedChartsData = localStorage.getItem(pinKey) || '[]';
       const response = await axios.post(`${API_URL}/exports/generate-pdf`,
         { targetUrl: currentUrl, theme: isDark ? 'dark' : 'light', layout: activePreset, userData, pinnedCharts: pinnedChartsData, pinKey },
         { headers: { Authorization: `Bearer ${token}` }, responseType: 'blob' }
       );
-      const safeName = name ? name.replace(/\s+/g, '_') : 'Lumina_Report';
+      const safeName = name ? name.replace(/\s+/g, '_') : 'DashTalk_Report';
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url; link.setAttribute('download', `${safeName}.pdf`);
@@ -274,7 +274,7 @@ export default function DynamicDashboard({ charts, initialLayout, dashboardName,
       pres.layout = 'LAYOUT_16x9';
       const cover = pres.addSlide();
       cover.background = { color: isDark ? '0d0f1a' : 'f0f1f8' };
-      cover.addText('Lumina Intelligence', { x: 0, y: '40%', w: '100%', align: 'center', fontSize: 40, color: isDark ? 'e8eaf5' : '12142a', bold: true });
+      cover.addText('DashTalk Intelligence', { x: 0, y: '40%', w: '100%', align: 'center', fontSize: 40, color: isDark ? 'e8eaf5' : '12142a', bold: true });
       cover.addText(name || activeDataset?.name || 'Analytics Report', { x: 0, y: '55%', w: '100%', align: 'center', fontSize: 18, color: '818cf8' });
       const slide = pres.addSlide();
       slide.background = { color: isDark ? '0d0f1a' : 'f0f1f8' };
@@ -284,7 +284,7 @@ export default function DynamicDashboard({ charts, initialLayout, dashboardName,
       const fitW = Math.min(maxW, maxH * aspect);
       const fitH = fitW / aspect;
       slide.addImage({ data: imgData, x: (10 - fitW) / 2, y: 1.0, w: fitW, h: fitH });
-      await pres.writeFile({ fileName: `${name || 'Lumina'}_Report.pptx` });
+      await pres.writeFile({ fileName: `${name || 'DashTalk'}_Report.pptx` });
       showToast('PowerPoint exported successfully');
     } catch (e) {
       console.error('PPT Export Error:', e);
@@ -897,7 +897,7 @@ export default function DynamicDashboard({ charts, initialLayout, dashboardName,
                   <Sparkles size={13} color="#fff" />
                 </div>
                 <div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--dd-text-1)' }}>Lumina AI</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--dd-text-1)' }}>DashTalk AI</div>
                   <div style={{ fontSize: 10, color: 'var(--dd-text-3)' }}>Contextual analyst</div>
                 </div>
               </div>

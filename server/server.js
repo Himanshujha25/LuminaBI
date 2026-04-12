@@ -31,8 +31,8 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const allowedOrigins = new Set([
   "http://localhost:5173",
   "http://127.0.0.1:5173",
-  "https://lumina-bi.vercel.app",
-  "https://luminabi.onrender.com",
+  "https://dashtalk.vercel.app",
+  "https://dashtalk.onrender.com",
   "http://192.168.29.122:5173",
   "http://localhost:5050",
   "http://127.0.0.1:5050",
@@ -86,10 +86,10 @@ app.post('/api/support', upload.any(), async (req, res) => {
 
     const { data, error } = await resend.emails.send({
       // 3. Inject the dynamic name here, but keep your verified email in the brackets!
-      from: `${displayName} (Lumina Support) <onboarding@resend.dev>`, 
-      to: 'jhahimanshu930@gmail.com', // Keep this as your own email while testing
-      reply_to: email, // This makes the "Reply" button work correctly!
-      subject: `[Lumina BI Support] ${issueType.toUpperCase()} Issue`,
+      from: `${displayName} (DashTalk Support) <onboarding@resend.dev>`, 
+      to: 'jhahimanshu930@gmail.com',
+      reply_to: email,
+      subject: `[DashTalk Support] ${issueType.toUpperCase()} Issue`,
       html: `
         <h3>New Support Request</h3>
         <p><strong>User:</strong> ${email}</p>
@@ -140,7 +140,7 @@ async function startServer() {
   });
 
   const jwt = require('jsonwebtoken');
-  const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_lumina_key';
+  const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_dashtalk_key';
 
   // Socket Auth Middleware
   io.use((socket, next) => {

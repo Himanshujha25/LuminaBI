@@ -6,7 +6,7 @@ import html2canvas from 'html2canvas';
  * @param {Array} pinnedCharts - Array of pinned chart config objects.
  * @param {string} datasetName - The name of the active dataset.
  */
-export async function generatePDFReport(pinnedCharts, datasetName = 'LuminaBI') {
+export async function generatePDFReport(pinnedCharts, datasetName = 'DashTalk') {
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pageW = pdf.internal.pageSize.getWidth();
   const pageH = pdf.internal.pageSize.getHeight();
@@ -23,7 +23,7 @@ export async function generatePDFReport(pinnedCharts, datasetName = 'LuminaBI') 
   pdf.setTextColor(255, 255, 255);
   pdf.setFontSize(28);
   pdf.setFont('helvetica', 'bold');
-  pdf.text('LuminaBI', margin, 55);
+  pdf.text('DashTalk', margin, 55);
   
   pdf.setFontSize(14);
   pdf.setFont('helvetica', 'normal');
@@ -47,7 +47,7 @@ export async function generatePDFReport(pinnedCharts, datasetName = 'LuminaBI') 
   pdf.line(margin, pageH - 20, pageW - margin, pageH - 20);
   pdf.setTextColor(100, 116, 139);
   pdf.setFontSize(9);
-  pdf.text('Powered by LuminaBI · Conversational AI Analytics', margin, pageH - 13);
+  pdf.text('Powered by DashTalk · Conversational AI Analytics', margin, pageH - 13);
 
   // --- Chart Pages ---
   for (let i = 0; i < pinnedCharts.length; i++) {
@@ -111,9 +111,9 @@ export async function generatePDFReport(pinnedCharts, datasetName = 'LuminaBI') 
     pdf.line(margin, pageH - 10, pageW - margin, pageH - 10);
     pdf.setTextColor(71, 85, 105);
     pdf.setFontSize(8);
-    pdf.text('LuminaBI Analytics Report', margin, pageH - 5);
+    pdf.text('DashTalk Analytics Report', margin, pageH - 5);
     pdf.text(`Page ${i + 2}`, pageW - margin, pageH - 5, { align: 'right' });
   }
 
-  pdf.save(`LuminaBI_Report_${datasetName.replace(/\s+/g, '_')}_${Date.now()}.pdf`);
+  pdf.save(`DashTalk_Report_${datasetName.replace(/\s+/g, '_')}_${Date.now()}.pdf`);
 }

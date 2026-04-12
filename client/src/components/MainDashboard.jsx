@@ -245,7 +245,7 @@ const MainDashboard = () => {
   const isViewer = activeDataset?.isShared && activeDataset.role?.toLowerCase() === 'viewer';
 
   const userId          = storeUser?.id || 'guest';
-  const PIN_STORAGE_KEY = `lumina_pinned_charts_${userId}`;
+  const PIN_STORAGE_KEY = `dashtalk_pinned_charts_${userId}`;
 
   const [pinnedCharts, setPinnedCharts] = useState(() => {
     try {
@@ -262,7 +262,7 @@ const MainDashboard = () => {
   const handleAnalyticsClick = () => {
     if (!activeDataset) return;
     const slugName = activeDataset.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
-    navigate(`/analytics/${slugName}/${activeDataset.id}/lumina_25`);
+    navigate(`/analytics/${slugName}/${activeDataset.id}/dashtalk_25`);
     setCurrentView('analytics');
   };
 
@@ -311,8 +311,8 @@ const MainDashboard = () => {
           })));
       }
     };
-    window.addEventListener('lumina-chat-updated', handleSync);
-    return () => window.removeEventListener('lumina-chat-updated', handleSync);
+    window.addEventListener('dashtalk-chat-updated', handleSync);
+    return () => window.removeEventListener('dashtalk-chat-updated', handleSync);
   }, [activeDataset?.id]);
 
   useEffect(() => {
@@ -638,10 +638,10 @@ const MainDashboard = () => {
                       <button className={`action-btn ${showSQL ? 'active' : ''}`} onClick={() => setShowSQL(!showSQL)}>
                         <Database size={14}/><span className="action-btn-text">SQL</span>
                       </button>
-                      <button className="action-btn icon-only" onClick={() => exportAsCSV(currentData.data, 'lumina_export')} title="Export CSV">
+                      <button className="action-btn icon-only" onClick={() => exportAsCSV(currentData.data, 'dashtalk_export')} title="Export CSV">
                         <Download size={14}/>
                       </button>
-                      <button className="action-btn icon-only" onClick={() => exportAsPNG('main-chart-export', 'lumina_insight')} title="Export PNG">
+                      <button className="action-btn icon-only" onClick={() => exportAsPNG('main-chart-export', 'dashtalk_insight')} title="Export PNG">
                         <ImageIcon size={14}/>
                       </button>
                       <button className={`action-btn icon-only ${isChartFullscreen ? 'active' : ''}`} onClick={() => setIsChartFullscreen(!isChartFullscreen)} title="Fullscreen">
@@ -742,7 +742,7 @@ const MainDashboard = () => {
                 <div className="flex flex-col animate-fade-in py-4 pl-1" style={{ minHeight: '40vh' }}>
                   <div className="hidden sm:flex flex-col items-center justify-center text-center py-8">
                     <h1 className="text-3xl lg:text-4xl font-black mb-3 leading-tight tracking-tight">
-                      Lumina <span className="gradient-text">Conversational BI</span>
+                      Dash<span className="gradient-text">Talk Conversational BI</span>
                     </h1>
                     <p className="text-base max-w-md mb-8 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                       Ask anything about your data — trends, breakdowns, comparisons — AI renders it instantly.
@@ -843,7 +843,7 @@ const MainDashboard = () => {
               <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                 <div className="lm-sidebar-logo"><Sparkles size={13} color="#fff"/></div>
                 <div>
-                  <div style={{ fontSize:12, fontWeight:700, color:'var(--text-primary)' }}>Lumina AI</div>
+                  <div style={{ fontSize:12, fontWeight:700, color:'var(--text-primary)' }}>DashTalk AI</div>
                   <div style={{ fontSize:10, color:'var(--text-tertiary)', overflow:'hidden', textOverflow:'ellipsis', maxWidth:160, whiteSpace:'nowrap' }}>
                     {activeDataset ? activeDataset.name : 'No dataset'}
                   </div>

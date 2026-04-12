@@ -5,8 +5,8 @@ const generateWithOpenRouter = async (prompt, userKey) => {
     apiKey: userKey,
     baseURL: "https://openrouter.ai/api/v1",
     defaultHeaders: {
-      "HTTP-Referer": "https://luminabi.app",
-      "X-Title": "LuminaBI"
+      "HTTP-Referer": "https://dashtalk.app",
+      "X-Title": "DashTalk"
     }
   });
 

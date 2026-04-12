@@ -106,7 +106,7 @@ const Header = () => {
   const handleAnalyticsClick = () => {
     if (!activeDataset) return;
     const slugName = activeDataset.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
-    navigate(`/analytics/${slugName}/${activeDataset.id}/lumina_25`);
+    navigate(`/analytics/${slugName}/${activeDataset.id}/dashtalk_25`);
     setCurrentView('analytics');
     setIsMobileMenuOpen(false);
   };
@@ -147,7 +147,7 @@ const Header = () => {
         <div className="hdr-left">
           <div className="hdr-mobile-title">
             <strong>{mobileTitle}</strong>
-            <span>{activeDataset?.name || 'LuminaBI'}</span>
+            <span>{activeDataset?.name || 'DashTalk'}</span>
           </div>
           <button
             className="hdr-icon-btn hdr-toggle"

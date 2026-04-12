@@ -12,7 +12,7 @@ const useStore = create((set, get) => ({
 
     // In development, Vite proxies /socket.io to the backend
     const isLocal = new Set(['localhost', '127.0.0.1', '::1']).has(window.location.hostname);
-    const socketUrl = isLocal ? window.location.origin : 'https://luminabi.onrender.com';
+    const socketUrl = isLocal ? window.location.origin : 'https://dashtalk.onrender.com';
 
     const newSocket = io(socketUrl, {
       auth: { token },
@@ -59,7 +59,7 @@ const useStore = create((set, get) => ({
 
     newSocket.on('chat-updated', (data) => {
       // Dispatch custom event to notify components like Professional Board to re-sync
-      window.dispatchEvent(new CustomEvent('lumina-chat-updated', { detail: data }));
+      window.dispatchEvent(new CustomEvent('dashtalk-chat-updated', { detail: data }));
     });
 
     set({ socket: newSocket });

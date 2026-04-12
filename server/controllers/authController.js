@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { sendEmail } = require('../utils/email');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_lumina_key';
+const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_dashtalk_key';
 
 const register = async (req, res) => {
     try {
@@ -204,7 +204,7 @@ const forgotPassword = async (req, res) => {
 
         await sendEmail({
             to: email,
-            subject: 'LuminaBI - Password Reset OTP',
+            subject: 'DashTalk - Password Reset OTP',
             html: `
                 <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px; color: #333;">
                     <h2 style="color: #6366f1;">Reset Your Password</h2>

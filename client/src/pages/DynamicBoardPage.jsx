@@ -27,8 +27,8 @@ export default function DynamicBoardPage() {
                 setRefreshTrigger(prev => prev + 1);
             }
         };
-        window.addEventListener('lumina-chat-updated', handleSync);
-        return () => window.removeEventListener('lumina-chat-updated', handleSync);
+        window.addEventListener('dashtalk-chat-updated', handleSync);
+        return () => window.removeEventListener('dashtalk-chat-updated', handleSync);
     }, [datasetId]);
 
     useEffect(() => {
@@ -52,10 +52,10 @@ export default function DynamicBoardPage() {
                 }
 
                 // 2. Fetch Chat History to reconstruct the "dashboard" (pinned/all viz)
-                if (slug === 'lumina_25') {
+                if (slug === 'dashtalk_25') {
                     const userData = JSON.parse(localStorage.getItem("user") || "{}");
                     const userId = userData?.id || "guest";
-                    const PIN_STORAGE_KEY = `lumina_pinned_charts_${userId}`;
+                    const PIN_STORAGE_KEY = `dashtalk_pinned_charts_${userId}`;
                     const localPins = JSON.parse(localStorage.getItem(PIN_STORAGE_KEY) || "[]");
                     if (localPins && localPins.length > 0) {
                         setCharts(localPins);

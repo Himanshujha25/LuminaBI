@@ -41,7 +41,7 @@ exports.generatePDF = async (req, res) => {
         await page.evaluateOnNewDocument((token, theme, layout, userData, pinnedCharts, pinKey) => {
             if (token) localStorage.setItem('token', token);
             localStorage.setItem('theme', theme);
-            if (layout) localStorage.setItem('lumina_layout', layout);
+            if (layout) localStorage.setItem('dashtalk_layout', layout);
             
             // This is the magic fix that makes sure Puppeteer sees the exact charts you do!
             if (userData) localStorage.setItem('user', userData);

@@ -29,7 +29,7 @@ export default function SharedReport() {
         <div className="min-h-screen bg-[#0b0f19] flex items-center justify-center">
             <div className="flex flex-col items-center gap-4">
                 <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-                <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Fetching Lumina Insight...</p>
+                <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Fetching DashTalk Insight...</p>
             </div>
         </div>
     );
@@ -41,7 +41,7 @@ export default function SharedReport() {
                 <p className="text-slate-400 mb-8">{error}</p>
                 <Link to="/" className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-md font-bold text-sm uppercase transition-all">
                     <ArrowLeft size={16} />
-                    Back to Lumina
+                    Back to DashTalk
                 </Link>
             </div>
         </div>
@@ -53,7 +53,7 @@ export default function SharedReport() {
             <header className="border-b border-slate-800 bg-[#0b0f19]/80 backdrop-blur-md sticky top-0 z-50 px-6 py-4">
                 <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <Link to="/" className="text-indigo-500 font-black text-xl tracking-tighter">LUMINA BI</Link>
+                        <Link to="/" className="text-indigo-500 font-black text-xl tracking-tighter">DASHTALK</Link>
                         <div className="h-4 w-px bg-slate-800"></div>
                         <div>
                             <h1 className="text-sm font-black uppercase tracking-tight m-0">{report.name || 'Shared Insight'}</h1>
@@ -121,8 +121,8 @@ export default function SharedReport() {
                          </div>
                      </div>
                      <div className="p-6 rounded-lg bg-indigo-600/10 border border-indigo-500/20">
-                         <h3 className="text-[10px] font-black uppercase text-indigo-400 mb-2">Lumina AI Insight</h3>
-                         <p className="text-xs text-slate-300 leading-relaxed italic">"This data snapshot was generated using Lumina's deep-intelligence contextual engine."</p>
+                         <h3 className="text-[10px] font-black uppercase text-indigo-400 mb-2">DashTalk AI Insight</h3>
+                         <p className="text-xs text-slate-300 leading-relaxed italic">"This data snapshot was generated using DashTalk's deep-intelligence contextual engine."</p>
                      </div>
                 </div>
             </main>

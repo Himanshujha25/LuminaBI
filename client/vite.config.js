@@ -11,8 +11,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icon-192.png', 'icon-512.png'],
       manifest: {
-        name: 'LuminaBI – Conversational Business Intelligence',
-        short_name: 'LuminaBI',
+        name: 'DashTalk – Conversational BI Platform',
+        short_name: 'DashTalk',
         description: 'Ask anything about your data — AI-powered charts and insights instantly.',
         theme_color: '#6366f1',
         background_color: '#0B0F19',
@@ -51,19 +51,19 @@ export default defineConfig({
         // Network-first for API calls so data stays fresh
         runtimeCaching: [
           {
-            urlPattern: /^(https:\/\/luminabi\.onrender\.com|http:\/\/localhost:5050|http:\/\/127\.0\.0\.1:5050)\/api\/.*/i,
+            urlPattern: /^(https:\/\/dashtalk\.onrender\.com|http:\/\/localhost:5050|http:\/\/127\.0\.0\.1:5050)\/api\/.*/i,
             handler: 'NetworkFirst',
             options: {
-              cacheName: 'lumina-api-cache',
+              cacheName: 'dashtalk-api-cache',
               expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 }, // 24h
               networkTimeoutSeconds: 10,
             },
           },
           {
-            urlPattern: /^(https:\/\/luminabi\.onrender\.com|http:\/\/localhost:5050|http:\/\/127\.0\.0\.1:5050)\/query.*/i,
+            urlPattern: /^(https:\/\/dashtalk\.onrender\.com|http:\/\/localhost:5050|http:\/\/127\.0\.0\.1:5050)\/query.*/i,
             handler: 'NetworkFirst',
             options: {
-              cacheName: 'lumina-query-cache',
+              cacheName: 'dashtalk-query-cache',
               expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 }, // 1h
               networkTimeoutSeconds: 30,
             },

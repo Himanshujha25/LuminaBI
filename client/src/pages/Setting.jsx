@@ -748,7 +748,7 @@ const AiSection = ({ user, onSave }) => {
           <div className="sw-key-box" style={{display:'flex',gap:14,alignItems:'flex-start'}}>
             <PIcon p={active} size={36}/>
             <div>
-              <p style={{fontSize:13.5,fontWeight:600,color:'var(--text-1)',marginBottom:3}}>Using Lumina system key</p>
+              <p style={{fontSize:13.5,fontWeight:600,color:'var(--text-1)',marginBottom:3}}>Using DashTalk system key</p>
               <p style={{fontSize:12.5,color:'var(--text-2)',lineHeight:1.6,marginBottom:10}}>{active.model} is active on our shared key. Add your own for higher rate limits.</p>
               <a href={active.keyUrl} target="_blank" rel="noopener noreferrer" className="sw-btn link">Get a personal key at {active.keyDomain}<ArrowUpRight size={12}/></a>
             </div>

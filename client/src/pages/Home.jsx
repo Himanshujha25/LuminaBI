@@ -603,7 +603,7 @@ const Home = () => {
       <nav className="lbi-nav">
         <Link to="/" className="lbi-logo">
           <div className="lbi-logo-icon"><BarChart2 size={18} color="#fff" /></div>
-          <span className="lbi-logo-text">Lumina<span className="gradient-text">BI</span></span>
+          <span className="lbi-logo-text">Dash<span className="gradient-text">Talk</span></span>
         </Link>
 
         {/* Desktop links */}
@@ -666,7 +666,7 @@ const Home = () => {
         </h1>
 
         <p className="hero-sub anim-slide-up" style={{ animationDelay: '.16s' }}>
-          LuminaBI turns raw CSVs into interactive dashboards using natural language.
+          DashTalk turns raw CSVs into interactive dashboards using natural language.
           No SQL. No BI engineers. Just ask and see.
         </p>
 
@@ -804,7 +804,7 @@ const Home = () => {
             Lumina<span className="gradient-text">BI</span>
           </span>
         </div>
-        <p className="footer-copy">© 2026 LuminaBI · All rights reserved</p>
+        <p className="footer-copy">© 2026 DashTalk · All rights reserved</p>
       </footer>
     </>
   );

@@ -547,7 +547,7 @@ const Support = () => {
               borderTop: '.5px solid var(--sp-footer-border)',
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             }}>
-              <span style={{ fontSize: 11, color: 'var(--sp-footer-hint)' }}>support@lumina.bi</span>
+              <span style={{ fontSize: 11, color: 'var(--sp-footer-hint)' }}>support@dashtalk.app</span>
               <button
                 type="submit"
                 disabled={isSubmitting}
