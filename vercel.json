@@ -14,8 +14,16 @@
       "destination": "https://dashtalk.onrender.com/api/$1"
     },
     {
+      "source": "/query/(.*)",
+      "destination": "https://dashtalk.onrender.com/query/$1"
+    },
+    {
+      "source": "/health",
+      "destination": "https://dashtalk.onrender.com/health"
+    },
+    {
       "source": "/(.*)",
-      "destination": "/client/$1"
+      "destination": "/index.html"
     }
   ]
 }
