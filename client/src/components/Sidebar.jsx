@@ -10,56 +10,56 @@
   const SIDEBAR_STYLES = `
     :root {
       --sb-bg:               #ffffff;
-      --sb-border:           rgba(0,0,0,0.07);
-      --sb-divider:          rgba(0,0,0,0.06);
-      --sb-brand-text:       #0f0f12;
-      --sb-brand-accent:     #6366f1;
+      --sb-border:           rgba(0,0,0,0.06);
+      --sb-divider:          rgba(0,0,0,0.05);
+      --sb-brand-text:       #060e20;
+      --sb-brand-accent:     #0891b2;
       --sb-group-label:      rgba(0,0,0,0.30);
-      --sb-item-color:       rgba(0,0,0,0.45);
-      --sb-item-hover-bg:    rgba(0,0,0,0.04);
+      --sb-item-color:       rgba(0,0,0,0.44);
+      --sb-item-hover-bg:    rgba(8,145,178,0.05);
       --sb-item-hover-color: rgba(0,0,0,0.80);
-      --sb-item-active-bg:   rgba(99,102,241,0.09);
-      --sb-item-active-color:#4f46e5;
-      --sb-item-active-bar:  #6366f1;
-      --sb-ds-bg:            rgba(99,102,241,0.06);
-      --sb-ds-border:        rgba(99,102,241,0.15);
+      --sb-item-active-bg:   rgba(8,145,178,0.08);
+      --sb-item-active-color:#0891b2;
+      --sb-item-active-bar:  #22d3ee;
+      --sb-ds-bg:            rgba(8,145,178,0.05);
+      --sb-ds-border:        rgba(8,145,178,0.14);
       --sb-ds-dot:           #059669;
-      --sb-ds-label:         rgba(0,0,0,0.38);
+      --sb-ds-label:         rgba(0,0,0,0.36);
       --sb-ds-name:          rgba(0,0,0,0.78);
-      --sb-up-bg:            rgba(99,102,241,0.07);
-      --sb-up-border:        rgba(99,102,241,0.25);
-      --sb-up-color:         #4f46e5;
-      --sb-card-bg:          rgba(99,102,241,0.05);
-      --sb-card-border:      rgba(99,102,241,0.15);
-      --sb-card-title:       #1e1b4b;
-      --sb-card-desc:        rgba(0,0,0,0.45);
+      --sb-up-bg:            rgba(8,145,178,0.06);
+      --sb-up-border:        rgba(8,145,178,0.22);
+      --sb-up-color:         #0891b2;
+      --sb-card-bg:          rgba(8,145,178,0.04);
+      --sb-card-border:      rgba(8,145,178,0.13);
+      --sb-card-title:       #0c4a6e;
+      --sb-card-desc:        rgba(0,0,0,0.44);
     }
 
     [data-theme="dark"] {
-      --sb-bg:               #0b0f19;
-      --sb-border:           rgba(255,255,255,0.07);
-      --sb-divider:          rgba(255,255,255,0.05);
-      --sb-brand-text:       #ffffff;
-      --sb-brand-accent:     #6366f1;
-      --sb-group-label:      rgba(255,255,255,0.22);
-      --sb-item-color:       rgba(255,255,255,0.48);
-      --sb-item-hover-bg:    rgba(255,255,255,0.05);
-      --sb-item-hover-color: rgba(255,255,255,0.82);
-      --sb-item-active-bg:   rgba(99,102,241,0.14);
-      --sb-item-active-color:#818cf8;
-      --sb-item-active-bar:  #6366f1;
-      --sb-ds-bg:            rgba(99,102,241,0.08);
-      --sb-ds-border:        rgba(99,102,241,0.18);
+      --sb-bg:               #070d1a;
+      --sb-border:           rgba(34,211,238,0.07);
+      --sb-divider:          rgba(34,211,238,0.05);
+      --sb-brand-text:       #e8f4f8;
+      --sb-brand-accent:     #22d3ee;
+      --sb-group-label:      rgba(232,244,248,0.22);
+      --sb-item-color:       rgba(232,244,248,0.46);
+      --sb-item-hover-bg:    rgba(34,211,238,0.06);
+      --sb-item-hover-color: rgba(232,244,248,0.85);
+      --sb-item-active-bg:   rgba(34,211,238,0.12);
+      --sb-item-active-color:#22d3ee;
+      --sb-item-active-bar:  #22d3ee;
+      --sb-ds-bg:            rgba(34,211,238,0.06);
+      --sb-ds-border:        rgba(34,211,238,0.14);
       --sb-ds-dot:           #10b981;
-      --sb-ds-label:         rgba(255,255,255,0.35);
-      --sb-ds-name:          rgba(255,255,255,0.85);
-      --sb-up-bg:            rgba(99,102,241,0.10);
-      --sb-up-border:        rgba(99,102,241,0.35);
-      --sb-up-color:         #818cf8;
-      --sb-card-bg:          rgba(255,255,255,0.03);
-      --sb-card-border:      rgba(255,255,255,0.08);
-      --sb-card-title:       #e2e8f0;
-      --sb-card-desc:        rgba(255,255,255,0.38);
+      --sb-ds-label:         rgba(232,244,248,0.34);
+      --sb-ds-name:          rgba(232,244,248,0.88);
+      --sb-up-bg:            rgba(34,211,238,0.08);
+      --sb-up-border:        rgba(34,211,238,0.28);
+      --sb-up-color:         #22d3ee;
+      --sb-card-bg:          rgba(34,211,238,0.04);
+      --sb-card-border:      rgba(34,211,238,0.10);
+      --sb-card-title:       #e8f4f8;
+      --sb-card-desc:        rgba(232,244,248,0.38);
     }
 
     .sb-btn {
@@ -225,7 +225,7 @@
                 color: 'var(--sb-brand-text)',
                 letterSpacing: '-0.4px', whiteSpace: 'nowrap',
               }}>
-                Lumina<span style={{ color: 'var(--sb-brand-accent)' }}>BI</span>
+                Dash<span style={{ color: 'var(--sb-brand-accent)' }}>Talk</span>
               </span>
             </div>
 

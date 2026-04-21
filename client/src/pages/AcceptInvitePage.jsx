@@ -394,7 +394,7 @@ export default function AcceptInvitePage() {
               <BarChart2 size={18} color="#fff" />
             </div>
             <span className={logoText}>
-              Lumina<span style={gradText}>BI</span>
+              Dash<span style={gradText}>Talk</span>
             </span>
           </div>
 

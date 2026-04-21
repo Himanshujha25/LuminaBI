@@ -101,7 +101,7 @@ exports.generatePDF = async (req, res) => {
 
         res.set({
             'Content-Type': 'application/pdf',
-            'Content-Disposition': 'attachment; filename="Lumina_Dashboard.pdf"',
+            'Content-Disposition': 'attachment; filename="DashTalk_Dashboard.pdf"',
             'Content-Length': pdfBuffer.length
         });
 

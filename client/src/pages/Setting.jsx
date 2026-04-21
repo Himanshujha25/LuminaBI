@@ -21,23 +21,23 @@ const STYLES = `
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --page:        #f3f4f8;
+    --page:        #f0f6ff;
     --surface:     #ffffff;
-    --surface-2:   #f8f8fb;
-    --border:      rgba(0,0,0,.08);
-    --border-md:   rgba(0,0,0,.13);
-    --border-str:  rgba(0,0,0,.20);
-    --text-1:      #0d0e14;
-    --text-2:      rgba(13,14,20,.52);
-    --text-3:      rgba(13,14,20,.34);
-    --text-4:      rgba(13,14,20,.22);
-    --field:       rgba(0,0,0,.025);
-    --field-bdr:   rgba(0,0,0,.10);
-    --hover:       rgba(0,0,0,.035);
-    --accent:      #3b3fce;
-    --accent-dim:  rgba(59,63,206,.10);
-    --accent-bdr:  rgba(59,63,206,.22);
-    --accent-txt:  #3b3fce;
+    --surface-2:   #f6faff;
+    --border:      rgba(0,0,0,.06);
+    --border-md:   rgba(0,0,0,.11);
+    --border-str:  rgba(0,0,0,.18);
+    --text-1:      #060e20;
+    --text-2:      rgba(6,14,32,.52);
+    --text-3:      rgba(6,14,32,.34);
+    --text-4:      rgba(6,14,32,.20);
+    --field:       rgba(0,0,0,.022);
+    --field-bdr:   rgba(8,145,178,.12);
+    --hover:       rgba(8,145,178,.04);
+    --accent:      #0891b2;
+    --accent-dim:  rgba(8,145,178,.09);
+    --accent-bdr:  rgba(8,145,178,.22);
+    --accent-txt:  #0891b2;
     --danger:      #d42b2b;
     --danger-dim:  rgba(212,43,43,.07);
     --danger-bdr:  rgba(212,43,43,.20);
@@ -47,15 +47,15 @@ const STYLES = `
     --warn-dim:    rgba(180,120,0,.08);
     --warn-bdr:    rgba(180,120,0,.22);
     --warn-txt:    #8a5c00;
-    --nav-active:  rgba(59,63,206,.08);
-    --nav-clr:     rgba(13,14,20,.44);
+    --nav-active:  rgba(8,145,178,.08);
+    --nav-clr:     rgba(6,14,32,.44);
     --toggle-off:  rgba(0,0,0,.16);
-    --toggle-on:   #3b3fce;
-    --av-bg:       rgba(59,63,206,.10);
-    --av-txt:      #3b3fce;
+    --toggle-on:   #0891b2;
+    --av-bg:       rgba(8,145,178,.10);
+    --av-txt:      #0891b2;
     --shadow-sm:   0 1px 2px rgba(0,0,0,.05), 0 0 0 1px rgba(0,0,0,.04);
-    --shadow-md:   0 4px 12px rgba(0,0,0,.08), 0 0 0 1px rgba(0,0,0,.04);
-    --shadow-lg:   0 12px 32px rgba(0,0,0,.12), 0 0 0 1px rgba(0,0,0,.05);
+    --shadow-md:   0 4px 12px rgba(8,145,178,.08), 0 0 0 1px rgba(0,0,0,.03);
+    --shadow-lg:   0 12px 32px rgba(8,145,178,.10), 0 0 0 1px rgba(0,0,0,.04);
     --r-sm:        6px;
     --r-md:        9px;
     --r-lg:        13px;
@@ -63,23 +63,23 @@ const STYLES = `
   }
 
   [data-theme="dark"] {
-    --page:        #0a0b12;
-    --surface:     #111320;
-    --surface-2:   #161829;
-    --border:      rgba(255,255,255,.07);
-    --border-md:   rgba(255,255,255,.12);
-    --border-str:  rgba(255,255,255,.18);
-    --text-1:      #e8eaf5;
-    --text-2:      rgba(232,234,245,.50);
-    --text-3:      rgba(232,234,245,.30);
-    --text-4:      rgba(232,234,245,.17);
-    --field:       rgba(255,255,255,.04);
-    --field-bdr:   rgba(255,255,255,.09);
-    --hover:       rgba(255,255,255,.05);
-    --accent:      #5a5fff;
-    --accent-dim:  rgba(90,95,255,.12);
-    --accent-bdr:  rgba(90,95,255,.28);
-    --accent-txt:  #8a8fff;
+    --page:        #030712;
+    --surface:     #070d1a;
+    --surface-2:   #0d1829;
+    --border:      rgba(34,211,238,.06);
+    --border-md:   rgba(34,211,238,.11);
+    --border-str:  rgba(34,211,238,.18);
+    --text-1:      #e8f4f8;
+    --text-2:      rgba(232,244,248,.50);
+    --text-3:      rgba(232,244,248,.30);
+    --text-4:      rgba(232,244,248,.16);
+    --field:       rgba(34,211,238,.03);
+    --field-bdr:   rgba(34,211,238,.10);
+    --hover:       rgba(34,211,238,.05);
+    --accent:      #22d3ee;
+    --accent-dim:  rgba(34,211,238,.10);
+    --accent-bdr:  rgba(34,211,238,.24);
+    --accent-txt:  #22d3ee;
     --danger:      #f06060;
     --danger-dim:  rgba(240,96,96,.09);
     --danger-bdr:  rgba(240,96,96,.24);
@@ -89,15 +89,15 @@ const STYLES = `
     --warn-dim:    rgba(255,190,50,.08);
     --warn-bdr:    rgba(255,190,50,.22);
     --warn-txt:    #e8a020;
-    --nav-active:  rgba(90,95,255,.12);
-    --nav-clr:     rgba(232,234,245,.40);
+    --nav-active:  rgba(34,211,238,.10);
+    --nav-clr:     rgba(232,244,248,.40);
     --toggle-off:  rgba(255,255,255,.16);
-    --toggle-on:   #5a5fff;
-    --av-bg:       rgba(90,95,255,.14);
-    --av-txt:      #9a9fff;
-    --shadow-sm:   0 1px 3px rgba(0,0,0,.30);
-    --shadow-md:   0 4px 16px rgba(0,0,0,.35);
-    --shadow-lg:   0 16px 40px rgba(0,0,0,.45);
+    --toggle-on:   #22d3ee;
+    --av-bg:       rgba(34,211,238,.10);
+    --av-txt:      #22d3ee;
+    --shadow-sm:   0 1px 3px rgba(0,0,0,.35);
+    --shadow-md:   0 4px 16px rgba(0,0,0,.40);
+    --shadow-lg:   0 16px 40px rgba(0,0,0,.50);
   }
 
   .sw {
@@ -516,13 +516,13 @@ const ProfileSection = ({ user, loading, onSave }) => {
       <div className="sw-card">
         <p className="sw-sec-title">Personal info</p>
         <Field label="Full name">
-          {loading?<Skel h={38}/>:<input className="sw-field" value={name} onChange={e=>setName(e.target.value)} placeholder="Your full name"/>}
+          {loading?<Skel h={38}/>:<input className="sw-field" value={name} onChange={e=>setName(e.target.value)} placeholder="Shivakant Mishra"/>}
         </Field>
         <Field label="Email address" hint="Contact support to change your email address.">
           {loading?<Skel h={38}/>:<input className="sw-field" value={user?.email||''} disabled/>}
         </Field>
         <Field label="Bio" hint="A brief description shown to your teammates.">
-          {loading?<Skel h={70}/>:<textarea className="sw-field" rows={2} value={bio} onChange={e=>setBio(e.target.value)} placeholder="Tell your team about yourself…"/>}
+          {loading?<Skel h={70}/>:<textarea className="sw-field" rows={2} value={bio} onChange={e=>setBio(e.target.value)} placeholder="Builder of DashTalk · +91 9720028490"/>}
         </Field>
         <button className="sw-btn primary" onClick={save} disabled={saving||loading}>
           {saving?<><span className="sw-spin"/> Saving…</>:<><Save size={13}/> Save changes</>}

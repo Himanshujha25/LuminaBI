@@ -15,17 +15,17 @@ const GLOBAL_CSS = `
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg:        #080a12;
-    --surface:   #0e1120;
-    --surface-2: #131628;
-    --border:    rgba(255,255,255,.07);
-    --border-md: rgba(255,255,255,.12);
-    --text-1:    #eef0fa;
-    --text-2:    rgba(238,240,250,.50);
-    --text-3:    rgba(238,240,250,.28);
-    --accent:    #5a5fff;
-    --accent-2:  #a78bfa;
-    --accent-3:  #38bdf8;
+    --bg:        #030712;
+    --surface:   #070d1a;
+    --surface-2: #0d1829;
+    --border:    rgba(34,211,238,.07);
+    --border-md: rgba(34,211,238,.13);
+    --text-1:    #e8f4f8;
+    --text-2:    rgba(232,244,248,.50);
+    --text-3:    rgba(232,244,248,.28);
+    --accent:    #22d3ee;
+    --accent-2:  #f472b6;
+    --accent-3:  #a78bfa;
     --green:     #34d399;
     --amber:     #fbbf24;
     --font-head: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -46,7 +46,7 @@ const GLOBAL_CSS = `
 
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: rgba(90,95,255,.3); border-radius: 999px; }
+  ::-webkit-scrollbar-thumb { background: rgba(34,211,238,.28); border-radius: 999px; }
 
   .noise-overlay {
     position: fixed; inset: 0; z-index: 0; pointer-events: none;
@@ -58,8 +58,8 @@ const GLOBAL_CSS = `
   .bg-grid {
     position: fixed; inset: 0; z-index: 0; pointer-events: none;
     background-image:
-      linear-gradient(rgba(255,255,255,.024) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,.024) 1px, transparent 1px);
+      linear-gradient(rgba(34,211,238,.022) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(34,211,238,.022) 1px, transparent 1px);
     background-size: 52px 52px;
     mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 30%, transparent 100%);
   }
@@ -68,12 +68,12 @@ const GLOBAL_CSS = `
     position: fixed; border-radius: 50%; pointer-events: none; z-index: 0;
     filter: blur(120px); opacity: .18;
   }
-  .blob-1 { width: 700px; height: 700px; top: -200px; left: -100px; background: #5a5fff; }
-  .blob-2 { width: 500px; height: 500px; top: 100px; right: -100px; background: #a78bfa; opacity: .12; }
-  .blob-3 { width: 400px; height: 400px; bottom: 10%; left: 30%; background: #38bdf8; opacity: .09; }
+  .blob-1 { width: 700px; height: 700px; top: -200px; left: -100px; background: #0891b2; }
+  .blob-2 { width: 500px; height: 500px; top: 100px; right: -100px; background: #f472b6; opacity: .10; }
+  .blob-3 { width: 400px; height: 400px; bottom: 10%; left: 30%; background: #a78bfa; opacity: .08; }
 
   .gradient-text {
-    background: linear-gradient(135deg, #818cf8 0%, #a78bfa 50%, #38bdf8 100%);
+    background: linear-gradient(135deg, #22d3ee 0%, #f472b6 50%, #a78bfa 100%);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     background-clip: text;
   }
@@ -101,9 +101,9 @@ const GLOBAL_CSS = `
     position: fixed; top: 0; left: 0; right: 0; z-index: 100;
     display: flex; align-items: center; justify-content: space-between;
     padding: 0 40px; height: 60px;
-    background: rgba(8,10,18,.7);
-    backdrop-filter: blur(20px) saturate(1.4);
-    border-bottom: 1px solid var(--border);
+    background: rgba(3,7,18,.75);
+    backdrop-filter: blur(24px) saturate(1.4);
+    border-bottom: 1px solid rgba(34,211,238,.07);
     transition: background .3s;
   }
   .lbi-logo {
@@ -111,10 +111,10 @@ const GLOBAL_CSS = `
     text-decoration: none;
   }
   .lbi-logo-icon {
-    width: 32px; height: 32px; border-radius: 8px;
-    background: linear-gradient(135deg, #4f52e8, #7c5cf6);
+    width: 32px; height: 32px; border-radius: 9px;
+    background: linear-gradient(135deg, #0891b2, #22d3ee);
     display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 0 0 1px rgba(255,255,255,.12), 0 4px 12px rgba(79,82,232,.4);
+    box-shadow: 0 0 0 1px rgba(34,211,238,.22), 0 4px 16px rgba(34,211,238,.4);
   }
   .lbi-logo-text {
     font-family: var(--font-head); font-size: 17px; font-weight: 700;
@@ -140,9 +140,9 @@ const GLOBAL_CSS = `
   .lbi-mobile-drawer {
     display: none;
     position: fixed; top: 60px; left: 0; right: 0; z-index: 99;
-    background: rgba(8,10,18,.96);
-    backdrop-filter: blur(24px) saturate(1.4);
-    border-bottom: 1px solid var(--border);
+    background: rgba(3,7,18,.97);
+    backdrop-filter: blur(28px) saturate(1.4);
+    border-bottom: 1px solid rgba(34,211,238,.07);
     flex-direction: column;
     padding: 16px 20px 20px;
     gap: 6px;
@@ -155,15 +155,15 @@ const GLOBAL_CSS = `
     color: var(--text-2); font-size: 14px; font-weight: 500;
     text-decoration: none; transition: all .14s;
   }
-  .drawer-link:hover { background: rgba(255,255,255,.06); color: var(--text-1); }
-  .drawer-divider { height: 1px; background: var(--border); margin: 8px 0; }
+  .drawer-link:hover { background: rgba(34,211,238,.05); color: var(--text-1); }
+  .drawer-divider { height: 1px; background: rgba(34,211,238,.07); margin: 8px 0; }
   .drawer-cta {
     display: flex; align-items: center; justify-content: center; gap: 8px;
     padding: 12px 20px; border-radius: 10px;
-    background: linear-gradient(135deg, #4f52e8, #7c5cf6);
-    color: #fff; font-size: 14px; font-weight: 600;
+    background: linear-gradient(135deg, #0891b2, #22d3ee);
+    color: #030712; font-size: 14px; font-weight: 700;
     text-decoration: none; margin-top: 4px;
-    box-shadow: 0 4px 16px rgba(79,82,232,.35);
+    box-shadow: 0 4px 20px rgba(34,211,238,.40);
   }
 
   .btn-ghost {
@@ -172,17 +172,17 @@ const GLOBAL_CSS = `
     font-family: var(--font-body); font-size: 13.5px; font-weight: 500;
     cursor: pointer; text-decoration: none; transition: color .15s, background .15s;
   }
-  .btn-ghost:hover { color: var(--text-1); background: rgba(255,255,255,.05); }
+  .btn-ghost:hover { color: var(--text-1); background: rgba(34,211,238,.05); }
   .btn-cta {
     padding: 8px 18px; border-radius: 8px;
-    background: linear-gradient(135deg, #4f52e8, #7c5cf6);
-    color: #fff; font-family: var(--font-body); font-size: 13.5px; font-weight: 600;
+    background: linear-gradient(135deg, #0891b2, #22d3ee);
+    color: #030712; font-family: var(--font-body); font-size: 13.5px; font-weight: 700;
     border: none; cursor: pointer; text-decoration: none;
-    box-shadow: 0 0 0 1px rgba(255,255,255,.12), 0 3px 10px rgba(79,82,232,.35);
+    box-shadow: 0 0 0 1px rgba(34,211,238,.28), 0 4px 16px rgba(34,211,238,.40);
     transition: opacity .15s, transform .12s;
     display: inline-flex; align-items: center; gap: 6px;
   }
-  .btn-cta:hover { opacity: .9; transform: translateY(-1px); }
+  .btn-cta:hover { opacity: .9; transform: translateY(-1px); box-shadow: 0 0 0 1px rgba(34,211,238,.35), 0 8px 24px rgba(34,211,238,.50); }
 
   /* ── HERO ── */
   .hero {
@@ -801,7 +801,7 @@ const Home = () => {
             <BarChart2 size={15} color="#fff" />
           </div>
           <span style={{ fontFamily: 'var(--font-head)', fontSize: 15, fontWeight: 700, color: 'var(--text-2)' }}>
-            Lumina<span className="gradient-text">BI</span>
+            Dash<span className="gradient-text">Talk</span>
           </span>
         </div>
         <p className="footer-copy">© 2026 DashTalk · All rights reserved</p>

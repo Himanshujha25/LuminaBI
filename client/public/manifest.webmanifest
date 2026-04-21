@@ -1,7 +1,7 @@
 {
-  "name": "LuminaBI",
-  "short_name": "LuminaBI",
-  "description": "Conversational Business Intelligence powered by AI.",
+  "name": "DashTalk",
+  "short_name": "DashTalk",
+  "description": "AI-powered conversational BI — ask your data anything.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0B0F19",

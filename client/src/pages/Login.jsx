@@ -144,7 +144,7 @@ const Login = () => {
 const S = {
   page: {
     minHeight: '100vh',
-    background: '#0d0f1a',
+    background: '#030712',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
@@ -157,10 +157,10 @@ const S = {
   gridBg: {
     position: 'absolute', inset: 0, zIndex: 0,
     backgroundImage: `
-      linear-gradient(rgba(255,255,255,.028) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,.028) 1px, transparent 1px)
+      linear-gradient(rgba(34,211,238,.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(34,211,238,.04) 1px, transparent 1px)
     `,
-    backgroundSize: '48px 48px',
+    backgroundSize: '52px 52px',
     maskImage: 'radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%)',
   },
   logo: {
@@ -169,34 +169,36 @@ const S = {
     textDecoration: 'none', marginBottom: 36,
   },
   logoIcon: {
-    width: 34, height: 34, borderRadius: 9,
-    background: 'linear-gradient(135deg, #4f52e8, #7c5cf6)',
+    width: 34, height: 34, borderRadius: 10,
+    background: 'linear-gradient(135deg, #0891b2, #22d3ee)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
+    boxShadow: '0 0 20px rgba(34,211,238,0.35)',
   },
   logoText: {
-    fontSize: 17, fontWeight: 700, color: '#e8eaf5',
+    fontSize: 17, fontWeight: 700, color: '#e8f4f8',
     letterSpacing: '-.3px',
   },
   logoBi: {
-    background: 'linear-gradient(90deg, #818cf8, #a78bfa)',
+    background: 'linear-gradient(90deg, #22d3ee, #f472b6)',
     WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
   },
   card: {
     position: 'relative', zIndex: 1,
     width: '100%', maxWidth: 400,
-    background: '#13161f',
-    border: '1px solid rgba(255,255,255,.08)',
-    borderRadius: 18,
+    background: 'rgba(7,13,26,0.92)',
+    border: '1px solid rgba(34,211,238,0.12)',
+    borderRadius: 20,
     padding: '36px 36px 32px',
-    boxShadow: '0 24px 64px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.04)',
+    boxShadow: '0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(34,211,238,0.06), inset 0 1px 0 rgba(255,255,255,0.04)',
+    backdropFilter: 'blur(24px)',
   },
   cardHead: { marginBottom: 24 },
   heading: {
-    fontSize: 22, fontWeight: 700,
-    color: '#e8eaf5', margin: 0, letterSpacing: '-.4px',
+    fontSize: 22, fontWeight: 800,
+    color: '#e8f4f8', margin: 0, letterSpacing: '-.5px',
   },
   sub: {
-    fontSize: 13.5, color: 'rgba(232,234,245,.42)',
+    fontSize: 13.5, color: 'rgba(232,244,248,.42)',
     marginTop: 5,
   },
   errorBox: {
@@ -209,17 +211,17 @@ const S = {
   form: { display: 'flex', flexDirection: 'column', gap: 16 },
   fieldWrap: { display: 'flex', flexDirection: 'column', gap: 6 },
   label: {
-    fontSize: 12, fontWeight: 600,
-    letterSpacing: '.04em', textTransform: 'uppercase',
-    color: 'rgba(232,234,245,.38)',
+    fontSize: 11.5, fontWeight: 700,
+    letterSpacing: '.06em', textTransform: 'uppercase',
+    color: 'rgba(232,244,248,.38)',
   },
   input: {
     width: '100%', padding: '10px 13px',
-    borderRadius: 9, fontSize: 14,
-    fontFamily: "'DM Sans', sans-serif",
-    background: 'rgba(255,255,255,.05)',
-    border: '1px solid rgba(255,255,255,.09)',
-    color: '#e8eaf5', outline: 'none',
+    borderRadius: 10, fontSize: 14,
+    fontFamily: "'Inter', sans-serif",
+    background: 'rgba(34,211,238,0.04)',
+    border: '1px solid rgba(34,211,238,0.12)',
+    color: '#e8f4f8', outline: 'none',
     boxSizing: 'border-box',
     transition: 'border-color .15s, box-shadow .15s',
   },
@@ -231,37 +233,38 @@ const S = {
     padding: 2, borderRadius: 4, transition: 'color .12s',
   },
   forgotLink: {
-    fontSize: 12, color: 'rgba(129,140,248,.75)',
-    textDecoration: 'none', fontWeight: 500,
+    fontSize: 12, color: 'rgba(34,211,238,.75)',
+    textDecoration: 'none', fontWeight: 600,
   },
   submitBtn: {
     marginTop: 6,
-    width: '100%', padding: '11px 16px',
+    width: '100%', padding: '12px 16px',
     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-    borderRadius: 9, border: 'none', cursor: 'pointer',
-    background: 'linear-gradient(135deg, #4f52e8, #7c5cf6)',
-    color: '#fff', fontSize: 14, fontWeight: 600,
-    fontFamily: "'DM Sans', sans-serif",
-    boxShadow: '0 2px 12px rgba(79,82,232,.35)',
+    borderRadius: 10, border: 'none', cursor: 'pointer',
+    background: 'linear-gradient(135deg, #0891b2, #22d3ee)',
+    color: '#030712', fontSize: 14, fontWeight: 700,
+    fontFamily: "'Inter', sans-serif",
+    boxShadow: '0 4px 20px rgba(34,211,238,0.35)',
     transition: 'opacity .15s, transform .12s',
+    letterSpacing: '-0.01em',
   },
   submitBtnDisabled: { opacity: 0.55, cursor: 'not-allowed' },
   footer: {
     marginTop: 22, textAlign: 'center',
-    fontSize: 13, color: 'rgba(232,234,245,.36)',
+    fontSize: 13, color: 'rgba(232,244,248,.36)',
   },
   footerLink: {
-    color: 'rgba(129,140,248,.85)', fontWeight: 600,
+    color: 'rgba(34,211,238,.90)', fontWeight: 600,
     textDecoration: 'none',
   },
 };
 
 const CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
   @keyframes auth-card-in {
-    from { opacity: 0; transform: translateY(14px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: translateY(18px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
   }
   @keyframes auth-shake {
     0%,100% { transform: translateX(0); }
@@ -274,19 +277,20 @@ const CSS = `
     to { transform: rotate(360deg); }
   }
 
-  .auth-card-in { animation: auth-card-in .3s ease both; }
+  .auth-card-in { animation: auth-card-in .35s cubic-bezier(.22,1,.36,1) both; }
   .auth-shake   { animation: auth-shake .38s ease; }
   .auth-spin    { animation: auth-spin .65s linear infinite; }
 
   .auth-input:focus {
-    border-color: rgba(129,140,248,.55) !important;
-    box-shadow: 0 0 0 3px rgba(79,82,232,.18) !important;
+    border-color: rgba(34,211,238,.60) !important;
+    box-shadow: 0 0 0 3px rgba(34,211,238,.14) !important;
   }
-  .auth-input::placeholder { color: rgba(232,234,245,.20); }
+  .auth-input::placeholder { color: rgba(232,244,248,.20); }
 
   .auth-submit:hover:not(:disabled) {
-    opacity: .88;
+    opacity: .90;
     transform: translateY(-1px);
+    box-shadow: 0 8px 28px rgba(34,211,238,0.45) !important;
   }
   .auth-submit:active:not(:disabled) {
     transform: translateY(0) scale(.98);
