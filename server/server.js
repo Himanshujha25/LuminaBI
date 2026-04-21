@@ -33,6 +33,7 @@ const allowedOrigins = new Set([
   "http://127.0.0.1:5173",
   "https://dashtalk.vercel.app",
   "https://dashtalk.onrender.com",
+  "https://lumina-bi.vercel.app",
   "http://192.168.29.122:5173",
   "http://localhost:5050",
   "http://127.0.0.1:5050",
